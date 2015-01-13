@@ -182,7 +182,7 @@ class MessageSender(Process):
         if self._stopping:
             return
         msg = self._msg_q.get(True)
-        topics = '%s.%s.%d.%s' % (self._name, self._create_time, self._hostname, msg['status'] if msg else 'stopping', ) 
+        topics = '%s.%d.%s.%s' % (self._name, self._create_time, self._hostname, msg['status'] if msg else 'stopping', ) 
         self._ch.basic_publish(
                  exchange=EXCHANGE_NAME, 
                  routing_key=topics,
