@@ -33,7 +33,7 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         '''
         if name in self._db.database_names():
             if expid in self._db[name].collection_names():
-                rs = self._db[name][expid].find({'host' : 'condor-%s' % wid})
+                rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort("timestamp")
                 if rs:
                     data = []
                     for d in rs:
