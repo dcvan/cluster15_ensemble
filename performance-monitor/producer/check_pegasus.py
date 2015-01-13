@@ -105,6 +105,7 @@ class ProcessMonitor(object):
                 self._cur = self.find_process()
                 time.sleep(1)
                 self._timeout_counter += 1
+            self._timeout_counter = 0
             with self._lock:
                 try:
                     self._stat['count'] += 1
