@@ -13,15 +13,15 @@ class UpdateHandler(tornado.websocket.WebSocketHandler):
     
     '''
     
-    def initialize(self, conn):
+    def initialize(self, conn, consumers):
         '''
         Initialize the event handler
         
         :param pika.connection.Connection conn: the AMQP connection
-        
+        :param dict consumers: consumers
         '''
         self._conn = conn
-        self._consumers = {}
+        self._consumers = consumers
         
     def check_origin(self, origin):
         '''

@@ -32,7 +32,7 @@
 	var lineChart = myChart.Line(data, {bezierCurve: true});
 	function init(){
     	var output = document.getElementById("updates");
-   	 	var websocket = new WebSocket("ws://152.54.14.21:8081/updates")
+   	 	var websocket = new WebSocket("ws://152.54.14.32:8081/updates")
    		websocket.onmessage = function(evt){
    	    	var msg = JSON.parse(evt.data);
    	    	lineChart.addData([msg.cpu_percent], new Date(msg.timestamp * 1000).toDateString());

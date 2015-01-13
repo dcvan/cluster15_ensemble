@@ -22,7 +22,7 @@ class Application(tornado.web.Application):
         '''
         amqp_conn = MessageConnection(MESSAGE_BROKER_URI)
         handlers = [
-                (r'/updates', UpdateHandler, dict(conn=amqp_conn)),   
+                (r'/updates', UpdateHandler, dict(conn=amqp_conn, consumers={})),   
                 ]
         settings = {
                 'template_path': 'templates/',
