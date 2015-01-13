@@ -3,20 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <title>Worker</title>
+<script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+<script src="Chart.min.js">
+  var Chartjs = Chart.noConflict()
+</script>
+<script>
+	$(document).ready(function(){
+		$.ajax({
+			url: window.location.pathname,
+			type: 'POST',
+			contentType: 'application/json',
+			success: function(data){
+				for(i = 0; i < data.length; i ++){
+					console.log(data);
+					$('#content').append(JSON.stringify(data[i]));
+				}
+			}
+		});
+	});
+</script>
 </head>
 <body>
-<table>
-	{% for r in rs %}
-		{% block r %}
-		<tr>
-			{% for f in r %}
-				{% block f %}
-					<td>{{r[f]}}</td>
-				{% end %}
-			{% end %}
-		</tr>
-		{% end %}
-	{% end %}
-</table>
+<div id="content"></div>
 </body>
 </html>

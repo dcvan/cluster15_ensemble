@@ -3,7 +3,7 @@ Created on Jan 13, 2015
 
 @author: dc
 '''
-
+import json
 import tornado.web
 
 class WorkerStatusRenderer(tornado.web.RedirectHandler):
@@ -25,11 +25,20 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         '''
         
         '''
+        self.render("worker.html")
+        
+    def post(self, name, expid, wid):
+        '''
+        
+        '''
         if name in self._db.database_names():
             if expid in self._db[name].collection_names():
                 rs = self._db[name][expid].find({'host' : 'condor-%s' % wid})
                 if rs:
-                    self.render('worker.html', rs=rs)
+                    data = [d for d in rs]
+                    self.set_header('Content-Type', 'application/json;charset="utf-8"')
+                    self.write(json.dump(data))
+                    self.finish()
                 else:
                     raise tornado.web.HTTPError(404)
             else:
