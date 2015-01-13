@@ -7,12 +7,9 @@
 <script src="{{static_url('js/Chart.min.js')}}">
   var Chartjs = Chart.noConflict()
 </script>
-</head>
-<body>
-<canvas id="cpu_mem_pct" width="100%" height="500"></canvas>
 <script>
 	$(document).ready(function(){
-		var cpuMemChart = new Chart($('#cpu_mem_pct').getContext("2d"));
+		var cpuMemChart = new Chart($('#cpu_mem_pct').get(0).getContext("2d"));
 		var data = {
 			    labels: [],
 			    datasets: [
@@ -35,11 +32,14 @@
 			contentType: 'application/json',
 			success: function(data){
 				for(i = 0; i < data.length; i ++){
-					cpuMemLineChart.addData([data.cpu_percent, data.mem_percent], msg.executable)
+					cpuMemLineChart.addData([data[i].avg_cpu_percent], data[i].executable);
 				}
 			}
 		});
 	});
 </script>
+</head>
+<body>
+<canvas id="cpu_mem_pct" width="100%" height="500"></canvas>
 </body>
 </html>

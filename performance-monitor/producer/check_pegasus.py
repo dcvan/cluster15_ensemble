@@ -69,17 +69,6 @@ class ProcessMonitor(object):
                 self._stat['timestamp'] = int(time.time())
                 self._msg_q.put(dict(self._stat))
                 print(self._stat)
-                self._stat['step'] = 0
-                self._stat['count'] = 0
-                self._stat['executable'] = None 
-                self._stat['runtime'] = 0.0
-                self._stat['avg_cpu_percent']= 0.0
-                self._stat['avg_mem_percent'] = 0.0
-                self._stat['total_read_count'] = 0
-                self._stat['total_write_count'] = 0
-                self._stat['total_read_bytes'] = 0
-                self._stat['total_write_bytes'] = 0
-                self._stat['timestamp'] = 0
 
     def find_process(self):
         '''
@@ -161,6 +150,18 @@ class ProcessMonitor(object):
                     
                 except psutil.NoSuchProcess:
                     self._cur = None
+                    with self._lock:
+                        self._stat['step'] = 0
+                        self._stat['count'] = 0
+                        self._stat['executable'] = None 
+                        self._stat['runtime'] = 0.0
+                        self._stat['avg_cpu_percent']= 0.0
+                        self._stat['avg_mem_percent'] = 0.0
+                        self._stat['total_read_count'] = 0
+                        self._stat['total_write_count'] = 0
+                        self._stat['total_read_bytes'] = 0
+                        self._stat['total_write_bytes'] = 0
+                        self._stat['timestamp'] = 0
             time.sleep(self._interval)
 
 if __name__ == '__main__':
