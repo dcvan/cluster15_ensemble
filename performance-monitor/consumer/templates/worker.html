@@ -32,7 +32,10 @@
 			contentType: 'application/json',
 			success: function(data){
 				for(i = 0; i < data.length; i ++){
-					cpuMemLineChart.addData([data[i].avg_cpu_percent], data[i].executable);
+					if(data[i].status == 'terminated')
+						cpuMemLineChart.addData([data[i].avg_cpu_percent], data[i].executable);
+					else
+						cpuMemLineChart.addData([data[i].cpu_percent], '');
 				}
 			}
 		});
