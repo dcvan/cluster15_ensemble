@@ -35,7 +35,10 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
             if expid in self._db[name].collection_names():
                 rs = self._db[name][expid].find({'host' : 'condor-%s' % wid})
                 if rs:
-                    data = [d for d in rs]
+                    data = []
+                    for d in rs:
+                        del d['_id']
+                        data.append(d)
                     self.set_header('Content-Type', 'application/json;charset="utf-8"')
                     self.write(json.dumps(data))
                     self.finish()
