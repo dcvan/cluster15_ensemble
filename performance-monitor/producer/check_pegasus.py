@@ -29,7 +29,7 @@ class ProcessMonitor(object):
                 name, 
                 pika.URLParameters(MESSAGE_BROKER_URI), 
                 self._msg_q,
-                self._sender,
+                self._hostname,
                 )
         self._cur = None
         self._interval = 1
