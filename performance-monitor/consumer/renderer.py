@@ -37,7 +37,7 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
                 if rs:
                     data = [d for d in rs]
                     self.set_header('Content-Type', 'application/json;charset="utf-8"')
-                    self.write(json.dump(data))
+                    self.write(json.dumps(data))
                     self.finish()
                 else:
                     raise tornado.web.HTTPError(404)
