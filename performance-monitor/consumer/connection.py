@@ -63,8 +63,8 @@ class MessageConnection(object):
         
         '''
         self._closing = True
-        if self._consumers:
-            del self._consumers[:]
+        while self._consumers:
+            self._consumers.pop()
         self._conn.close()
         
     def add_timeout(self, period, callback):
