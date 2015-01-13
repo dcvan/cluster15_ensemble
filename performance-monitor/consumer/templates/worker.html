@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Worker</title>
+</head>
+<body>
+<table>
+	{% for r in rs %}
+		{% block r %}
+		<tr>
+			{% for f in r %}
+				{% block f %}
+					<td>{{escape(r[f])}}</td>
+				{% end %}
+			{% end %}
+		</tr>
+		{% end %}
+	{% end %}
+</table>
+</body>
+</html>
