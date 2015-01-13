@@ -20,6 +20,12 @@ class MessageSender(Process):
     def __init__(self, name, conn_param, msg_q, hostname):
         '''
         
+        :param str name: workflow name
+        :param pika.connection.ConnectionParameters conn_param: AMQP connection parameters
+        :param multiprocessing.Queue: system message queue for communication between the monitor
+                                      and the AMQP sender
+        :param str hostname: the hostname
+        
         '''
         Process.__init__(self)
         self._name = name

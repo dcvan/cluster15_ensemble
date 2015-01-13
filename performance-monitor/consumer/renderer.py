@@ -6,27 +6,33 @@ Created on Jan 13, 2015
 
 import tornado.web
 
-class PageRenderer(tornado.web.RedirectHandler):
+class WorkerStatusRenderer(tornado.web.RedirectHandler):
     '''
-    A mock web page render 
+    A web handler that renders status page of the worker of interest
     
     '''
 
-    def __init__(self, **kwargs):
+    def initialize(self, db):
+        '''
+        Initialize the handler
+        
+        :param pymongo.MongoClient db: the mongoDB connection
+        
+        '''
+        self._db = db
+        
+    def get(self, name, expid, wid):
         '''
         
         '''
-        pass
-    
-    def get(self, **kwargs):
-        '''
-        GET() method
-        
-        '''
-        pass
-    
-    def post(self, **kwargs):
-        '''
-        POST() method
-        
-        '''
+        if name in self._db.database_names():
+            if expid in self._db[name].collection_names():
+                rs = self._db[name][expid].find({'host' : 'condor-%s' % wid})
+                if rs:
+                    self.render('worker.html', rs=rs)
+                else:
+                    raise tornado.web.HTTPError(404)
+            else:
+                raise tornado.web.HTTPError(404)
+        else:
+            raise tornado.web.HTTPError(404)

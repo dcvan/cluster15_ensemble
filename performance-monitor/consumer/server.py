@@ -11,7 +11,7 @@ import pymongo
 from message_consumer import ArchiveConsumer
 from connection import MessageConnection
 from message import UpdateHandler
-from renderer import PageRenderer
+from renderer import WorkerStatusRenderer
 from config import MESSAGE_BROKER_URI, ARCHIVE_HOST, ARCHIVE_PORT
 
 class Application(tornado.web.Application):
@@ -29,9 +29,11 @@ class Application(tornado.web.Application):
         self._start_archive_consumer()
         handlers = [
                 # experiments
-                (r'/types/([a-z-]+)', PageRenderer, dict(db=self._mongo_conn)),
+                #(r'/types/([a-z-]+)', PageRenderer, dict(db=self._mongo_conn)),
                 # workers
-                (r'/types/([a-z-]+)/experiments/([0-9]+)', PageRenderer, dict(db=self._mongo_conn)),
+                #(r'/types/([a-z-]+)/experiments/([0-9]+)', PageRenderer, dict(db=self._mongo_conn)),
+                # worker
+                (r'/types/([a-z-]+)/experiments/([0-9]+)/workers/([0-9]+)', WorkerStatusRenderer, dict(db=self._mongo_conn)),
                 (r'/types/([a-z-]+)/experiments/([0-9]+)/workers/([0-9]+)/([a-z#]+)', UpdateHandler, dict(conn=self._amqp_conn, consumers={})),
                 ]
         settings = {
