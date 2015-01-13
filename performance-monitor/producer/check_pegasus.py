@@ -3,27 +3,33 @@
 import psutil
 import time
 import pika
+import socket
 from multiprocessing import Process, Manager, RLock, Queue
 
 from message_sender import MessageSender
 from config import MESSAGE_BROKER_URI, TIMEOUT
 
 class ProcessMonitor(object):
-    """
-
-    """
-
+    '''
+    A monitor to check a list of processes' system resource utilization
+    
+    '''
     def __init__(self, name, msg_q, executables):
-        """
-
-        """
+        '''
+        
+        :param str name: workflow name(montage or genomic)
+        :param multiprocessing.Queue msg_q: system message queue for communication between the monitor and AMQP sender
+        :param set executables: executables to be monitored
+        '''
         manager = Manager()
         self._msg_q = msg_q
         self._procs = list(executables)
+        self._hostname = 'condor-0' if socket.gethostname() == 'master' else socket.gethostname()
         self._sender = MessageSender(
                 name, 
                 pika.URLParameters(MESSAGE_BROKER_URI), 
                 self._msg_q,
+                self._sender,
                 )
         self._cur = None
         self._interval = 1
@@ -31,6 +37,7 @@ class ProcessMonitor(object):
         self._step = manager.Value('i', 0)
         self._lock = RLock()
         self._stat = manager.dict({
+                    'host': self._hostname,
                     'timestamp': 0,
                     'count':0,
                     'step': 0,
@@ -46,9 +53,12 @@ class ProcessMonitor(object):
                     })
     
     def on_terminate(self, proc):
-        """
-
-        """
+        '''
+        Send a summary message when a process is terminated
+        
+        :param psutil.Process proc: the process just terminated
+        
+        '''
         if self._stat['count'] > 1:
             with self._lock:
                 self._step.set(self._step.get() + 1) 
@@ -72,11 +82,13 @@ class ProcessMonitor(object):
                 self._stat['timestamp'] = 0
 
     def find_process(self):
-        """
+        '''
+        Find any running process of interest. Because only an interesting job will be running at 
+        any point of time, it simply returns the first found process of interest
         
         :rtype - psutil.Process
         
-        """
+        '''
         if self._procs: # always true except no executable is passed in
             for proc in psutil.process_iter():
                 try:
@@ -92,9 +104,10 @@ class ProcessMonitor(object):
                     pass
 
     def run(self):
-        """
-
-        """
+        '''
+        Start the monitor. It creates an AMQP sender and sends job statistics periodically
+         
+        '''
         self._sender.start()
         while self._procs: # always true except no executable is passed in
             while not self._cur:
@@ -152,7 +165,7 @@ class ProcessMonitor(object):
 if __name__ == '__main__':
     try:
         ProcessMonitor(
-                'test', 
+                'genomic', 
                 Queue(), 
                 set(['bwa', 'java', 'python', 'pegasus-transfer'])).run()
     except KeyboardInterrupt:

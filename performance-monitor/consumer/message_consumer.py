@@ -4,9 +4,8 @@ Created on Jan 12, 2015
 @author: dc
 '''
 import json
-import pymongo 
 
-from config import EXCHANGE_NAME, ARCHIVE_HOST, ARCHIVE_PORT
+from config import EXCHANGE_NAME
 
 class MessageConsumer(object):
     '''
@@ -165,7 +164,7 @@ class WebConsumer(MessageConsumer):
         self._ch.queue_bind(
                 exchange=EXCHANGE_NAME,
                 queue=self._queue,
-                routing_key='*.stopping',
+                routing_key='#.stopping',
                 callback=None,
                 )
         super(WebConsumer, self)._on_queue_declareok(method)
@@ -186,11 +185,14 @@ class ArchiveConsumer(MessageConsumer):
     
     '''
     
-    def __init__(self):
+    def __init__(self, db):
         '''
+        
+        :param pymongo.MongoClient db: mongoDB connection
+        
         '''
         super(ArchiveConsumer, self).__init__('#')
-        self._db = pymongo.MongoClient(ARCHIVE_HOST, ARCHIVE_PORT)
+        self._db = db
     
     def stop(self):
         '''
@@ -210,7 +212,7 @@ class ArchiveConsumer(MessageConsumer):
        
         '''
         fs = deliver.routing_key.split('.')
-        if len(fs) != 3:
+        if len(fs) != 4:
             return
-        self._db[fs[0]][fs[2]].insert(json.loads(body))
+        self._db[fs[0]][fs[1]].insert(json.loads(body))
         

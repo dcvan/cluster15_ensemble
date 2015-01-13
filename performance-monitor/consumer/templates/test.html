@@ -35,7 +35,10 @@
    	 	var websocket = new WebSocket("ws://152.54.14.32:8081/updates")
    		websocket.onmessage = function(evt){
    	    	var msg = JSON.parse(evt.data);
-   	    	lineChart.addData([msg.cpu_percent], new Date(msg.timestamp * 1000).toDateString());
+   	    	if(msg.status == "terminated")
+   	    		lineChart.addData([msg.avg_cpu_percent], msg.executable);
+   	    	else
+   	    		lineChart.addData([msg.cpu_percent], "");
    		};
 	}
 	window.addEventListener("load", init, false);

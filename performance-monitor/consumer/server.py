@@ -6,10 +6,13 @@ Created on Jan 12, 2015
 
 import tornado.web
 import tornado.ioloop 
+import pymongo
 
+from message_consumer import ArchiveConsumer
 from connection import MessageConnection
-from update import UpdateHandler
-from config import MESSAGE_BROKER_URI
+from message import UpdateHandler
+from renderer import PageRenderer
+from config import MESSAGE_BROKER_URI, ARCHIVE_HOST, ARCHIVE_PORT
 
 class Application(tornado.web.Application):
     '''
@@ -19,16 +22,44 @@ class Application(tornado.web.Application):
     
     def __init__(self):
         '''
+        
         '''
-        amqp_conn = MessageConnection(MESSAGE_BROKER_URI)
+        self._amqp_conn = MessageConnection(MESSAGE_BROKER_URI)
+        self._mongo_conn = pymongo.MongoClient(ARCHIVE_HOST, ARCHIVE_PORT)
+        self._start_archive_consumer()
         handlers = [
-                (r'/updates', UpdateHandler, dict(conn=amqp_conn, consumers={})),   
+                # experiments
+                (r'/types/([a-z-]+)', PageRenderer, dict(db=self._mongo_conn)),
+                # workers
+                (r'/types/([a-z-]+)/experiments/([0-9]+)', PageRenderer, dict(db=self._mongo_conn)),
+                (r'/types/([a-z-]+)/experiments/([0-9]+)/workers/([0-9]+)/([a-z#]+)', UpdateHandler, dict(conn=self._amqp_conn, consumers={})),
                 ]
         settings = {
                 'template_path': 'templates/',
             }
         tornado.web.Application.__init__(self, handlers, **settings)
-    
+        
+    def stop(self):
+        '''
+        Clean up
+        
+        '''
+        if self._amqp_conn:
+            self._amqp_conn.stop()
+        if self._mongo_conn and self._mongo_conn.alive():
+            self._mongo_conn.close()
+        
+    def _start_archive_consumer(self):
+        '''
+        Start archive consumer
+        
+        '''
+        def callback():
+            c = ArchiveConsumer(self._mongo_conn)
+            self._amqp_conn.channel(c.on_channel_open)
+            self._amqp_conn.add_consumer(c)
+        
+        self._amqp_conn.add_timeout(1, callback)
 
 if __name__ == '__main__':
     try:
@@ -37,4 +68,5 @@ if __name__ == '__main__':
         print 'Server is running ...'
         tornado.ioloop.IOLoop.current().start()
     except KeyboardInterrupt:
+        app.stop()
         tornado.ioloop.IOLoop.current().stop()

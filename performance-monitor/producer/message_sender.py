@@ -17,7 +17,7 @@ class MessageSender(Process):
     
     '''
 
-    def __init__(self, name, conn_param, msg_q):
+    def __init__(self, name, conn_param, msg_q, hostname):
         '''
         
         '''
@@ -31,6 +31,8 @@ class MessageSender(Process):
         self._closing = False
         self._stopping = False
         self._create_time = int(time.time())
+        self._hostname = hostname
+
     
     @property
     def name(self):
@@ -180,7 +182,7 @@ class MessageSender(Process):
         if self._stopping:
             return
         msg = self._msg_q.get(True)
-        topics = '%s.%s.%d' % (self._name, msg['status'], self._create_time, ) if msg else '%s.stopping.%d' % (self._name, self._create_time, )
+        topics = '%s.%s.%d.%s' % (self._name, self._create_time, self._hostname, msg['status'] if msg else 'stopping', ) 
         self._ch.basic_publish(
                  exchange=EXCHANGE_NAME, 
                  routing_key=topics,
