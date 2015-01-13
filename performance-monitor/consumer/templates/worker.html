@@ -9,14 +9,30 @@
 </script>
 <script>
 	$(document).ready(function(){
+		var cpuMemChart = new Chart($('#cpu_mem_pct').getContext("2d"));
+		var data = {
+			    labels: [],
+			    datasets: [
+			        {
+			            label: "CPU Percentage",
+			            fillColor: "rgba(151,187,205,0.2)",
+			            strokeColor: "rgba(151,187,205,1)",
+			            pointColor: "rgba(151,187,205,1)",
+			            pointStrokeColor: "#fff",
+			            pointHighlightFill: "#fff",
+			            pointHighlightStroke: "rgba(151,187,205,1)",
+			            data: []
+			        }
+			    ]
+			};
+		var cpuMemLineChart = cpuMemChart.Line(data, {bezierCurve: true});
 		$.ajax({
 			url: window.location.pathname,
 			type: 'POST',
 			contentType: 'application/json',
 			success: function(data){
 				for(i = 0; i < data.length; i ++){
-					console.log(data);
-					$('#content').append(JSON.stringify(data[i]));
+					cpuMemLineChart.addData([data.cpu_percent, data.mem_percent], msg.executable)
 				}
 			}
 		});
@@ -24,6 +40,6 @@
 </script>
 </head>
 <body>
-<div id="content"></div>
+<canvas id="cpu_mem_pct" width="100%" height="500"></canvas>
 </body>
 </html>
