@@ -147,6 +147,7 @@ class ProcessMonitor(object):
                     self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
                     print(self._cur.pid, self._stat['executable'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
                     self._msg_q.put({
+                        'host': self._hostname,
                         'timestamp': time.time(),
                         'executable': self._stat['executable'],
                         'cpu_percent': cpu_percent,
