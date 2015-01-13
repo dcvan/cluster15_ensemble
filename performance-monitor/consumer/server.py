@@ -58,7 +58,8 @@ class Application(tornado.web.Application):
             c = ArchiveConsumer(self._mongo_conn)
             self._amqp_conn.channel(c.on_channel_open)
             self._amqp_conn.add_consumer(c)
-        
+        if not self._amqp_conn.is_connected:
+            self._amqp_conn.connect()
         self._amqp_conn.add_timeout(1, callback)
 
 if __name__ == '__main__':
