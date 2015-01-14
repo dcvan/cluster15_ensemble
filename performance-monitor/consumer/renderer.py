@@ -36,8 +36,8 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
                 rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort('timestamp')
                 if rs:
                     self.render("worker.html", 
-                                labels=','.join([r['executable'] if r['status'] == 'terminated' else '' for r in rs]),
-                                data=','.join(r['avg_cpu_percent'] if r['status'] == 'terminated' else r['cpu_percent'] for r in rs)
+                                labels=','.join(['"%s"' %r['executable'] if r['status'] == 'terminated' else '""' for r in rs]),
+                                data=','.join([r['avg_cpu_percent'] if r['status'] == 'terminated' else r['cpu_percent'] for r in rs])
                                 )
                 else:
                     raise tornado.web.HTTPError(404)
