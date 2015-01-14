@@ -41,10 +41,10 @@
 						runtimeLabels.push('');
 						cpuPct.push(data[i].cpu_percent);
 						memPct.push(data[i].memory_percent);
-						readCount.push(data[i].total_read_count);
-						writeCount.push(data[i].total_write_count);
-						readBytes.push(data[i].total_read_bytes);
-						writeBytes.push(data[i].total_write_bytes);
+						readCount.push(data[i].total_read_count / 1000);
+						writeCount.push(data[i].total_write_count / 1000);
+						readBytes.push(data[i].total_read_bytes / 1024 / 1024);
+						writeBytes.push(data[i].total_write_bytes / 1024 / 1024);
 					}
 				}
 				var cpuMemChart = new Chart($('#cpu_mem_pct').get(0).getContext('2d')),
