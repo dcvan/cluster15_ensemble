@@ -32,10 +32,10 @@
 						avgMemPct.push(data[i].avg_mem_percent);
 						//readRates.push(data[i].read_rate);
 						//writeRates.push(data[i].write_rate);
-						totalReadCount.push(data[i].total_read_count);
-						totalWriteCount.push(data[i].total_write_count);
-						totalReadBytes.push(data[i].total_read_bytes)	;
-						totalWriteBytes.push(data[i].total_write_bytes);
+						totalReadCount.push(data[i].total_read_count / 1000);
+						totalWriteCount.push(data[i].total_write_count / 1000);
+						totalReadBytes.push(data[i].total_read_bytes / 1024 / 1024)	;
+						totalWriteBytes.push(data[i].total_write_bytes / 1024 / 1024);
 					}
 					else{
 						runtimeLabels.push('');
