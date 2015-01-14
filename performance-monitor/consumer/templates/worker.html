@@ -16,12 +16,14 @@
 			success: function(data){
 				var labels = [], data = [];
 				for(i = 0; i < data.length; i ++){
-					if(data[i].status == 'terminated')
+					if(data[i].status == 'terminated'){
 						labels.append(data[i].executable);
 						data.append(data[i].avg_cpu_percent);
-					else
+					}
+					else{
 						labels.append('');
 						data.append(data[i].cpu_percent);
+					}
 				}
 				
 				var cpuMemChart = new Chart($('#cpu_mem_pct').get(0).getContext("2d"));
