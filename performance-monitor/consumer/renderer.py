@@ -23,17 +23,42 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         
     def get(self, name, expid, wid):
         '''
+        GET method
         
-        '''
-        self.render("worker.html")
-        
-    def post(self, name, expid, wid):
-        '''
+        :param str name: workflow name/type
+        :param str expid: experiment ID
+        :param str wid: worker ID
+        :raise tornado.web.HTTPError
         
         '''
         if name in self._db.database_names():
             if expid in self._db[name].collection_names():
-                rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort("timestamp")
+                rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort('timestamp')
+                if rs:
+                    self.render("worker.html", 
+                                labels=','.join([r['executable'] if r['status'] == 'terminated' else '' for r in rs]),
+                                data=','.join(r['avg_cpu_percent'] if r['status'] == 'terminated' else r['cpu_percent'] for r in rs)
+                                )
+                else:
+                    raise tornado.web.HTTPError(404)
+            else:
+                raise tornado.web.HTTPError(404)
+        else:
+            raise tornado.web.HTTPError(404)
+        
+    def post(self, name, expid, wid):
+        '''
+        POST method
+        
+        :param str name: workflow name/type
+        :param str expid: experiment ID
+        :param str wid: worker ID
+        :raise tornado.web.HTTPError
+        
+        '''
+        if name in self._db.database_names():
+            if expid in self._db[name].collection_names():
+                rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort('timestamp')
                 if rs:
                     data = []
                     for d in rs:
