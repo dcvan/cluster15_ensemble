@@ -31,20 +31,21 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         :raise tornado.web.HTTPError
         
         '''
-        if name in self._db.database_names():
-            if expid in self._db[name].collection_names():
-                rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort('timestamp')
-                if rs:
-                    self.render("worker.html", 
-                                labels=[r['executable'] if r['status'] == 'terminated' else '' for r in rs],
-                                nums=[r['avg_cpu_percent'] if r['status'] == 'terminated' else r['cpu_percent'] for r in rs]
-                                )
-                else:
-                    raise tornado.web.HTTPError(404)
-            else:
-                raise tornado.web.HTTPError(404)
-        else:
-            raise tornado.web.HTTPError(404)
+#         if name in self._db.database_names():
+#             if expid in self._db[name].collection_names():
+#                 rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort('timestamp')
+#                 if rs:
+#                     self.render("worker.html", 
+#                                 labels=[r['executable'] if r['status'] == 'terminated' else '' for r in rs],
+#                                 nums=[r['avg_cpu_percent'] if r['status'] == 'terminated' else r['cpu_percent'] for r in rs]
+#                                 )
+#                 else:
+#                     raise tornado.web.HTTPError(404)
+#             else:
+#                 raise tornado.web.HTTPError(404)
+#         else:
+#             raise tornado.web.HTTPError(404)
+        self.render('worker.html')
         
     def post(self, name, expid, wid):
         '''
