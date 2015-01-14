@@ -11,7 +11,7 @@
 	$(document).ready(function(){
 		var cpuMemChart = new Chart($('#cpu_mem_pct').get(0).getContext("2d"));
 		var data = {
-			    labels: [{{labels}}],
+			    labels: {{labels}},
 			    datasets: [
 			        {
 			            label: "CPU Percentage",
@@ -21,7 +21,7 @@
 			            pointStrokeColor: "#fff",
 			            pointHighlightFill: "#fff",
 			            pointHighlightStroke: "rgba(151,187,205,1)",
-			            data: [{{data}}]
+			            data: {{nums}}
 			        }
 			    ]
 			};
