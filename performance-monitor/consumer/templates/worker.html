@@ -57,8 +57,7 @@
 				
 				var dataTemplate = {
 						labels: null,
-						datasets:[ 
-						]
+						datasets: null, 
 				};
 				
 				var datasetTemplate = {
@@ -75,6 +74,7 @@
 				// CPU and memory runtime usage data
 				var cpuMemData = $.extend({}, dataTemplate);
 				cpuMemData.labels = runtimeLabels;
+				cpuMemData.datasets = [];
 				var cpuDs = $.extend({}, datasetTemplate);
 				cpuDs.label = 'CPU Usage at Runtime';
 				cpuDs.data = cpuPct;
@@ -87,6 +87,7 @@
 				// read/write count at runtime
 				var rwCountData = $.extend({}, dataTemplate);
 				rwCountData.labels = runtimeLabels;
+				rwCountData.datasets = [];
 				var readCountDs = $.extend({}, datasetTemplate);
 				readCountDs.label = 'Read Count at Runtime';
 				readCountDs.data = readCount
@@ -99,6 +100,7 @@
 				// read/write bytes at runtime
 				var rwBytesData = $.extend({}, dataTemplate);
 				rwBytesData.labels = runtimeLabels;
+				rwBytesData.datasets = [];
 				var readBytesDs = $.extend({}, datasetTemplate);
 				readBytesDs.label = 'Read Bytes at Runtime';
 				readBytesDs.data = readBytes;
@@ -111,6 +113,7 @@
 				// runtime summary
 				var sumRuntimeData = $.extend({}, dataTemplate);
 				sumRuntimeData.labels = sumLabels;
+				sumRuntimeData.datasets = [];
 				var runtimeDs = $.extend({}, datasetTemplate);
 				runtimeDs.label = 'Runtime'
 				runtimeDs.data = runtime;
@@ -119,6 +122,7 @@
 				// average CPU and memory usage
 				var sumCpuMemData = $.extend({}, dataTemplate);
 				sumCpuMemData.labels = sumLabels;
+				sumCpuMemData.datasets = [];
 				var avgCpuDs = $.extend({}, dataTemplate);
 				avgCpuDs.label = 'Avg. CPU Usage';
 				avgCpuDs.data = avgCpuPct;
@@ -131,6 +135,7 @@
 				// total read/write count summary
 				var sumRwCountData = $.extend({}, dataTemplate);
 				sumRwCountData.labels = sumLabels;
+				sumRwCountData.datasets = [];
 				var sumReadCountDs = $.extend({}, dataTemplate);
 				sumReadCountDs.label = 'Total Read Count'
 				sumReadCountDs.data = totalReadCount;
@@ -143,6 +148,7 @@
 				// total read/write bytes summary
 				var sumRwBytesData = $.extend({}, dataTemplate);
 				sumRwBytesData.labels = sumLabels;
+				sumRwBytesData.datasets = [];
 				var sumReadBytesDs = $.extend({}, dataTemplate);
 				sumReadBytesDs.label = 'Total Read Bytes';
 				sumReadBytesDs.data = totalReadBytes;
