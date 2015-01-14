@@ -14,9 +14,8 @@
 			type: 'POST',
 			contentType: 'application/json',
 			success: function(data){
-				var labels = [], nums = [];
+				var labels = [], cpu_pct = [], mem_pct = [];
 				for(i = 0; i < data.length; i ++){
-					var labels = [], cpu_pct = [], mem_pct = [];
 					if(data[i].status == 'terminated'){
 						labels.push(data[i].executable);
 						cpu_pct.push(data[i].avg_cpu_percent);
@@ -43,7 +42,7 @@
 					            data: cpu_pct
 					        },
 					        {
-					            label: "My First dataset",
+					            label: "Memory Percentage",
 					            fillColor: "rgba(220,220,220,0.2)",
 					            strokeColor: "rgba(220,220,220,1)",
 					            pointColor: "rgba(220,220,220,1)",
