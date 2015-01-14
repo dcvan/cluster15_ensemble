@@ -49,6 +49,8 @@ class ProcessMonitor(object):
                     'total_write_count': 0,
                     'total_read_bytes': 0,
                     'total_write_bytes': 0,
+                    'read_rate': 0,
+                    'write_rate': 0,
                     'status': 'terminated',
                     })
     
@@ -65,7 +67,9 @@ class ProcessMonitor(object):
                 self._stat['step'] = self._step.get()
                 self._stat['runtime'] = time.time() - proc.create_time()
                 self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
-                self._stat['avg_mem_percent'] /= self._stat['count'] 
+                self._stat['avg_mem_percent'] /= self._stat['count']
+                self._stat['read_rate'] = self._stat['total_read_bytes' ]/self._stat['runtime']
+                self._stat['write_rate'] = self._stat['total_write_bytes' ]/self._stat['runtime']
                 self._stat['timestamp'] = int(time.time())
                 self._msg_q.put(dict(self._stat))
                 print(self._stat)
@@ -121,9 +125,9 @@ class ProcessMonitor(object):
                     
                     # determine check-in interval by executable 
                     if self._stat['executable'] == 'bwa':
-                        self._interval = 20
+                        self._interval = 30
                     elif self._stat['executable'] == 'gatk':
-                        self._interval = 40
+                        self._interval = 60
                     else:
                         self._interval = 1
                     
@@ -161,6 +165,8 @@ class ProcessMonitor(object):
                         self._stat['total_write_count'] = 0
                         self._stat['total_read_bytes'] = 0
                         self._stat['total_write_bytes'] = 0
+                        self._stat['read_rate'] = 0
+                        self._stat['write_rate'] = 0
                         self._stat['timestamp'] = 0
             time.sleep(self._interval)
 

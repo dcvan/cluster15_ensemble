@@ -14,22 +14,46 @@
 			type: 'POST',
 			contentType: 'application/json',
 			success: function(data){
-				var labels = [], cpu_pct = [], mem_pct = [];
+				var runtimeLabels = [], sumLabels = [], 
+					  cpuPct = [], memPct = [], 
+					  readCount = [], writeCount = [], 
+					  readBytes = [], writeBytes = [], 
+					  runtime = [], 
+					  readRates = [], writeRates = [],
+					  totalReadBytes = [], totalWriteBytes = [],
+					  totalReadCount = [], totalWriteCount = [],
+					  avgCpuPct = [], avgMemPct = [];
 				for(i = 0; i < data.length; i ++){
 					if(data[i].status == 'terminated'){
-						labels.push(data[i].executable);
-						cpu_pct.push(data[i].avg_cpu_percent);
-						mem_pct.push(data[i].avg_mem_percent);
+						runtimeLabels[runtimeLabels.length - 1] = data[i].executable;
+						sumLabels.push(data[i].executable);
+						runtime.push(data[i].runtime);
+						avgCpuPct.push(data[i].avg_cpu_percent);
+						avgMemPct.push(data[i].avg_mem_percent);
+						//readRates.push(data[i].read_rate);
+						//writeRates.push(data[i].write_rate);
+						totalReadCount.push(data[i].total_read_count);
+						totalWriteCount.push(data[i].total_write_count);
+						totalReadBytes.push(data[i].total_read_bytes)	;
+						totalWriteBytes.push(data[i].total_write_bytes);
 					}
 					else{
-						labels.push('');
-						cpu_pct.push(data[i].cpu_percent);
-						mem_pct.push(data[i].memory_percent);
+						runtimeLabels.push('');
+						cpuPct.push(data[i].cpu_percent);
+						memPct.push(data[i].memory_percent);
+						readCount.push(data[i].total_read_count);
+						writeCount.push(data[i].total_write_count);
+						readBytes.push(data[i].total_read_bytes);
+						writeBytes.push(data[i].total_write_bytes);
 					}
 				}
-				var cpuMemChart = new Chart($('#cpu_mem_pct').get(0).getContext("2d"));
-				var cpu_data = {
-					    labels: labels,
+				var cpuMemChart = new Chart($('#cpu_mem_pct').get(0).getContext('2d')),
+					   ioCountChart = new Chart($('#io_count').get(0).getContext('2d')),
+					   ioBytesChart = new Chart($('#io_bytes').get(0).getContext('2d')),
+					   sumChart = new Chart($('#summary').get(0).getContext('2d'));
+				
+				var cpuMemData = {
+					    labels: runtimeLabels,
 					    datasets: [
 					        {
 					            label: "CPU Percentage",
@@ -39,7 +63,7 @@
 					            pointStrokeColor: "#fff",
 					            pointHighlightFill: "#fff",
 					            pointHighlightStroke: "rgba(151,187,205,1)",
-					            data: cpu_pct
+					            data: cpuPct
 					        },
 					        {
 					            label: "Memory Percentage",
@@ -49,17 +73,73 @@
 					            pointStrokeColor: "#fff",
 					            pointHighlightFill: "#fff",
 					            pointHighlightStroke: "rgba(220,220,220,1)",
-					            data: mem_pct
+					            data: memPct
 					        },
 					    ]
-					};
-				var cpuMemLineChart = cpuMemChart.Line(cpu_data, {bezierCurve: true});
+					},
+					ioCountData = {
+					    labels: runtimeLabels,
+					    datasets: [
+					        {
+					            label: "Read Count",
+					            fillColor: "rgba(151,187,205,0.2)",
+					            strokeColor: "rgba(151,187,205,1)",
+					            pointColor: "rgba(151,187,205,1)",
+					            pointStrokeColor: "#fff",
+					            pointHighlightFill: "#fff",
+					            pointHighlightStroke: "rgba(151,187,205,1)",
+					            data: readCount
+					        },
+					        {
+					            label: "Write Count",
+					            fillColor: "rgba(220,220,220,0.2)",
+					            strokeColor: "rgba(220,220,220,1)",
+					            pointColor: "rgba(220,220,220,1)",
+					            pointStrokeColor: "#fff",
+					            pointHighlightFill: "#fff",
+					            pointHighlightStroke: "rgba(220,220,220,1)",
+					            data: writeCount
+					        },
+					    ]
+					},
+					ioBytesData = {
+						    labels: runtimeLabels,
+						    datasets: [
+						        {
+						            label: "Read Count",
+						            fillColor: "rgba(151,187,205,0.2)",
+						            strokeColor: "rgba(151,187,205,1)",
+						            pointColor: "rgba(151,187,205,1)",
+						            pointStrokeColor: "#fff",
+						            pointHighlightFill: "#fff",
+						            pointHighlightStroke: "rgba(151,187,205,1)",
+						            data: readBytes
+						        },
+						        {
+						            label: "Write Count",
+						            fillColor: "rgba(220,220,220,0.2)",
+						            strokeColor: "rgba(220,220,220,1)",
+						            pointColor: "rgba(220,220,220,1)",
+						            pointStrokeColor: "#fff",
+						            pointHighlightFill: "#fff",
+						            pointHighlightStroke: "rgba(220,220,220,1)",
+						            data: writeBytes
+						        },
+						    ]
+						};
+				
+				cpuMemChart.Line(cpuMemData, {bezierCurve: true});
+				ioCountChart.Line(ioCountData, {bezierCurve: true});
+				ioBytesChart.Line(ioBytesData, {bezierCurve: true});
 			}
 		});
 	});
 </script>
 </head>
 <body>
-<canvas id="cpu_mem_pct" width="1000" height="500"></canvas>
+<canvas id="cpu_mem_pct" width="1500" height="500"></canvas>
+<canvas id="io_count" width="1500" height="500"></canvas>
+<canvas id="io_bytes" width="1500" height="500"></canvas>
+<canvas id="summary" width="1500" height="500"></canvas>
 </body>
 </html>
