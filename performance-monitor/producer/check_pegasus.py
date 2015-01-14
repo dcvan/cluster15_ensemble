@@ -121,9 +121,9 @@ class ProcessMonitor(object):
                     
                     # determine check-in interval by executable 
                     if self._stat['executable'] == 'bwa':
-                        self._interval = 10
-                    elif self._stat['executable'] == 'gatk':
                         self._interval = 20
+                    elif self._stat['executable'] == 'gatk':
+                        self._interval = 40
                     else:
                         self._interval = 1
                     

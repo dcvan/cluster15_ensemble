@@ -9,41 +9,52 @@
 </script>
 <script>
 	$(document).ready(function(){
-		var cpuMemChart = new Chart($('#cpu_mem_pct').get(0).getContext("2d"));
-		var data = {
-			    labels: [],
-			    datasets: [
-			        {
-			            label: "CPU Percentage",
-			            fillColor: "rgba(151,187,205,0.2)",
-			            strokeColor: "rgba(151,187,205,1)",
-			            pointColor: "rgba(151,187,205,1)",
-			            pointStrokeColor: "#fff",
-			            pointHighlightFill: "#fff",
-			            pointHighlightStroke: "rgba(151,187,205,1)",
-			            data: []
-			        }
-			    ]
-			};
-		var cpuMemLineChart = cpuMemChart.Line(data, {bezierCurve: true});
-		
 		$.ajax({
 			url: window.location.pathname,
 			type: 'POST',
 			contentType: 'application/json',
 			success: function(data){
-				var labels = [], data = [];
+				var labels = [], nums = [];
 				for(i = 0; i < data.length; i ++){
+					var labels = [], cpu_pct = [], mem_pct = [];
 					if(data[i].status == 'terminated'){
-						data.labels.append(data[i].executable);
-						data.datasets[0].data.append(data[i].avg_cpu_percent);
+						labels.push(data[i].executable);
+						cpu_pct.push(data[i].avg_cpu_percent);
+						mem_pct.push(data[i].avg_mem_percent);
 					}
 					else{
-						data.labels.append('');
-						data.datasets[0].data.append(data[i].cpu_percent);
+						labels.push('');
+						cpu_pct.push(data[i].cpu_percent);
+						mem_pct.push(data[i].memory_percent);
 					}
 				}
-				cpuMemLineChart.update();
+				var cpuMemChart = new Chart($('#cpu_mem_pct').get(0).getContext("2d"));
+				var cpu_data = {
+					    labels: labels,
+					    datasets: [
+					        {
+					            label: "CPU Percentage",
+					            fillColor: "rgba(151,187,205,0.2)",
+					            strokeColor: "rgba(151,187,205,1)",
+					            pointColor: "rgba(151,187,205,1)",
+					            pointStrokeColor: "#fff",
+					            pointHighlightFill: "#fff",
+					            pointHighlightStroke: "rgba(151,187,205,1)",
+					            data: cpu_pct
+					        },
+					        {
+					            label: "My First dataset",
+					            fillColor: "rgba(220,220,220,0.2)",
+					            strokeColor: "rgba(220,220,220,1)",
+					            pointColor: "rgba(220,220,220,1)",
+					            pointStrokeColor: "#fff",
+					            pointHighlightFill: "#fff",
+					            pointHighlightStroke: "rgba(220,220,220,1)",
+					            data: mem_pct
+					        },
+					    ]
+					};
+				var cpuMemLineChart = cpuMemChart.Line(cpu_data, {bezierCurve: true});
 			}
 		});
 	});
