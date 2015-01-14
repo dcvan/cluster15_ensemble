@@ -55,161 +55,106 @@
 					   sumRwBytesChart = new Chart($('#sum_rw_bytes').get(0).getContext('2d')),
 					   sumRuntimeChart = new Chart($('#sum_runtime').get(0).getContext('2d'));
 				
-				var cpuMemData = {
-					    labels: runtimeLabels,
-					    datasets: [
-					        {
-					            label: "CPU Percentage",
-					            fillColor: "rgba(151,187,205,0.2)",
-					            strokeColor: "rgba(151,187,205,1)",
-					            pointColor: "rgba(151,187,205,1)",
-					            pointStrokeColor: "#fff",
-					            pointHighlightFill: "#fff",
-					            pointHighlightStroke: "rgba(151,187,205,1)",
-					            data: cpuPct
-					        },
-					        {
-					            label: "Memory Percentage",
-					            fillColor: "rgba(220,220,220,0.2)",
-					            strokeColor: "rgba(220,220,220,1)",
-					            pointColor: "rgba(220,220,220,1)",
-					            pointStrokeColor: "#fff",
-					            pointHighlightFill: "#fff",
-					            pointHighlightStroke: "rgba(220,220,220,1)",
-					            data: memPct
-					        },
-					    ]
-					},
-					ioCountData = {
-					    labels: runtimeLabels,
-					    datasets: [
-					        {
-					            label: "Read Count",
-					            fillColor: "rgba(151,187,205,0.2)",
-					            strokeColor: "rgba(151,187,205,1)",
-					            pointColor: "rgba(151,187,205,1)",
-					            pointStrokeColor: "#fff",
-					            pointHighlightFill: "#fff",
-					            pointHighlightStroke: "rgba(151,187,205,1)",
-					            data: readCount
-					        },
-					        {
-					            label: "Write Count",
-					            fillColor: "rgba(220,220,220,0.2)",
-					            strokeColor: "rgba(220,220,220,1)",
-					            pointColor: "rgba(220,220,220,1)",
-					            pointStrokeColor: "#fff",
-					            pointHighlightFill: "#fff",
-					            pointHighlightStroke: "rgba(220,220,220,1)",
-					            data: writeCount
-					        },
-					    ]
-					},
-					ioBytesData = {
-						    labels: runtimeLabels,
-						    datasets: [
-						        {
-						            label: "Read Count",
-						            fillColor: "rgba(151,187,205,0.2)",
-						            strokeColor: "rgba(151,187,205,1)",
-						            pointColor: "rgba(151,187,205,1)",
-						            pointStrokeColor: "#fff",
-						            pointHighlightFill: "#fff",
-						            pointHighlightStroke: "rgba(151,187,205,1)",
-						            data: readBytes
-						        },
-						        {
-						            label: "Write Count",
-						            fillColor: "rgba(220,220,220,0.2)",
-						            strokeColor: "rgba(220,220,220,1)",
-						            pointColor: "rgba(220,220,220,1)",
-						            pointStrokeColor: "#fff",
-						            pointHighlightFill: "#fff",
-						            pointHighlightStroke: "rgba(220,220,220,1)",
-						            data: writeBytes
-						        },
-						    ]
-					},
-					sumCpuMemData = {
-						labels: sumLabels,
-						datasets: [
-				                   {
-				                       label: "Avg. CPU Usage",
-				                       fillColor: "rgba(220,220,220,0.5)",
-				                       strokeColor: "rgba(220,220,220,0.8)",
-				                       highlightFill: "rgba(220,220,220,0.75)",
-				                       highlightStroke: "rgba(220,220,220,1)",
-				                       data: avgCpuPct
-				                   },
-				                   {
-				                       label: "Avg. Memory Usage",
-				                       fillColor: "rgba(41,23,25,0.15)",
-				                       strokeColor: "rgba(1,7,23,0.28)",
-				                       highlightFill: "rgba(123,147,25,75)",
-				                       highlightStroke: "rgba(15,18,25,111)",
-				                       data: avgMemPct
-				                   }
+				var dataTemplate = {
+						labels: null,
+						datasets:[ 
 						]
-					},	
-					sumRwCountData = {
-						labels: sumLabels,
-						datasets: [
-				                   {
-				                       label: "Read Count",
-				                       fillColor: "rgba(41,23,25,0.15)",
-				                       strokeColor: "rgba(1,7,23,0.28)",
-				                       highlightFill: "rgba(123,147,25,75)",
-				                       highlightStroke: "rgba(15,18,25,111)",
-				                       data: totalReadCount
-				                   },
-				                   {
-				                       label: "Write Count",
-				                       fillColor: "rgba(12,17,2,0.5)",
-				                       strokeColor: "rgba(111,17,20,8)",
-				                       highlightFill: "rgba(113,112,25,75)",
-				                       highlightStroke: "rgba(1,17,210,123)",
-				                       data: totalWriteCount
-				                   }
-						]
-					},
-					sumRwBytesData = {
-						labels: sumLabels,
-						datasets:[
-				                   {
-				                       label: "Read Bytes",
-				                       fillColor: "rgba(151,187,205,0.5)",
-				                       strokeColor: "rgba(151,187,205,0.8)",
-				                       highlightFill: "rgba(151,187,205,0.75)",
-				                       highlightStroke: "rgba(151,187,205,1)",
-				                       data: totalReadBytes
-				                   },
-				                   {
-				                       label: "Write Bytes",
-				                       fillColor: "rgba(151,167,205,1.5)",
-				                       strokeColor: "rgba(151,111,205,12.8)",
-				                       highlightFill: "rgba(151,17,205,6.75)",
-				                       highlightStroke: "rgba(11,87,25,156)",
-				                       data: totalWriteBytes
-				                   }
-						]
-					},
-					sumRuntimeData = {
-						    labels: sumLabels,
-						    datasets: [
-					                   {
-					                       label: "Runtime",
-					                       fillColor: "rgba(220,220,220,0.5)",
-					                       strokeColor: "rgba(220,220,220,0.8)",
-					                       highlightFill: "rgba(220,220,220,0.75)",
-					                       highlightStroke: "rgba(220,220,220,1)",
-					                       data: runtime
-					                   }
-						    ]
-					};
+				};
+				
+				var datasetTemplate = {
+			            label: null,
+			            fillColor: 'rgba(151,187,205,0.2)'',
+			            strokeColor: 'rgba(151,187,205,1)'',
+			            pointColor: 'rgba(151,187,205,1)',
+			            pointStrokeColor: '#fff',
+			            pointHighlightFill: '#fff',
+			            pointHighlightStroke: 'rgba(151,187,205,1)',
+			            data: null
+				};
+				
+				// CPU and memory runtime usage data
+				var cpuMemData = $.extend({}, dataTemplate);
+				cpuMemData.labels = runtimeLabels;
+				var cpuDs = $.extend({}, datasetTemplate);
+				cpuDs.label = 'CPU Usage at Runtime';
+				cpuDs.data = cpuPct;
+				cpuMemData.datasets.push(cpuDs);
+				var memDs= $.extend({}, datasetTemplate);
+				memDs.label = 'Memory Usage at Runtime';
+				memDs.data = memPct;
+				cpuMemData.datasets.push(memDs);
+				
+				// read/write count at runtime
+				var rwCountData = $.extend({}, dataTemplate);
+				rwCountData.labels = runtimeLabels;
+				var readCountDs = $.extend({}, datasetTemplate);
+				readCountDs.label = 'Read Count at Runtime';
+				readCountDs.data = readCount
+				rwCountData.datasets.push(readCountDs);
+				var writeCountDs = $.extend({}, datasetTemplate);
+				writeCountDs.label = 'Write Count at Runtime';
+				writeCountDs.data = writeCount;
+				rwCountData.datasets.push(writeCountDs);
+				
+				// read/write bytes at runtime
+				var rwBytesData = $.extend({}, dataTemplate);
+				rwBytesData.labels = runtimeLabels;
+				var readBytesDs = $.extend({}, datasetTemplate);
+				readBytesDs.label = 'Read Bytes at Runtime';
+				readBytesDs.data = readBytes;
+				rwBytesData.datasets.push(readBytesDs);
+				var writeBytesDs = $.extend({}, datasetTemplate);
+				writeBytesDs.label = 'Write Bytes at Runtime';
+				writeBytesDs.data = writeBytes;
+				rwBytesData.datasets.push(writeBytesDs);
+				
+				// runtime summary
+				var sumRuntimeData = $.extend({}, dataTemplate);
+				sumRuntimeData.labels = sumLabels;
+				var runtimeDs = $.extend({}, datasetTemplate);
+				runtimeDs.label = 'Runtime'
+				runtimeDs.data = runtime;
+				sumRuntimeData.datasets.push(runtimeDs);
+				
+				// average CPU and memory usage
+				var sumCpuMemData = $.extend({}, dataTemplate);
+				sumCpuMemData.labels = sumLabels;
+				var avgCpuDs = $.extend({}, dataTemplate);
+				avgCpuDs.label = 'Avg. CPU Usage';
+				avgCpuDs.data = avgCpuPct;
+				sumCpuMemData.datasets.push(avgCpuDs);
+				var avgMemDs = $.extend({}, dataTemplate);
+				avgMemDs.label = 'Avg. Memory Usage';
+				avgMemDs.data = avgMemPct;
+				sumCpuMemData.datasets.push(avgMemDs);
+				
+				// total read/write count summary
+				var sumRwCountData = $.extend({}, dataTemplate);
+				sumRwCountData.labels = sumLabels;
+				var sumReadCountDs = $.extend({}, dataTemplate);
+				sumReadCountDs.label = 'Total Read Count'
+				sumReadCountDs.data = totalReadCount;
+				sumRwCountData.datasets.push(sumReadCountDs);
+				var sumWriteCountDs = $.extend({}, dataTemplate);
+				sumWriteCountDs.label = 'Total Write Count';
+				sumWriteCountDs.data = totalWriteBytes;
+				sumRwCountData.datasets.push(sumWriteCountDs);
+				
+				// total read/write bytes summary
+				var sumRwBytesData = $.extend({}, dataTemplate);
+				sumRwBytesData.labels = sumLabels;
+				var sumReadBytesDs = $.extend({}, dataTemplate);
+				sumReadBytesDs.label = 'Total Read Bytes';
+				sumReadBytesDs.data = totalReadBytes;
+				sumRwBytesData.datasets.push(sumReadBytesDs);
+				var sumWriteBytesDs = $.extend({}, dataTemplate);
+				sumWriteBytesDs.label = 'Total Write Bytes';
+				sumWriteBytesDs.data = totalWriteBytes;
+				sumRwBytesData.datasets.push(sumWriteBytesDs);
 				
 				var cpuMemLine = cpuMemChart.Line(cpuMemData, {bezierCurve: false});
-				var ioCountLine = ioCountChart.Line(ioCountData, {bezierCurve: false});
-				var ioBytesLine = ioBytesChart.Line(ioBytesData, {bezierCurve: false});
+				var ioCountLine = ioCountChart.Line(rwCountData, {bezierCurve: false});
+				var ioBytesLine = ioBytesChart.Line(rwBytesData, {bezierCurve: false});
 				var sumCpuMemLine = sumCpuMemChart.Bar(sumCpuMemData, {barShowStroke: false});
 				var sumRwCountLine = sumRwCountChart.Bar(sumRwCountData, {barShowStroke: false});
 				var sumRwBytesLine = sumRwBytesChart.Bar(sumRwBytesData, {barShowStroke: false});
@@ -217,6 +162,7 @@
 			}
 		});
 	});
+	
 </script>
 </head>
 <body>
