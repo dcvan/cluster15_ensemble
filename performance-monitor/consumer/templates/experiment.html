@@ -26,16 +26,14 @@ var Chartjs = Chart.noConflict();
 	</thead>
 	<tbody>
 		{% for e in experiments %}
-			{% block e %}
 				<tr>
 					<td><a href="/types/{{e.name}}/experiments/{{e.expid}}">{{e.expid}}</a></td>
-					<td>{{e.name}}</td>
-					<td>{{e.status}}</td>
-					<td>{% '.'.join(e.nodes) %}</td>
-					<td>{{convert_datetime(e.timestamp)}}</td>
-					<td>{{e.runtime if e.runtime else '-'}}</td>
+					<td>{{e['name']}}</td>
+					<td>{{e['status']}}</td>
+					<td>{% ','.join(e['nodes']) %}</td>
+					<td>{{convert_datetime(e['timestamp'])}}</td>
+					<td>{{e['runtime'] if e.runtime else '-'}}</td>
 				</tr>
-			{% end %}
 		{% end %}
 	</tbody>
 </table>
