@@ -12,7 +12,7 @@ $(document).ready(function(){
 				   readBytes = {}, writeBytes = {},
 				   readRate = {}, writeRate = {},
 				   runtime = {};
-			var walltime = new Chart($('#walltime').get(0).getContext('2d')),
+			var walltimeChart = new Chart($('#walltime').get(0).getContext('2d')),
 				   cpuChart = new Chart($('#cpu_usage').get(0).getContext('2d')),
 				   memChart = new Chart($('#mem_usage').get(0).getContext('2d')),
 				   readCountChart = new Chart($('#read_count').get(0).getContext('2d')),
@@ -183,6 +183,7 @@ $(document).ready(function(){
 				});
 			}
 			console.log(JSON.stringify(cpuData));
+			walltimeChart.Line(walltimeData, {bezierCurve: false});
 			cpuChart.Line(cpuData, {bezierCurve: false});
 			memChart.Line(memData, {bezierCurve: false});
 			readCountChart.Line(readCountData, {bezierCurve: false});
