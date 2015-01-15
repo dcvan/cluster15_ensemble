@@ -41,7 +41,7 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
                     'name' : name,
                     'status' : 'terminated'
                 }).sort('timestamp')
-        if rs:
+        if rs.count() != 0:
             experiments = self._db['cluster15']['experiment'].find({'name': name}).sort('timestamp')
             data = {
                     'experiments': [e['expid'] for e in experiments],
@@ -97,7 +97,7 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
                     'host' : 'condor-%s' % wid,
                     'expid' : int(expid),
                 }).sort('timestamp')
-        if rs:
+        if rs.count() != 0:
             data = []
             for d in rs:
                 del d['_id']

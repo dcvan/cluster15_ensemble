@@ -218,9 +218,9 @@ class ArchiveConsumer(MessageConsumer):
         if 'status' in data:
             if data['status'] == 'nascent':
                 data['status'] = 'running'
-                if 'workflow' not in self._db[DB_NAME].collection_names() or not self._db[DB_NAME]['workflow'].find({'name': data['name']}):
+                if 'workflow' not in self._db[DB_NAME].collection_names() or self._db[DB_NAME]['workflow'].find({'name': data['name']}).count() != 0:
                     self._db[DB_NAME]['workflow'].insert(data)
-                if 'experiment' not in self._db[DB_NAME].collection_names() or not self._db[DB_NAME]['experiment'].find({'expid': data['expid']}):
+                if 'experiment' not in self._db[DB_NAME].collection_names() or self._db[DB_NAME]['experiment'].find({'expid': int(data['expid'])}).count() != 0:
                     self._db[DB_NAME]['experiment'].insert(data)
             elif data['status'] == 'finished':
                 if data['walltime']:

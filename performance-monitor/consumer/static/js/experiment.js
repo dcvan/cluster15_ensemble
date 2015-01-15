@@ -18,8 +18,14 @@ $(document).ready(function(){
 				   readBytesChart = new Chart($('#read_bytes').get(0).getContext('2d')),
 				   writeBytesChart = new Chart($('#write_count').get(0).getContext('2d')),
 				   runtimeChart = new Chart($('#runtime').get(0).getContext('2d'));
-			for(i = 0; i < data.experiments; i ++){
-				labels.push(new Date(data.experiments[i]).toString());
+			for(i = 0; i < data.experiments.length; i ++){
+				var m = new Date(data.experiments[i]);
+				labels.push(m.getUTCFullYear() 
+						+"/"+ (m.getUTCMonth()+1) 
+						+"/"+ m.getUTCDate() 
+						+ " " + m.getUTCHours() 
+						+ ":" + m.getUTCMinutes() 
+						+ ":" + m.getUTCSeconds());
 			}
 			for(i = 0; i < data.updates.length; i ++){
 				var step = data.updates[i].step;
