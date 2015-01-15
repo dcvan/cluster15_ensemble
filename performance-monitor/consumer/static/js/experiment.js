@@ -189,8 +189,8 @@ $(document).ready(function(){
 			writeCountChart.Line(writeCountData, {bezierCurve: false});
 			readBytesChart.Line(readBytesData, {bezierCurve: false});
 			writeBytesChart.Line(writeBytesData, {bezierCurve: false});
-			readRatesChart.Line(readRateData, {bezierCurve: false});
-			writeRatesChart.Line(writeRateData, {bezierCurve: false});
+			readRateChart.Line(readRateData, {bezierCurve: false});
+			writeRateChart.Line(writeRateData, {bezierCurve: false});
 			runtimeChart.Line(runtimeData, {bezierCurve: false});
 		}
 	});
