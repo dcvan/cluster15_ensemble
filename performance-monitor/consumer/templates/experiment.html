@@ -31,7 +31,7 @@ var Chartjs = Chart.noConflict();
 					<td><a href="/types/{{e['name']}}/experiments/{{e['expid']}}">{{e['expid']}}</a></td>
 					<td>{{e['name']}}</td>
 					<td>{{e['status']}}</td>
-					<td>{% ','.join(e['nodes']) %}</td>
+					<td>{{ ','.join(e['nodes']) }}</td>
 					<td>{{datetime.datetime.fromtimestamp(e['timestamp'] / 1000).strftime("%Y-%m-%d %H:%M:%S")}}</td>
 					<td>{{e['runtime'] if 'runtime' in e else '-'}}</td>
 				</tr>
