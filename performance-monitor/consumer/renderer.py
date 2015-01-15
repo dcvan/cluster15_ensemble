@@ -37,15 +37,19 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         :raise tornado.web.HTTPError
 
         '''
-        rs = self._db['cluster15']['experiment'].find({
+        rs = self._db['cluster15']['update'].find({
                     'name' : name,
                     'status' : 'terminated'
                 }).sort('timestamp')
         if rs:
-            data = []
+            experiments = self._db['cluster15']['experiment'].find({'name': name}).sort('timestamp')
+            data = {
+                    'experiments': [e.expid for e in experiments],
+                    'updates': [],
+                    }
             for d in rs:
                 del d['_id']
-                data.append(d)
+                data['updates'].append(d)
             self.set_header('Content-Type', 'application/json;charset="utf-8"')
             self.write(json.dumps(data))
             self.finish()
@@ -88,7 +92,7 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         :raise tornado.web.HTTPError
         
         '''
-        rs = self._db['cluster15']['experiment'].find({
+        rs = self._db['cluster15']['update'].find({
                     'name' : name,
                     'host' : 'condor-%s' % wid,
                     'expid' : int(expid),
