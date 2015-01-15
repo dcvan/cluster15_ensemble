@@ -5,7 +5,7 @@ Created on Jan 12, 2015
 '''
 import json
 
-from config import EXCHANGE_NAME
+from config import EXCHANGE_NAME, DB_NAME
 
 class MessageConsumer(object):
     '''
@@ -106,23 +106,23 @@ class MessageConsumer(object):
         '''
         timestamp = int(prop.timestamp)
         if timestamp > self._last_timestamp:
-            if body == 'stopping':
-                self._ch.basic_ack(deliver.delivery_tag)
-                self.stop()
-            else:
-                self._process(body)
-                self._last_timestamp = timestamp
-                self._ch.basic_ack(deliver.delivery_tag)
+            self.process(deliver, prop, body)
+            self._last_timestamp = timestamp
+            self._ch.basic_ack(deliver.delivery_tag)
             
-    def process(self, body):
+    def process(self, deliver, prop, body):
         '''
         Implemented by subclasses
         
         :param str body: message text body   
-        :raise NotImplementedError
+        :param pika.Spec.Basic.Deliver: frame contains delivery tag
+        :param pika.Spec.BasicProperties: frame contains user-define properties
         
         '''
-        raise NotImplementedError
+        data = json.loads(body)
+        if 'status' in data and data['status'] =='finished':
+            self._ch.basic_ack(deliver.delivery_tag)
+            self.stop()
                 
 class WebConsumer(MessageConsumer):
     '''
@@ -167,16 +167,19 @@ class WebConsumer(MessageConsumer):
                 )
         super(WebConsumer, self)._on_queue_declareok(method)
         
-    def _process(self, body):
+    def process(self, deliver, prop, body):
         '''
         Write messages to listeners
         
+        :param pika.Spec.Basic.Deliver: frame contains delivery tag
+        :param pika.Spec.BasicProperties: frame contains user-define properties
         :param str body: message text body
         
         '''
         for l in self._listeners:
             l.write_message(body)
-         
+        super(WebConsumer, self).process(deliver, prop, body)
+                 
 class ArchiveConsumer(MessageConsumer):
     '''
     Message consumer for message persistence
@@ -200,12 +203,29 @@ class ArchiveConsumer(MessageConsumer):
         self._db.close()
         super(ArchiveConsumer, self).stop()
         
-    def _process(self, body):
+    def process(self, deliver, prop, body):
         '''
         Store message into DB
         
+        :param pika.Spec.Basic.Deliver: frame contains delivery tag
+        :param pika.Spec.BasicProperties: frame contains user-define properties
         :param str body: message text body   
        
         '''
-        self._db['cluster15']['experiment'].insert(json.loads(body))
+        data = json.loads(body)
+        if 'status' in body:
+            if body['status'] == 'nascent':
+                if 'workflow' not in self._db[DB_NAME].collection_names() or not self._db[DB_NAME]['workflow'].find({'name': data['name']}):
+                    self._db[DB_NAME]['workflow'].insert(data)
+                if 'experiment' not in self._db[DB_NAME].collection_names() or not self._db[DB_NAME]['experiment'].find({'expid': data['expid']}):
+                    self._db[DB_NAME]['experiment'].insert(data)
+            elif body['status'] == 'finished':
+                if body['walltime']:
+                    self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$set': data}, upsert=False)
+            else:
+                self._db[DB_NAME]['update'].insert(data)
+        else:
+            # garbled message
+            pass
+        super(ArchiveConsumer, self).process(deliver, prop, body)
         

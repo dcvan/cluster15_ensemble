@@ -11,3 +11,5 @@ EXCHANGE_NAME = 'cluster15_stat'
 ARCHIVE_HOST = '127.0.0.1'
 
 ARCHIVE_PORT = 27017
+
+DB_NAME = 'cluster15'

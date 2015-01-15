@@ -4,6 +4,9 @@ import psutil
 import time
 import pika
 import socket
+import subprocess
+import os
+import shutil
 from multiprocessing import Process, Manager, RLock, Queue
 
 from message_sender import MessageSender
@@ -14,21 +17,24 @@ class ProcessMonitor(object):
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, name, msg_q, executables):
+    def __init__(self, name, msg_q, executables, workdir):
         '''
         Init
         
         :param str name: workflow name(montage or genomic)
         :param multiprocessing.Queue msg_q: system message queue for communication between the monitor and AMQP sender
         :param set executables: executables to be monitored
+        :param str workdir: workflow working directory
         
         '''
         manager = Manager()
+       
+        self._name = name
         self._msg_q = msg_q
         self._procs = list(executables)
-        self._hostname = 'condor-0' if socket.gethostname() == 'master' else socket.gethostname()
-        self._name = name
+        self._workdir = workdir
         self._expid = int(time.time() * 1000)
+        self._hostname = 'condor-0' if socket.gethostname() == 'master' else socket.gethostname()
         self._sender = MessageSender(
                 self._name, 
                 self._expid,
@@ -109,11 +115,28 @@ class ProcessMonitor(object):
          
         '''
         self._sender.start()
+        
+        # initialize
+        self._msg_q.put({
+            'name': self._name,
+            'hostname': self._hostname,
+            'expid': self._expid,
+            'timestamp': int(time.time() * 1000),
+            'status': 'nascent',             
+            })
         while self._procs: # always true except no executable is passed in
             while not self._cur:
                 # timeout 
                 if self._timeout_counter >= TIMEOUT:
-                    self._msg_q.put('stopping')
+                    self._msg_q.put({
+                        'name': self._name,
+                        'hostname': self._hostname,
+                        'expid': self._expid,
+                        'timestamp': int(time.time() * 1000),
+                        'status': 'finished',
+                        'walltime': self._get_walltime(self._workdir)
+                        })
+                    break
                 print('Waiting ...')
                 self._cur = self.find_process()
                 time.sleep(1)
@@ -179,14 +202,31 @@ class ProcessMonitor(object):
                         self._stat['timestamp'] = 0
             time.sleep(self._interval)
             
-    def _get_walltime(self):
+    def _get_walltime(self, workdir):
         '''
         Get workflow wall time
         
+        :param str workdir: workflow working directory
         :rtype int
         
         '''
-        pass
+        if os.path.isdir('%s/statistics' % workdir):
+            shutil.rmtree('%s/statistics' % workdir)
+        p = subprocess.Popen(['pegasus-statistics', workdir], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = p.communicate()
+        if not err:
+            for l in out.split('\n'):
+                if len(l) > 1 and l[0] != '#':
+                    l = l.lower()
+                    if 'workflow wall time' in l:
+                        walltime_text = l.split(':')[1].strip()
+                        fs = walltime_text.split(',')
+                        return int(fs[0].split(' ')[0]) * 60 + int(fs[1].split(' ')[1])
+        else:
+            # pegasus-statistics error
+            # can be pre-mature workflow run or working directory does not exist
+            return None
+            
 
 if __name__ == '__main__':
     try:
