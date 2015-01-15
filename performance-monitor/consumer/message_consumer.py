@@ -215,15 +215,15 @@ class ArchiveConsumer(MessageConsumer):
        
         '''
         data = json.loads(body)
-        if 'status' in body:
-            if body['status'] == 'nascent':
-                body['status'] = 'running'
+        if 'status' in data:
+            if data['status'] == 'nascent':
+                data['status'] = 'running'
                 if 'workflow' not in self._db[DB_NAME].collection_names() or not self._db[DB_NAME]['workflow'].find({'name': data['name']}):
                     self._db[DB_NAME]['workflow'].insert(data)
                 if 'experiment' not in self._db[DB_NAME].collection_names() or not self._db[DB_NAME]['experiment'].find({'expid': data['expid']}):
                     self._db[DB_NAME]['experiment'].insert(data)
-            elif body['status'] == 'finished':
-                if body['walltime']:
+            elif data['status'] == 'finished':
+                if data['walltime']:
                     self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$set': data}, upsert=False)
             else:
                 self._db[DB_NAME]['update'].insert(data)
