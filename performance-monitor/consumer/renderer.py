@@ -6,7 +6,7 @@ Created on Jan 13, 2015
 import json
 import tornado.web
 
-class ExperimentStatusRender(tornado.web.RedirectHandler):
+class ExperimentStatusRenderer(tornado.web.RedirectHandler):
     '''
     Renders experiment status
     
