@@ -54,37 +54,54 @@ $(document).ready(function(){
 					datasets: null, 
 			};
 			
-			var datasetTemplate1 = {
+			var lineTemp1 = {
 		            label: null,
-		            fillColor: "rgba(170,57,57,0.2)",
-		            strokeColor: "rgba(170,57,57,1)",
-		            pointColor: "rgba(170,57,57,1)",
+		            fillColor: 'rgba(170,57,57,0.2)',
+		            strokeColor: 'rgba(170,57,57,1)',
+		            pointColor: 'rgba(170,57,57,1)',
 		            pointStrokeColor: '#fff',
 		            pointHighlightFill: '#fff',
-		            pointHighlightStroke: "rgba(170,57,57, 1)",
+		            pointHighlightStroke: 'rgba(170,57,57,1)',
 		            data: null
-			};
-			
-			var datasetTemplate2 = {
+			}, 
+			lineTemp2 = {
 		            label: null,
 		            fillColor: 'rgba(151,187,205,0.2)',
 		            strokeColor: 'rgba(151,187,205,1)',
-		            pointColor: 'rgba(151,187,205,1)',
+		            pointColor: 'rgba(151,187,205,1)'',
 		            pointStrokeColor: '#fff',
 		            pointHighlightFill: '#fff',
 		            pointHighlightStroke: 'rgba(151,187,205,1)',
 		            data: null
+			},
+			barTemp1 = {
+		            label: null,
+		            fillColor: "rgba(170,57,57,0.5)",
+		            strokeColor: "rgba(170,57,57,0.8)",
+		            highlightFill: "rgba(170,57,57,0.75)",
+		            highlightStroke: "rgba(170,57,57,1)",
+		            data: null
+			},
+			barTemp2 = {
+		            label: null,
+		            fillColor: "rgba(151,187,205,0.5)",
+		            strokeColor: "rgba(151,187,205,0.8)",
+		            highlightFill: "rgba(151,187,205,0.75)",
+		            highlightStroke: "rgba(151,187,205,1)",
+		            data: null	
 			};
+			
+			
 			
 			// CPU and memory runtime usage data
 			var cpuMemData = $.extend({}, dataTemplate);
 			cpuMemData.labels = runtimeLabels;
 			cpuMemData.datasets = [];
-			var cpuDs = $.extend({}, datasetTemplate1);
+			var cpuDs = $.extend({}, lineTemp1);
 			cpuDs.label = 'CPU Usage at Runtime';
 			cpuDs.data = cpuPct;
 			cpuMemData.datasets.push(cpuDs);
-			var memDs= $.extend({}, datasetTemplate2);
+			var memDs= $.extend({}, lineTemp2);
 			memDs.label = 'Memory Usage at Runtime';
 			memDs.data = memPct;
 			cpuMemData.datasets.push(memDs);
@@ -93,11 +110,11 @@ $(document).ready(function(){
 			var rwCountData = $.extend({}, dataTemplate);
 			rwCountData.labels = runtimeLabels;
 			rwCountData.datasets = [];
-			var readCountDs = $.extend({}, datasetTemplate1);
+			var readCountDs = $.extend({}, lineTemp1);
 			readCountDs.label = 'Read Count at Runtime';
 			readCountDs.data = readCount
 			rwCountData.datasets.push(readCountDs);
-			var writeCountDs = $.extend({}, datasetTemplate2);
+			var writeCountDs = $.extend({}, lineTemp2);
 			writeCountDs.label = 'Write Count at Runtime';
 			writeCountDs.data = writeCount;
 			rwCountData.datasets.push(writeCountDs);
@@ -106,11 +123,11 @@ $(document).ready(function(){
 			var rwBytesData = $.extend({}, dataTemplate);
 			rwBytesData.labels = runtimeLabels;
 			rwBytesData.datasets = [];
-			var readBytesDs = $.extend({}, datasetTemplate1);
+			var readBytesDs = $.extend({}, lineTemp1);
 			readBytesDs.label = 'Read Bytes at Runtime';
 			readBytesDs.data = readBytes;
 			rwBytesData.datasets.push(readBytesDs);
-			var writeBytesDs = $.extend({}, datasetTemplate2);
+			var writeBytesDs = $.extend({}, lineTemp2);
 			writeBytesDs.label = 'Write Bytes at Runtime';
 			writeBytesDs.data = writeBytes;
 			rwBytesData.datasets.push(writeBytesDs);
@@ -119,7 +136,7 @@ $(document).ready(function(){
 			var sumRuntimeData = $.extend({}, dataTemplate);
 			sumRuntimeData.labels = sumLabels;
 			sumRuntimeData.datasets = [];
-			var runtimeDs = $.extend({}, datasetTemplate1);
+			var runtimeDs = $.extend({}, barTemp1);
 			runtimeDs.label = 'Runtime'
 			runtimeDs.data = runtime;
 			sumRuntimeData.datasets.push(runtimeDs);
@@ -128,11 +145,11 @@ $(document).ready(function(){
 			var sumCpuMemData = $.extend({}, dataTemplate);
 			sumCpuMemData.labels = sumLabels;
 			sumCpuMemData.datasets = [];
-			var avgCpuDs = $.extend({}, datasetTemplate1);
+			var avgCpuDs = $.extend({}, barTemp1);
 			avgCpuDs.label = 'Avg. CPU Usage';
 			avgCpuDs.data = avgCpuPct;
 			sumCpuMemData.datasets.push(avgCpuDs);
-			var avgMemDs = $.extend({}, datasetTemplate2);
+			var avgMemDs = $.extend({}, barTemp2);
 			avgMemDs.label = 'Avg. Memory Usage';
 			avgMemDs.data = avgMemPct;
 			sumCpuMemData.datasets.push(avgMemDs);
@@ -141,11 +158,11 @@ $(document).ready(function(){
 			var sumRwCountData = $.extend({}, dataTemplate);
 			sumRwCountData.labels = sumLabels;
 			sumRwCountData.datasets = [];
-			var sumReadCountDs = $.extend({}, datasetTemplate1);
+			var sumReadCountDs = $.extend({}, lineTemp1);
 			sumReadCountDs.label = 'Total Read Count'
 			sumReadCountDs.data = totalReadCount;
 			sumRwCountData.datasets.push(sumReadCountDs);
-			var sumWriteCountDs = $.extend({}, datasetTemplate2);
+			var sumWriteCountDs = $.extend({}, lineTemp2);
 			sumWriteCountDs.label = 'Total Write Count';
 			sumWriteCountDs.data = totalWriteBytes;
 			sumRwCountData.datasets.push(sumWriteCountDs);
@@ -154,11 +171,11 @@ $(document).ready(function(){
 			var sumRwBytesData = $.extend({}, dataTemplate);
 			sumRwBytesData.labels = sumLabels;
 			sumRwBytesData.datasets = [];
-			var sumReadBytesDs = $.extend({}, datasetTemplate1);
+			var sumReadBytesDs = $.extend({}, barTemp1);
 			sumReadBytesDs.label = 'Total Read Bytes';
 			sumReadBytesDs.data = totalReadBytes;
 			sumRwBytesData.datasets.push(sumReadBytesDs);
-			var sumWriteBytesDs = $.extend({}, datasetTemplate2);
+			var sumWriteBytesDs = $.extend({}, barTemp2);
 			sumWriteBytesDs.label = 'Total Write Bytes';
 			sumWriteBytesDs.data = totalWriteBytes;
 			sumRwBytesData.datasets.push(sumWriteBytesDs);
@@ -167,11 +184,11 @@ $(document).ready(function(){
 			var sumRwRatesData = $.extend({}, dataTemplate);
 			sumRwRatesData.labels = sumLabels;
 			sumRwRatesData.datasets = [];
-			var sumReadRatesDs = $.extend({}, datasetTemplate1);
+			var sumReadRatesDs = $.extend({}, barTemp1);
 			sumReadRatesDs.label = 'Read Rate';
 			sumReadRatesDs.data = readRates;
 			sumRwRatesData.datasets.push(sumReadRatesDs);
-			var sumWriteRatesDs = $.extend({}, datasetTemplate2);
+			var sumWriteRatesDs = $.extend({}, barTemp2);
 			sumWriteRatesDs.label = 'Write Rate';
 			sumWriteRatesDs.data = writeRates;
 			sumRwRatesData.datasets.push(sumWriteRatesDs);
