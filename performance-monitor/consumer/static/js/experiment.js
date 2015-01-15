@@ -90,7 +90,7 @@ $(document).ready(function(){
 				runtimeData = {labels: labels, datasets: []};
 			for(s in cpuUsage){
 				var cnt = +s;
-				color = '' + (cr + cnt * 10) + ',' + (cg - cnt * 10) + ',' + (cg - cnt * 15)
+				color = '' + (cr + cnt * 40)%255 + ',' + Math.abs(cg - cnt * 30)%255 + ',' + (cg + cnt * 75)%255
 				cpuData.datasets.push({
 					label: s,
 		            fillColor: 'rgba('+ color +',0.2)',
