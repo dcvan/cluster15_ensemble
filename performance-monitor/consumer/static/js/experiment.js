@@ -16,7 +16,7 @@ $(document).ready(function(){
 				   readCountChart = new Chart($('#read_count').get(0).getContext('2d')),
 				   writeCountChart = new Chart($('#write_count').get(0).getContext('2d')),
 				   readBytesChart = new Chart($('#read_bytes').get(0).getContext('2d')),
-				   writeBytesChart = new Chart($('#write_count').get(0).getContext('2d')),
+				   writeBytesChart = new Chart($('#write_bytes').get(0).getContext('2d')),
 				   runtimeChart = new Chart($('#runtime').get(0).getContext('2d'));
 			for(i = 0; i < data.experiments.length; i ++){
 				var m = new Date(data.experiments[i]);
@@ -107,7 +107,7 @@ $(document).ready(function(){
 					label: s,
 		            fillColor: 'rgba('+ color +',0.2)',
 		            strokeColor: 'rgba('+ color + ',1)',
-		            pointColor: 'rgba(' + color ',1)',
+		            pointColor: 'rgba(' + color + ',1)',
 		            pointStrokeColor: '#fff',
 		            pointHighlightFill: '#fff',
 		            pointHighlightStroke: 'rgba('+ color +',1)',
