@@ -71,6 +71,7 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
             experiments = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
             data = {
                     'experiments': [e['expid'] for e in experiments],
+                    'walltime': [e['walltime'] if 'walltime' in e else 0 for e in experiments],
                     'updates': [],
                     }
             for d in rs:

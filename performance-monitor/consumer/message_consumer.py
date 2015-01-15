@@ -235,10 +235,9 @@ class ArchiveConsumer(MessageConsumer):
                     self._db[DB_NAME]['experiment'].insert(data)
                 else:
                     self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$addToSet': {'nodes': data['hostname'], 'timestamp': data['timestamp']}})
-                    
             elif data['status'] == 'finished':
                 if data['walltime']:
-                    self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$set': data}, upsert=False)
+                    self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$set': data}, upsert=True)
             else:
                 self._db[DB_NAME]['update'].insert(data)
         else:

@@ -23,7 +23,7 @@ var Chartjs = Chart.noConflict();
 			<th>Status</th>
 			<th>Nodes</th>
 			<th>Last updated time</th>
-			<th>Runtime</th>
+			<th>Walltime</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -34,12 +34,14 @@ var Chartjs = Chart.noConflict();
 					<td>{{e['status']}}</td>
 					<td>{{ ','.join(e['nodes']) }}</td>
 					<td>{{datetime.datetime.fromtimestamp(e['timestamp'] / 1000).strftime("%Y-%m-%d %H:%M:%S")}}</td>
-					<td>{{e['runtime'] if 'runtime' in e else '-'}}</td>
+					<td>{{e['walltime'] if 'walltime' in e else '-'}}</td>
 				</tr>
 		{% end %}
 	</tbody>
 </table>
 <h2>Trend</h2>
+<h3>Walltime</h3>
+<canvas id="walltime" width="1500" height="500"></canvas>
 <h3>CPU Usage</h3>
 <canvas id="cpu_usage" width="1500" height="500"></canvas>
 <h3>Memory Usage</h3>
@@ -52,6 +54,10 @@ var Chartjs = Chart.noConflict();
 <canvas id="read_bytes" width="1500" height="500"></canvas>
 <h3>Number of Bytes Written</h3>
 <canvas id="write_bytes" width="1500" height="500"></canvas>
+<h3>Read Rate</h3>
+<canvas id="read_rate" width="1500" height="500"></canvas>
+<h3>Write rate</h3>
+<canvas id="write_rate" width="1500" height="500"></canvas>
 <h3>Runtime</h3>
 <canvas id="runtime" width="1500" height="500"></canvas>
 </body>
