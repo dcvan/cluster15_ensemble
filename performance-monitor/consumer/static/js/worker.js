@@ -68,7 +68,7 @@ $(document).ready(function(){
 		            label: null,
 		            fillColor: 'rgba(151,187,205,0.2)',
 		            strokeColor: 'rgba(151,187,205,1)',
-		            pointColor: 'rgba(151,187,205,1)'',
+		            pointColor: 'rgba(151,187,205,1)',
 		            pointStrokeColor: '#fff',
 		            pointHighlightFill: '#fff',
 		            pointHighlightStroke: 'rgba(151,187,205,1)',
@@ -76,18 +76,18 @@ $(document).ready(function(){
 			},
 			barTemp1 = {
 		            label: null,
-		            fillColor: "rgba(170,57,57,0.5)",
-		            strokeColor: "rgba(170,57,57,0.8)",
-		            highlightFill: "rgba(170,57,57,0.75)",
-		            highlightStroke: "rgba(170,57,57,1)",
+		            fillColor: 'rgba(170,57,57,0.5)',
+		            strokeColor: 'rgba(170,57,57,0.8)',
+		            highlightFill: 'rgba(170,57,57,0.75)',
+		            highlightStroke: 'rgba(170,57,57,1)',
 		            data: null
 			},
 			barTemp2 = {
 		            label: null,
-		            fillColor: "rgba(151,187,205,0.5)",
-		            strokeColor: "rgba(151,187,205,0.8)",
-		            highlightFill: "rgba(151,187,205,0.75)",
-		            highlightStroke: "rgba(151,187,205,1)",
+		            fillColor: 'rgba(151,187,205,0.5)',
+		            strokeColor: 'rgba(151,187,205,0.8)',
+		            highlightFill: 'rgba(151,187,205,0.75)',
+		            highlightStroke: 'rgba(151,187,205,1)',
 		            data: null	
 			};
 			
