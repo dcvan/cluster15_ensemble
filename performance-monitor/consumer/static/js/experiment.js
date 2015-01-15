@@ -7,6 +7,7 @@ $(document).ready(function(){
 		type: 'POST',
 		contentType: 'application/json',
 		success: function(data){
+			var dates = {};
 			var labels = [], cpuUsage = {}, memUsage = {}, 
 				   readCount = {}, writeCount = {},
 				   readBytes = {}, writeBytes = {},
@@ -19,7 +20,10 @@ $(document).ready(function(){
 				   writeBytesChart = new Chart($('#write_count').get(0).getContext('2d')),
 				   runtimeChart = new Chart($('#runtime').get(0).getContext('2d'));
 			for(i = 0; i < data.length; i ++){
-				labels.push(new Date(data[i].expid).toString());
+				if(!(data[i].expid in dates)){
+					labels.push(new Date(data[i].expid).toString());
+					dates[data[i].expid] = null;
+				}
 				var step = data[i].step;
 				if(!(step in cpuUsage))
 					cpuUsage[step] = [];

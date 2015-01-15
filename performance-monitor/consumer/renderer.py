@@ -89,7 +89,7 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         
         '''
         rs = self._db['cluster15']['experiment'].find({
-                    'type': name,
+                    'name': name,
                     'host' : 'condor-%s' % wid,
                     'expid' : expid,
                 }).sort('timestamp')
