@@ -23,8 +23,8 @@ $(document).ready(function(){
 					runtime.push(data[i].runtime);
 					avgCpuPct.push(data[i].avg_cpu_percent);
 					avgMemPct.push(data[i].avg_mem_percent);
-					readRates.push(data[i].read_rate);
-					writeRates.push(data[i].write_rate);
+					readRates.push(data[i].read_rate / 1024 / 1024);
+					writeRates.push(data[i].write_rate / 1024 / 1024);
 					totalReadCount.push(data[i].total_read_count / 1000);
 					totalWriteCount.push(data[i].total_write_count / 1000);
 					totalReadBytes.push(data[i].total_read_bytes / 1024 / 1024)	;
