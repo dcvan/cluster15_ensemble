@@ -21,6 +21,7 @@ class ProcessMonitor(object):
         :param str name: workflow name(montage or genomic)
         :param multiprocessing.Queue msg_q: system message queue for communication between the monitor and AMQP sender
         :param set executables: executables to be monitored
+        
         '''
         manager = Manager()
         self._msg_q = msg_q
@@ -30,6 +31,7 @@ class ProcessMonitor(object):
         self._expid = int(time.time() * 1000)
         self._sender = MessageSender(
                 self._name, 
+                self._expid,
                 pika.URLParameters(MESSAGE_BROKER_URI), 
                 self._msg_q,
                 self._hostname,

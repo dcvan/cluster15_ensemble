@@ -21,6 +21,7 @@ class MessageSender(Process):
         '''
         
         :param str name: workflow name
+        :param int expid: experiment ID
         :param pika.connection.ConnectionParameters conn_param: AMQP connection parameters
         :param multiprocessing.Queue: system message queue for communication between the monitor
                                       and the AMQP sender
