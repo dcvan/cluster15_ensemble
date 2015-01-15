@@ -1,7 +1,6 @@
 /**
  * 
  */
-var Chartjs = Chart.noConflict()
 $(document).ready(function(){
 	$.ajax({
 		url: window.location.pathname,

@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <title>Experiment</title>
 <script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
-<script src="{{static_url('js/Chart.min.js')}}"></script>
+<script src="{{static_url('js/Chart.min.js')}}">
+var Chartjs = Chart.noConflict();
+</script>
 <script src="{{static_url('js/experiment.js')}}"></script>
 </head>
 <body>
