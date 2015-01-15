@@ -68,7 +68,8 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
                     'status' : 'terminated'
                 }).sort('timestamp')
         if rs.count() != 0:
-            experiments = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
+            rs = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
+            experiments = [e for e in rs]
             data = {
                     'experiments': [e['expid'] for e in experiments],
                     'walltime': [e['walltime'] if 'walltime' in e else 0 for e in experiments],
