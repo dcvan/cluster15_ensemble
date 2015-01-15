@@ -23,8 +23,8 @@ $(document).ready(function(){
 					runtime.push(data[i].runtime);
 					avgCpuPct.push(data[i].avg_cpu_percent);
 					avgMemPct.push(data[i].avg_mem_percent);
-					//readRates.push(data[i].read_rate);
-					//writeRates.push(data[i].write_rate);
+					readRates.push(data[i].read_rate);
+					writeRates.push(data[i].write_rate);
 					totalReadCount.push(data[i].total_read_count / 1000);
 					totalWriteCount.push(data[i].total_write_count / 1000);
 					totalReadBytes.push(data[i].total_read_bytes / 1024 / 1024)	;
@@ -46,6 +46,7 @@ $(document).ready(function(){
 				   sumCpuMemChart = new Chart($('#sum_cpu_mem_pct').get(0).getContext('2d')),
 				   sumRwCountChart = new Chart($('#sum_rw_count').get(0).getContext('2d')),
 				   sumRwBytesChart = new Chart($('#sum_rw_bytes').get(0).getContext('2d')),
+				   sumRwRatesChart = new Chart($('#sum_rw_rates').get(0).getContext('2d')),
 				   sumRuntimeChart = new Chart($('#sum_runtime').get(0).getContext('2d'));
 			
 			var dataTemplate = {
@@ -162,6 +163,19 @@ $(document).ready(function(){
 			sumWriteBytesDs.data = totalWriteBytes;
 			sumRwBytesData.datasets.push(sumWriteBytesDs);
 			
+			// read/write bytes
+			var sumRwRatesData = $.extend({}, dataTemplate);
+			sumRwRatesData.labels = sumLabels;
+			sumRwRatesData.datasets = [];
+			var sumReadRatesDs = $.extend({}, datasetTemplate1);
+			sumReadRatesDs.label = 'Read Rate';
+			sumReadRatesDs.data = readRates;
+			sumRwRatesData.datasets.push(sumReadRatesDs);
+			var sumWriteRatesDs = $.extend({}, datasetTemplate2);
+			sumWriteRatesDs.label = 'Write Rate';
+			sumWriteRatesDs.data = writeRates;
+			sumRwRatesData.datasets.push(sumWriteRatesDs);
+			
 			var cpuMemLine = cpuMemChart.Line(cpuMemData, {bezierCurve: false});
 			var ioCountLine = ioCountChart.Line(rwCountData, {bezierCurve: false});
 			var ioBytesLine = ioBytesChart.Line(rwBytesData, {bezierCurve: false});
@@ -169,6 +183,7 @@ $(document).ready(function(){
 			var sumRwCountLine = sumRwCountChart.Bar(sumRwCountData, {barShowStroke: false});
 			var sumRwBytesLine = sumRwBytesChart.Bar(sumRwBytesData, {barShowStroke: false});
 			var sumRuntimeLine = sumRuntimeChart.Bar(sumRuntimeData, {barShowStroke: false});
+			var sumRwRatesLine = sumRwRatesChart.Bar(sumRwRatesData, {barShowStroke: false});
 		}
 	});
 });
