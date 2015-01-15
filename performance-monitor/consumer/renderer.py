@@ -44,7 +44,7 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         if rs:
             experiments = self._db['cluster15']['experiment'].find({'name': name}).sort('timestamp')
             data = {
-                    'experiments': [e.expid for e in experiments],
+                    'experiments': [e['expid'] for e in experiments],
                     'updates': [],
                     }
             for d in rs:
