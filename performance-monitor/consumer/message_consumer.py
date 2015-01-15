@@ -228,8 +228,13 @@ class ArchiveConsumer(MessageConsumer):
                     data['nodes'].append(data['hostname'])
                     del data['hostname']
                     self._db[DB_NAME]['experiment'].insert(data)
+                elif self._db[DB_NAME]['experiment'].find({'expid': data['expid']}).count() == 0:
+                    data['nodes'] = []
+                    data['nodes'].append(data['hostname'])
+                    del data['hostname']
+                    self._db[DB_NAME]['experiment'].insert(data)
                 else:
-                    self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$addToSet': {'nodes': data['hostname']}})
+                    self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$addToSet': {'nodes': data['hostname'], 'timestamp': data['timestamp']}})
                     
             elif data['status'] == 'finished':
                 if data['walltime']:
