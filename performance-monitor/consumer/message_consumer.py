@@ -110,7 +110,7 @@ class MessageConsumer(object):
                 self._ch.basic_ack(deliver.delivery_tag)
                 self.stop()
             else:
-                self._process(deliver, prop, body)
+                self._process(body)
                 self._last_timestamp = timestamp
                 self._ch.basic_ack(deliver.delivery_tag)
             
