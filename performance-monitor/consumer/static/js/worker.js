@@ -158,11 +158,11 @@ $(document).ready(function(){
 			var sumRwCountData = $.extend({}, dataTemplate);
 			sumRwCountData.labels = sumLabels;
 			sumRwCountData.datasets = [];
-			var sumReadCountDs = $.extend({}, lineTemp1);
+			var sumReadCountDs = $.extend({}, barTemp1);
 			sumReadCountDs.label = 'Total Read Count'
 			sumReadCountDs.data = totalReadCount;
 			sumRwCountData.datasets.push(sumReadCountDs);
-			var sumWriteCountDs = $.extend({}, lineTemp2);
+			var sumWriteCountDs = $.extend({}, barTemp2);
 			sumWriteCountDs.label = 'Total Write Count';
 			sumWriteCountDs.data = totalWriteBytes;
 			sumRwCountData.datasets.push(sumWriteCountDs);
@@ -196,11 +196,11 @@ $(document).ready(function(){
 			var cpuMemLine = cpuMemChart.Line(cpuMemData, {bezierCurve: false});
 			var ioCountLine = ioCountChart.Line(rwCountData, {bezierCurve: false});
 			var ioBytesLine = ioBytesChart.Line(rwBytesData, {bezierCurve: false});
-			var sumCpuMemLine = sumCpuMemChart.Bar(sumCpuMemData, {barShowStroke: false});
-			var sumRwCountLine = sumRwCountChart.Bar(sumRwCountData, {barShowStroke: false});
-			var sumRwBytesLine = sumRwBytesChart.Bar(sumRwBytesData, {barShowStroke: false});
-			var sumRuntimeLine = sumRuntimeChart.Bar(sumRuntimeData, {barShowStroke: false});
-			var sumRwRatesLine = sumRwRatesChart.Bar(sumRwRatesData, {barShowStroke: false});
+			var sumCpuMemLine = sumCpuMemChart.Bar(sumCpuMemData, {barShowStroke: true});
+			var sumRwCountLine = sumRwCountChart.Bar(sumRwCountData, {barShowStroke: true});
+			var sumRwBytesLine = sumRwBytesChart.Bar(sumRwBytesData, {barShowStroke: true});
+			var sumRuntimeLine = sumRuntimeChart.Bar(sumRuntimeData, {barShowStroke: true});
+			var sumRwRatesLine = sumRwRatesChart.Bar(sumRwRatesData, {barShowStroke: true});
 		}
 	});
 });
