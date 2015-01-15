@@ -6,15 +6,60 @@ Created on Jan 13, 2015
 import json
 import tornado.web
 
-class WorkerStatusRenderer(tornado.web.RedirectHandler):
+class ExperimentStatusRender(tornado.web.RedirectHandler):
     '''
-    A web handler that renders status page of the worker of interest
+    Renders experiment status
     
     '''
-
     def initialize(self, db):
         '''
-        Initialize the handler
+        Init
+        
+        :param pymongo.MongoClient db: the mongoDB connection
+        
+        '''
+        self._db = db
+        
+    def get(self, name):
+        '''
+        GET method
+        
+        :param str name: workflow name
+        
+        '''
+        self.render('experiment.html')
+    
+    def post(self, name):
+        '''
+        POST method
+        
+        :param str name: workflow name/type
+        :raise tornado.web.HTTPError
+
+        '''
+        rs = self._db['cluster15']['experiment'].find({
+                    'name' : name,
+                    'status' : 'terminated'
+                }).sort('timestamp')
+        if rs:
+            data = []
+            for d in rs:
+                del d['_id']
+                data.append(d)
+            self.set_header('Content-Type', 'application/json;charset="utf-8"')
+            self.write(json.dumps(data))
+            self.finish()
+        else:
+            raise tornado.web.HTTPError(404)
+    
+class WorkerStatusRenderer(tornado.web.RedirectHandler):
+    '''
+    Renders worker status
+    
+    '''
+    def initialize(self, db):
+        '''
+        Init
         
         :param pymongo.MongoClient db: the mongoDB connection
         
@@ -31,20 +76,6 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         :raise tornado.web.HTTPError
         
         '''
-#         if name in self._db.database_names():
-#             if expid in self._db[name].collection_names():
-#                 rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort('timestamp')
-#                 if rs:
-#                     self.render("worker.html", 
-#                                 labels=[r['executable'] if r['status'] == 'terminated' else '' for r in rs],
-#                                 nums=[r['avg_cpu_percent'] if r['status'] == 'terminated' else r['cpu_percent'] for r in rs]
-#                                 )
-#                 else:
-#                     raise tornado.web.HTTPError(404)
-#             else:
-#                 raise tornado.web.HTTPError(404)
-#         else:
-#             raise tornado.web.HTTPError(404)
         self.render('worker.html')
         
     def post(self, name, expid, wid):
@@ -57,20 +88,18 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         :raise tornado.web.HTTPError
         
         '''
-        if name in self._db.database_names():
-            if expid in self._db[name].collection_names():
-                rs = self._db[name][expid].find({'host' : 'condor-%s' % wid}).sort('timestamp')
-                if rs:
-                    data = []
-                    for d in rs:
-                        del d['_id']
-                        data.append(d)
-                    self.set_header('Content-Type', 'application/json;charset="utf-8"')
-                    self.write(json.dumps(data))
-                    self.finish()
-                else:
-                    raise tornado.web.HTTPError(404)
-            else:
-                raise tornado.web.HTTPError(404)
+        rs = self._db['cluster15']['experiment'].find({
+                    'type': name,
+                    'host' : 'condor-%s' % wid,
+                    'expid' : expid,
+                }).sort('timestamp')
+        if rs:
+            data = []
+            for d in rs:
+                del d['_id']
+                data.append(d)
+            self.set_header('Content-Type', 'application/json;charset="utf-8"')
+            self.write(json.dumps(data))
+            self.finish()
         else:
             raise tornado.web.HTTPError(404)

@@ -114,12 +114,10 @@ class MessageConsumer(object):
                 self._last_timestamp = timestamp
                 self._ch.basic_ack(deliver.delivery_tag)
             
-    def process(self, deliver, prop, body):
+    def process(self, body):
         '''
         Implemented by subclasses
         
-        :param pika.Spec.Basic.Deliver: frame contains delivery tag
-        :param pika.Spec.BasicProperties: frame contains user-define properties
         :param str body: message text body   
         :raise NotImplementedError
         
@@ -169,7 +167,7 @@ class WebConsumer(MessageConsumer):
                 )
         super(WebConsumer, self)._on_queue_declareok(method)
         
-    def _process(self, deliver, prop, body):
+    def _process(self, body):
         '''
         Write messages to listeners
         
@@ -202,17 +200,12 @@ class ArchiveConsumer(MessageConsumer):
         self._db.close()
         super(ArchiveConsumer, self).stop()
         
-    def _process(self, deliver, prop, body):
+    def _process(self, body):
         '''
         Store message into DB
         
-        :param pika.Spec.Basic.Deliver: frame contains delivery tag
-        :param pika.Spec.BasicProperties: frame contains user-define properties
         :param str body: message text body   
        
         '''
-        fs = deliver.routing_key.split('.')
-        if len(fs) != 4:
-            return
-        self._db[fs[0]][fs[1]].insert(json.loads(body))
+        self._db['cluster15']['experiment'].insert(json.loads(body))
         

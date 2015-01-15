@@ -16,6 +16,7 @@ class ProcessMonitor(object):
     '''
     def __init__(self, name, msg_q, executables):
         '''
+        Init
         
         :param str name: workflow name(montage or genomic)
         :param multiprocessing.Queue msg_q: system message queue for communication between the monitor and AMQP sender
@@ -25,8 +26,10 @@ class ProcessMonitor(object):
         self._msg_q = msg_q
         self._procs = list(executables)
         self._hostname = 'condor-0' if socket.gethostname() == 'master' else socket.gethostname()
+        self._name = name
+        self._expid = int(time.time() * 1000)
         self._sender = MessageSender(
-                name, 
+                self._name, 
                 pika.URLParameters(MESSAGE_BROKER_URI), 
                 self._msg_q,
                 self._hostname,
@@ -38,6 +41,8 @@ class ProcessMonitor(object):
         self._lock = RLock()
         self._stat = manager.dict({
                     'host': self._hostname,
+                    'expid': self._expid,
+                    'name': self._name, 
                     'timestamp': 0,
                     'count':0,
                     'step': 0,
@@ -70,7 +75,7 @@ class ProcessMonitor(object):
                 self._stat['avg_mem_percent'] /= self._stat['count']
                 self._stat['read_rate'] = self._stat['total_read_bytes' ]/self._stat['runtime']
                 self._stat['write_rate'] = self._stat['total_write_bytes' ]/self._stat['runtime']
-                self._stat['timestamp'] = int(time.time())
+                self._stat['timestamp'] = int(time.time() * 1000)
                 self._msg_q.put(dict(self._stat))
                 print(self._stat)
 
@@ -141,7 +146,9 @@ class ProcessMonitor(object):
                     print(self._cur.pid, self._stat['executable'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
                     self._msg_q.put({
                         'host': self._hostname,
-                        'timestamp': time.time(),
+                        'name': self._name,
+                        'expid': self._expid,
+                        'timestamp': int(time.time() * 1000),
                         'executable': self._stat['executable'],
                         'cpu_percent': cpu_percent,
                         'memory_percent': self._cur.memory_percent(),
@@ -169,6 +176,15 @@ class ProcessMonitor(object):
                         self._stat['write_rate'] = 0
                         self._stat['timestamp'] = 0
             time.sleep(self._interval)
+            
+    def _get_walltime(self):
+        '''
+        Get workflow wall time
+        
+        :rtype int
+        
+        '''
+        pass
 
 if __name__ == '__main__':
     try:

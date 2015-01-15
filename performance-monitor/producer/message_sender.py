@@ -17,7 +17,7 @@ class MessageSender(Process):
     
     '''
 
-    def __init__(self, name, conn_param, msg_q, hostname):
+    def __init__(self, name, expid, conn_param, msg_q, hostname):
         '''
         
         :param str name: workflow name
@@ -36,7 +36,7 @@ class MessageSender(Process):
         self._queue = None
         self._closing = False
         self._stopping = False
-        self._create_time = int(time.time())
+        self._expid = expid
         self._hostname = hostname
 
     
@@ -188,7 +188,7 @@ class MessageSender(Process):
         if self._stopping:
             return
         msg = self._msg_q.get(True)
-        topics = '%s.%d.%s.%s' % (self._name, self._create_time, self._hostname, msg['status'] if msg else 'stopping', ) 
+        topics = '%s.%d.%s.%s' % (self._name, self._expid, self._hostname, msg['status'] if msg else 'stopping', ) 
         self._ch.basic_publish(
                  exchange=EXCHANGE_NAME, 
                  routing_key=topics,
