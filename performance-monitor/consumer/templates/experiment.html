@@ -14,6 +14,7 @@ var Chartjs = Chart.noConflict();
 </head>
 <body>
 <h1>Experiments</h1>
+<h2>Listing</h2>
 <table id="experiments" class="table table-hover">
 	<thead>
 		<tr>
@@ -38,12 +39,20 @@ var Chartjs = Chart.noConflict();
 		{% end %}
 	</tbody>
 </table>
+<h2>Trend</h2>
+<h3>CPU Usage</h3>
 <canvas id="cpu_usage" width="1500" height="500"></canvas>
+<h3>Memory Usage</h3>
 <canvas id="mem_usage" width="1500" height="500"></canvas>
+<h3>Number of Reads</h3>
 <canvas id="read_count" width="1500" height="500"></canvas>
+<h3>Number of Writes</h3>
 <canvas id="write_count" width="1500" height="500"></canvas>
+<h3>Number of Bytes Read</h3>
 <canvas id="read_bytes" width="1500" height="500"></canvas>
+<h3>Number of Bytes Written</h3>
 <canvas id="write_bytes" width="1500" height="500"></canvas>
+<h3>Runtime</h3>
 <canvas id="runtime" width="1500" height="500"></canvas>
 </body>
 </html>
