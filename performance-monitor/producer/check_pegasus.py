@@ -6,6 +6,7 @@ import pika
 import socket
 import subprocess
 import os
+import sys
 import shutil
 from multiprocessing import Process, Manager, RLock, Queue
 
@@ -34,7 +35,7 @@ class ProcessMonitor(object):
         self._procs = list(executables)
         self._workdir = workdir
         self._expid = int(time.time() * 1000)
-        self._hostname = 'condor-0' if socket.gethostname() == 'master' else socket.gethostname()
+        self._hostname = socket.gethostname()
         self._sender = MessageSender(
                 self._name, 
                 self._expid,
@@ -139,7 +140,7 @@ class ProcessMonitor(object):
                             })
                     else:
                         self._msg_q.put(None)
-                    break
+                    sys.exit(0)
                 print('Waiting ...')
                 self._cur = self.find_process()
                 time.sleep(1)

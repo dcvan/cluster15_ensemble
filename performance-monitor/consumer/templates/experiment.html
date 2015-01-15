@@ -3,13 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <title>Experiment</title>
-<script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+<link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
+<script src="{{static_url('js/bootstrap.min.js')}}"></script>
 <script src="{{static_url('js/Chart.min.js')}}">
 var Chartjs = Chart.noConflict();
 </script>
 <script src="{{static_url('js/experiment.js')}}"></script>
 </head>
 <body>
+<h1>Experiments</h1>
+<table id="experiments" class="table table-hover">
+	<thead>
+		<tr>
+			<th>ID</th>
+			<th>Type</th>
+			<th>Status</th>
+			<th>Nodes</th>
+			<th>Last updated time</th>
+			<th>Runtime</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for e in experiments %}
+			{% block e %}
+				<tr>
+					<td><a href="/types/{{e.name}}/experiments/{{e.expid}}">{{e.expid}}</a></td>
+					<td>{{e.name}}</td>
+					<td>{{e.status}}</td>
+					<td>{% '.'.join(e.nodes) %}</td>
+					<td>{{convert_datetime(e.timestamp)}}</td>
+					<td>{{e.runtime if e.runtime else '-'}}</td>
+				</tr>
+			{% end %}
+		{% end %}
+	</tbody>
+</table>
 <canvas id="cpu_usage" width="1500" height="500"></canvas>
 <canvas id="mem_usage" width="1500" height="500"></canvas>
 <canvas id="read_count" width="1500" height="500"></canvas>

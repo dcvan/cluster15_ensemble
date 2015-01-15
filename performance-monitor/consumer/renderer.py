@@ -4,6 +4,7 @@ Created on Jan 13, 2015
 @author: dc
 '''
 import json
+import datetime
 import tornado.web
 
 class ExperimentStatusRenderer(tornado.web.RedirectHandler):
@@ -27,7 +28,18 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         :param str name: workflow name
         
         '''
-        self.render('experiment.html')
+        def convert_datetime(epoch):
+            '''
+            Convert UTC epoch time to human-readable date time
+            
+            :param int epoch: UTC epoch time
+            :rtype str
+             
+            '''
+            return datetime.datetime.fromtimestamp(epoch).strftime("%Y-%m-%d %H:%M:%S")
+        
+        rs = self._db['cluster15']['experiment'].find({'name': name}).sort('timestamp')
+        self.render('experiment.html', experiments=[e for e in rs], convert_datetime=convert_datetime)
     
     def post(self, name):
         '''
@@ -94,7 +106,7 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         '''
         rs = self._db['cluster15']['update'].find({
                     'name' : name,
-                    'host' : 'condor-%s' % wid,
+                    'host' : wid,
                     'expid' : int(expid),
                 }).sort('timestamp')
         if rs.count() != 0:

@@ -30,11 +30,11 @@ class Application(tornado.web.Application):
         handlers = [
                 # experiments
                 (r'/types/([a-z-]+)', ExperimentStatusRenderer, dict(db=self._mongo_conn)),
-                # workers
+                # nodes
                 #(r'/types/([a-z-]+)/experiments/([0-9]+)', PageRenderer, dict(db=self._mongo_conn)),
-                # worker
-                (r'/types/([a-z-]+)/experiments/([0-9]+)/workers/([0-9]+)', WorkerStatusRenderer, dict(db=self._mongo_conn)),
-                (r'/types/([a-z-]+)/experiments/([0-9]+)/workers/([0-9]+)/([a-z#]+)', UpdateHandler, dict(conn=self._amqp_conn, consumers={})),
+                # node
+                (r'/types/([a-z-]+)/experiments/([0-9]+)/nodes/([a-z0-9]+)', WorkerStatusRenderer, dict(db=self._mongo_conn)),
+                (r'/types/([a-z-]+)/experiments/([0-9]+)/nodes/([0-9]+)/([a-z#]+)', UpdateHandler, dict(conn=self._amqp_conn, consumers={})),
                 ]
         settings = {
                 'template_path': 'templates/',
