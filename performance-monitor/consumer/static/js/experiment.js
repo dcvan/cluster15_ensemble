@@ -85,6 +85,8 @@ $(document).ready(function(){
 				writeCountData = {labels: labels, datasets: []},
 				readBytesData = {labels: labels, datasets: []},
 				writeBytesData = {labels: labels, datasets: []},
+				readRateData = {labels: labels, datasets: []},
+				writeRateData = {labels: labels, datasets: []},
 				runtimeData = {labels: labels, datasets: []};
 			for(s in cpuUsage){
 				var cnt = +s;
