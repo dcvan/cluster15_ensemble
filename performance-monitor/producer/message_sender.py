@@ -189,17 +189,17 @@ class MessageSender(Process):
         if self._stopping:
             return
         msg = self._msg_q.get(True)
-        topics = '%s.%d.%s.%s' % (self._name, self._expid, self._hostname, msg['status'])
+        topics = '%s.%d.%s.%s' % (self._name, self._expid, self._hostname, msg['status'] if msg else 'stopping')
         self._ch.basic_publish(
                  exchange=EXCHANGE_NAME, 
                  routing_key=topics,
-                 body=json.dumps(msg),
+                 body=json.dumps(msg) if msg else 'stopping',
                  properties=pika.BasicProperties(
                     delivery_mode=2,
                     timestamp=int(time.time() * 1000)),
                  )
         
-        if msg['status'] != 'finished':
+        if msg and msg['status'] != 'finished':
             self._conn.add_timeout(1, self._publish)
         else:
             self.stop()

@@ -128,14 +128,17 @@ class ProcessMonitor(object):
             while not self._cur:
                 # timeout 
                 if self._timeout_counter >= TIMEOUT:
-                    self._msg_q.put({
-                        'name': self._name,
-                        'hostname': self._hostname,
-                        'expid': self._expid,
-                        'timestamp': int(time.time() * 1000),
-                        'status': 'finished',
-                        'walltime': self._get_walltime(self._workdir)
-                        })
+                    if self._hostname == 'master':
+                        self._msg_q.put({
+                            'name': self._name,
+                            'hostname': self._hostname,
+                            'expid': self._expid,
+                            'timestamp': int(time.time() * 1000),
+                            'status': 'finished',
+                            'walltime': self._get_walltime(self._workdir)
+                            })
+                    else:
+                        self._msg_q.put(None)
                     break
                 print('Waiting ...')
                 self._cur = self.find_process()
@@ -233,6 +236,7 @@ if __name__ == '__main__':
         ProcessMonitor(
                 'genomic', 
                 Queue(), 
-                set(['bwa', 'java', 'python', 'pegasus-transfer'])).run()
+                set(['bwa', 'java', 'python', 'pegasus-transfer']),
+                '/home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf/run0001').run()
     except KeyboardInterrupt:
         pass

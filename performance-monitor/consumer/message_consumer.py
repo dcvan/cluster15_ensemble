@@ -106,9 +106,13 @@ class MessageConsumer(object):
         '''
         timestamp = int(prop.timestamp)
         if timestamp > self._last_timestamp:
-            self.process(deliver, prop, body)
-            self._last_timestamp = timestamp
-            self._ch.basic_ack(deliver.delivery_tag)
+            if body == 'stopping':
+                self._ch.basic_ack(deliver.delivery_tag)
+                self.stop()
+            else:
+                self.process(deliver, prop, body)
+                self._last_timestamp = timestamp
+                self._ch.basic_ack(deliver.delivery_tag)
             
     def process(self, deliver, prop, body):
         '''
@@ -117,13 +121,12 @@ class MessageConsumer(object):
         :param str body: message text body   
         :param pika.Spec.Basic.Deliver: frame contains delivery tag
         :param pika.Spec.BasicProperties: frame contains user-define properties
+        :raise NotImplementedError
         
         '''
-        data = json.loads(body)
-        if 'status' in data and data['status'] =='finished':
-            self._ch.basic_ack(deliver.delivery_tag)
-            self.stop()
-                
+        
+        raise NotImplementedError
+
 class WebConsumer(MessageConsumer):
     '''
     Message consumer for real-time message notification
@@ -159,12 +162,6 @@ class WebConsumer(MessageConsumer):
         
         '''
         self._queue = method.method.queue
-        self._ch.queue_bind(
-                exchange=EXCHANGE_NAME,
-                queue=self._queue,
-                routing_key='#.stopping',
-                callback=None,
-                )
         super(WebConsumer, self)._on_queue_declareok(method)
         
     def process(self, deliver, prop, body):
@@ -178,7 +175,12 @@ class WebConsumer(MessageConsumer):
         '''
         for l in self._listeners:
             l.write_message(body)
-        super(WebConsumer, self).process(deliver, prop, body)
+        
+        data = json.loads(body)
+        if 'status' in data and data['status'] =='finished':
+            self._ch.basic_ack(deliver.delivery_tag)
+            self.stop()
+                
                  
 class ArchiveConsumer(MessageConsumer):
     '''
@@ -215,6 +217,7 @@ class ArchiveConsumer(MessageConsumer):
         data = json.loads(body)
         if 'status' in body:
             if body['status'] == 'nascent':
+                body['status'] = 'running'
                 if 'workflow' not in self._db[DB_NAME].collection_names() or not self._db[DB_NAME]['workflow'].find({'name': data['name']}):
                     self._db[DB_NAME]['workflow'].insert(data)
                 if 'experiment' not in self._db[DB_NAME].collection_names() or not self._db[DB_NAME]['experiment'].find({'expid': data['expid']}):
@@ -227,5 +230,4 @@ class ArchiveConsumer(MessageConsumer):
         else:
             # garbled message
             pass
-        super(ArchiveConsumer, self).process(deliver, prop, body)
         
