@@ -7,6 +7,30 @@ import json
 import tornado.web
 from config import DB_NAME
 
+class WorkflowRender(tornado.web.RedirectHandler):
+    '''
+    Renders workflow listing
+    
+    '''
+    
+    def initialize(self, db):
+        '''
+        Init
+        
+        :param pymongo.MongoClient db: the mongoDB connection
+        
+        '''
+        self._db = db
+        
+    def get(self):
+        '''
+        GET method
+        
+        '''
+        rs = self._db[DB_NAME]['workflow'].find().sort('name')
+        self.render('workflow.html', workflows=[w for w in rs])
+        
+
 class ExperimentStatusRenderer(tornado.web.RedirectHandler):
     '''
     Renders experiment status

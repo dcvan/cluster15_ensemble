@@ -219,7 +219,10 @@ class ArchiveConsumer(MessageConsumer):
             if data['status'] == 'nascent':
                 data['status'] = 'running'
                 if 'workflow' not in self._db[DB_NAME].collection_names() or self._db[DB_NAME]['workflow'].find({'name': data['name']}).count() == 0:
-                    self._db[DB_NAME]['workflow'].insert(data)
+                    self._db[DB_NAME]['workflow'].insert({
+                            'name': data['name'],
+                            'timestamp': data['timestamp']
+                            })
                 if 'experiment' not in self._db[DB_NAME].collection_names():
                     data['nodes'] = []
                     data['nodes'].append(data['hostname'])
