@@ -5,6 +5,7 @@ Created on Jan 13, 2015
 '''
 import json
 import tornado.web
+from config import DB_NAME
 
 class ExperimentStatusRenderer(tornado.web.RedirectHandler):
     '''
@@ -27,7 +28,7 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         :param str name: workflow name
         
         '''
-        rs = self._db['cluster15']['experiment'].find({'name': name}).sort('timestamp')
+        rs = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
         self.render('experiment.html', experiments=[e for e in rs])
     
     def post(self, name):
@@ -38,12 +39,12 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         :raise tornado.web.HTTPError
 
         '''
-        rs = self._db['cluster15']['update'].find({
+        rs = self._db[DB_NAME]['update'].find({
                     'name' : name,
                     'status' : 'terminated'
                 }).sort('timestamp')
         if rs.count() != 0:
-            experiments = self._db['cluster15']['experiment'].find({'name': name}).sort('timestamp')
+            experiments = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
             data = {
                     'experiments': [e['expid'] for e in experiments],
                     'updates': [],
@@ -53,13 +54,39 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
                 data['updates'].append(d)
             self.set_header('Content-Type', 'application/json;charset="utf-8"')
             self.write(json.dumps(data))
-            self.finish()
         else:
-            raise tornado.web.HTTPError(404)
-    
-class WorkerStatusRenderer(tornado.web.RedirectHandler):
+            self.set_status(404)
+        self.finish()
+        
+class NodeRenderer(tornado.web.RedirectHandler):
     '''
-    Renders worker status
+    Renders node listing
+    
+    '''
+    def initialize(self, db):
+        '''
+        Init
+        
+        '''
+        self._db = db
+        
+    def get(self, name, expid):
+        '''
+        GET method
+        
+        :param str name: workflow name/type
+        :param str expid: experiment ID
+        
+        '''
+        rs = self._db[DB_NAME]['experiment'].find_one({
+            'name': name,
+            'expid': int(expid),
+            })
+        self.render('node_listing.html', name=name, expid=expid, nodes=rs['nodes'])
+        
+class NodeStatusRenderer(tornado.web.RedirectHandler):
+    '''
+    Renders node status
     
     '''
     def initialize(self, db):
@@ -71,31 +98,29 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
         '''
         self._db = db
         
-    def get(self, name, expid, wid):
+    def get(self, name, expid, nid):
         '''
         GET method
         
         :param str name: workflow name/type
         :param str expid: experiment ID
-        :param str wid: worker ID
-        :raise tornado.web.HTTPError
+        :param str nid: node ID
         
         '''
-        self.render('worker.html')
+        self.render('node.html')
         
-    def post(self, name, expid, wid):
+    def post(self, name, expid, nid):
         '''
         POST method
         
         :param str name: workflow name/type
         :param str expid: experiment ID
-        :param str wid: worker ID
-        :raise tornado.web.HTTPError
+        :param str nid: node ID
         
         '''
-        rs = self._db['cluster15']['update'].find({
+        rs = self._db[DB_NAME]['update'].find({
                     'name' : name,
-                    'host' : wid,
+                    'host' : nid,
                     'expid' : int(expid),
                 }).sort('timestamp')
         if rs.count() != 0:
@@ -105,6 +130,6 @@ class WorkerStatusRenderer(tornado.web.RedirectHandler):
                 data.append(d)
             self.set_header('Content-Type', 'application/json;charset="utf-8"')
             self.write(json.dumps(data))
-            self.finish()
         else:
-            raise tornado.web.HTTPError(404)
+            self.set_status(404)
+        self.finish()
