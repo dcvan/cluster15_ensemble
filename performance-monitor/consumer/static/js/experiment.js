@@ -42,6 +42,6 @@ function plotLine(chart, labels, label, data, legend_area){
 			]
 	};
 	
-	chart.Line(data, {bezierCurve: false});
+	chart.Line(lineData, {bezierCurve: false});
 	legend(legend_area, lineData);
 }
