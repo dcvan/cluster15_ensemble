@@ -55,7 +55,7 @@ $(document).ready(function(){
 						+ ":" + m.getUTCMinutes() 
 						+ ":" + m.getUTCSeconds());
 					cpuData.data.push(data[i].avg_cpu_percent);
-					memData.data.push(data[i].avg_cpu_percent);
+					memData.data.push(data[i].avg_mem_percent);
 				}
 				
 				plotLine(new Chart($('#cpu_mem_paint canvas').get(0).getContext('2d')), labels, [cpuData, memData], $('#cpu_mem_paint div').get(0));
