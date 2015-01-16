@@ -8,42 +8,51 @@
 <script src="{{static_url('js/Chart.min.js')}}">
 var Chartjs = Chart.noConflict();
 </script>
+<script src="{{static_url('js/legend.js')}}">
 <script src="{{static_url('js/worker.js')}}"></script>
 </head>
 <body>
 <h2>Runtime</h2>
-<div id="cpu_mem">
+<div>
 	<h3>CPU & Memory Usage</h3>
 	<canvas id="cpu_mem_pct" width="1500" height="500"></canvas>
+	<div id="cpu_mem_pct_legend"></div>
 </div>
-<div id='rw_count'>
+<div>
 	<h3>Number of Reads/Writes</h3>
 	<canvas id="io_count" width="1500" height="500"></canvas>
+	<div id="io_count_legend"></div>
 </div>
-<div id='rw_bytes'>
+<div>
 	<h3>Number of Bytes Read/Written</h3>
 	<canvas id="io_bytes" width="1500" height="500"></canvas>
+	<div id="io_bytes_legend"></div>
 </div>
 <h2>Summary</h2>
-<div id='runtime'>
+<div>
 	<h3>Runtime</h3>
 	<canvas id="sum_runtime" width="1500" height="500"></canvas>
+	<div id="runtime_legend"></div>
 </div>
-<div id='sum_cpu_mem'>
+<div>
 	<h3>CPU & Memory Average Usage</h3>
 	<canvas id="sum_cpu_mem_pct" width="1500" height="500"></canvas>
+	<div id="sum_cpu_mem_pct_legend"></div>
 </div>
-<div id='sum_io_count'>
+<div>
 	<h3>Total Number of Reads/Writes</h3>
 	<canvas id="sum_rw_count" width="1500" height="500"></canvas>
+	<div id="sum_rw_count_legend"></div>
 </div>
-<div id='sum_io_bytes'>
+<div>
 	<h3>Total Number of Bytes Read/Written</h3>
 	<canvas id="sum_rw_bytes" width="1500" height="500"></canvas>
+	<div id="sum_rw_bytes_legend"></div>
 </div>
-<div id='sum_io_rates'>
+<div>
 	<h3>Read/Write Rate</h3>
 	<canvas id="sum_rw_rates" width="1500" height="500"></canvas>
+	<div id="sum_rw_rates_legend"></div>
 </div>
 </body>
 </html>

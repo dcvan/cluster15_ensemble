@@ -96,25 +96,9 @@ $(document).ready(function(){
 			
 			var lineOpts = {
 				bezierCurve: false,
-				legendTemplate : '<div class="legned_box">'
-						+'<% for (var i=0; i<datasets.length; i++) { %>'
-	                    +'<span class="legend_entry">'+
-	                    + '<div class="sample" style=\"border-color:<%=datasets[i].fillColor%>; background-color:<%=datasets[i].fillColor%>;\"></div>'
-	                    +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
-	                    + '</span>'
-	                +'<% } %>'
-	              +'</ul>'
 			},
 				barOpts = {
-					barShowStroke: true,
-					legendTemplate : '<div class="legned_box">'
-						+'<% for (var i=0; i<datasets.length; i++) { %>'
-	                    +'<span class="legend_entry">'+
-	                    + '<div class="sample" style=\"border-color:<%=datasets[i].fillColor%>; background-color:<%=datasets[i].fillColor%>;\"></div>'
-	                    +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
-	                    + '</span>'
-	                +'<% } %>'
-	              +'</ul>'
+				barShowStroke: true,
 			};
 			
 			// CPU and memory runtime usage data
@@ -226,14 +210,14 @@ $(document).ready(function(){
 			var sumRuntimeLine = sumRuntimeChart.Bar(sumRuntimeData, barOpts);
 			var sumRwRatesLine = sumRwRatesChart.Bar(sumRwRatesData, barOpts);
 			
-			$('#cpu_mem').append(cpuMemLine.generateLegend());
-			$('#rw_count').append(ioCountLine.generateLegend());
-			$('#rw_bytes').append(ioBytesLine.generateLegend());
-			$('#sum_cpu_mem').append(sumCpuMemLine.generateLegend());
-			$('#sum_io_count').append(sumRwCountLine.generateLegend());
-			$('#sum_io_bytes').append(sumRwBytesLine.generateLegend());
-			$('#sum_io_rates').append(sumRwRatesLine.generateLegend());
-			$('#runtime').append(sumRuntimeLine.generateLegend());
+			legend(document.getElementById('cpu_mem_pct_legend'), cpuMemData);
+			legend(document.getElementById('io_count_legend'), rwCountData);
+			legend(document.getElementById('io_bytes_legend'), rwBytesData);
+			legend(document.getElementById('sum_cpu_mem_legend'), sumCpuMemData);
+			legend(document.getElementById('sum_rw_count_legend'), sumRwCountData);
+			legend(document.getElementById('sum_rw_bytes_legend'), sumRwBytesData);
+			legend(document.getElementById('runtime_legend'), sumRuntimeData);
+			legend(document.getElementById('sum_rw_rates_legend'), sumRwRatesMemData);
 		}
 	});
 });
