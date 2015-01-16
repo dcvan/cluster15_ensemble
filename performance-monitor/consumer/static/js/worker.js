@@ -213,7 +213,7 @@ $(document).ready(function(){
 			legend(document.getElementById('cpu_mem_pct_legend'), cpuMemData);
 			legend(document.getElementById('io_count_legend'), rwCountData);
 			legend(document.getElementById('io_bytes_legend'), rwBytesData);
-			legend(document.getElementById('sum_cpu_mem_legend'), sumCpuMemData);
+			legend(document.getElementById('sum_cpu_mem_pct_legend'), sumCpuMemData);
 			legend(document.getElementById('sum_rw_count_legend'), sumRwCountData);
 			legend(document.getElementById('sum_rw_bytes_legend'), sumRwBytesData);
 			legend(document.getElementById('runtime_legend'), sumRuntimeData);
