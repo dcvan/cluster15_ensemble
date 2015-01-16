@@ -103,15 +103,15 @@ class ProcessMonitor(object):
                                 wait = Process(target=psutil.wait_procs, args=([p], None, self.on_terminate))
                                 wait.start()
                                 with self._lock:
-                                    if self._cur.name() == 'python':
+                                    if p.name() == 'python':
                                         self._stat['cmdline'] = ' '.join(self._cur.cmdline())
-                                        self._stat['executable'] = self._cur.cmdline()[1].split('/')[-1]
-                                    elif self._cur.name() == 'java':
-                                        self._stat['cmdline'] = ' '.join(self._cur.parent().cmdline())
-                                        self._stat['executable'] = self._cur.parent().cmdline()[1].split('/')[-1]
+                                        self._stat['executable'] = p.cmdline()[1].split('/')[-1]
+                                    elif p.name() == 'java':
+                                        self._stat['cmdline'] = ' '.join(p.parent().cmdline())
+                                        self._stat['executable'] = p.parent().cmdline()[1].split('/')[-1]
                                     else:
-                                        self._stat['cmdline'] = ' '.join(self._cur.cmdline())
-                                        self._stat['executable'] = self._cur.name() 
+                                        self._stat['cmdline'] = ' '.join(p.cmdline())
+                                        self._stat['executable'] = p.name() 
                                     self._msg_q.put({
                                         'name': self._name,
                                         'hostname': self._hostname,
@@ -121,10 +121,10 @@ class ProcessMonitor(object):
                                         'cmdline': self._stat['cmdline'],
                                         'cpu_percent': 0,
                                         'memory_percent': 0,
-                                        'total_read_count': self._stat['total_read_count'],
-                                        'total_write_count': self._stat['total_write_count'],
-                                        'total_read_bytes': self._stat['total_read_bytes'],
-                                        'total_write_bytes': self._stat['total_write_bytes'],
+                                        'total_read_count': 0,
+                                        'total_write_count': 0,
+                                        'total_read_bytes': 0,
+                                        'total_write_bytes': 0,
                                         'status': 'started'        
                                         })
                                 return p
