@@ -2,6 +2,7 @@
  * 
  */
 $(document).ready(function(){
+	$('.nav li').get(0).addClass('active');
 	$.ajax({
 		url: window.location.pathname,
 		type: 'POST',
@@ -19,8 +20,32 @@ $(document).ready(function(){
 						+ ":" + m.getUTCSeconds());
 			}
 			
-			plotLine(walltimeChart, labels, 'Walltime', data.walltime, document.getElementById('walltime_legend'));
+			plotLine(walltimeChart, labels, 'Walltime', data.walltime, $('#walltime_legend').get(0));
 		}
+	});
+	
+	$('.nav li a').click(function(e){
+		e.preventDefault();
+		var job = $(this).text();
+		.ajax({
+			url: '/types/genomic/jobs/' + job.
+			type: 'POST',
+			contentType: 'application/json',
+			success: function(data){
+				var labels = [], cpuUsage = [];
+				for(i = 0; i < data.length; i ++){
+					var m = new Date(data[i].start_time)
+					labels.push(m.getUTCFullYear() 
+						+"/"+ (m.getUTCMonth()+1) 
+						+"/"+ m.getUTCDate() 
+						+ " " + m.getUTCHours() 
+						+ ":" + m.getUTCMinutes() 
+						+ ":" + m.getUTCSeconds());
+					cpuUsage.push(data.avg_cpu_percent);
+					plotLine(new Chart($('#cpu_mem_paint canvas').get(0).getContext('2d')), labels, 'CPU Usage', cpuUsage, $('#cpu_mem_paint div').get(0));
+				}
+			}
+		})
 	});
 });
 

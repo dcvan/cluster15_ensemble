@@ -11,7 +11,7 @@ import pymongo
 from message_consumer import ArchiveConsumer
 from connection import MessageConnection
 from message import UpdateHandler
-from renderer import WorkflowRender, ExperimentStatusRenderer, NodeRenderer, NodeStatusRenderer
+from renderer import WorkflowRender, JobRender, ExperimentStatusRenderer, NodeRenderer, NodeStatusRenderer
 from config import MESSAGE_BROKER_URI, ARCHIVE_HOST, ARCHIVE_PORT
 
 class Application(tornado.web.Application):
@@ -32,6 +32,7 @@ class Application(tornado.web.Application):
                 (r'/', WorkflowRender, dict(db=self._mongo_conn)),
                 # experiments
                 (r'/types/([a-z-]+)', ExperimentStatusRenderer, dict(db=self._mongo_conn)),
+                (r'/types/([a-z-]+/jobs/(.+)', JobRender, dict(db=self._mongo_conn)),
                 # nodes
                 (r'/types/([a-z-]+)/experiments/([0-9]+)', NodeRenderer, dict(db=self._mongo_conn)),
                 # node

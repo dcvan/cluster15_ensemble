@@ -47,4 +47,16 @@ var Chartjs = Chart.noConflict();
 	<canvas id="walltime" width="1500" height="500"></canvas>
 	<div id="walltime_legend"></div>
 </div>
+
+<div id="cpu_mem_chart">
+	<ul id="cpu_mem_tabs" class="nav nav-tabs">
+	{% for j in jobs %}
+		<li><a href="#{{j}}}">{{j}}</a></li>
+	{% end %}
+	</ul>
+	<div id="cpu_mem_paint" class="tab-content">
+		<canvas></canvas>
+		<div></div>
+	</div>
+</div>
 </html>

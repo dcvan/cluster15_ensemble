@@ -30,7 +30,38 @@ class WorkflowRender(tornado.web.RedirectHandler):
         rs = self._db[DB_NAME]['workflow'].find().sort('name')
         self.render('workflow.html', workflows=[w for w in rs])
         
-
+class JobRender(tornado.web.RedirectHandler):
+    '''
+    Renders job stat
+    
+    '''
+    
+    def initialize(self, db):
+        '''
+        Init
+        
+        :param pymongo.MongoClient db: the mongoDB connection
+        
+        '''
+        self._db = db
+        
+    def post(self, name, job):
+        '''
+        POST method
+        
+        '''
+        rs = self._db[DB_NAME].find({
+              'name': name,
+              'cmdline': job,
+              'status': 'terminated'
+            }).sort('start_time')
+        if rs.count() != 0:
+            self.set_header('Content-Type', 'application/json;charset="utf-8"')
+            self.write(json.dump([d for d in rs]))
+        else:
+            self.set_status(404)
+        self.finish()
+        
 class ExperimentStatusRenderer(tornado.web.RedirectHandler):
     '''
     Renders experiment status
@@ -53,7 +84,13 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         
         '''
         rs = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
-        self.render('experiment.html', experiments=[e for e in rs])
+        update_rs = self._db[DB_NAME]['update'].find({'name': name, 'status': 'terminated'}).sort('start_time')
+        jobs = set([])
+        for d in update_rs:
+            if d['count'] > 10:
+                jobs.add(d['cmdline'])
+        
+        self.render('experiment.html', experiments=[e for e in rs], jobs=jobs)
     
     def post(self, name):
         '''
@@ -66,18 +103,14 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         rs = self._db[DB_NAME]['update'].find({
                     'name' : name,
                     'status' : 'terminated'
-                }).sort('timestamp')
+                }).sort('start_time')
         if rs.count() != 0:
             exp_rs = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
             experiments = [e for e in exp_rs]
             data = {
                     'experiments': [e['expid'] for e in experiments],
                     'walltime': [e['walltime'] if 'walltime' in e else 0 for e in experiments],
-                    'updates': [],
                     }
-            for d in rs:
-                del d['_id']
-                data['updates'].append(d)
             self.set_header('Content-Type', 'application/json;charset="utf-8"')
             self.write(json.dumps(data))
         else:
