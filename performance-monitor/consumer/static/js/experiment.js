@@ -20,7 +20,7 @@ $(document).ready(function(){
 						+ ":" + m.getUTCSeconds());
 			}
 			
-			plotLine(walltimeChart, labels, 'Walltime', data.walltime, $('#walltime_legend').get(0));
+			plotLine(walltimeChart, labels, [{'label': 'Walltime', 'data': data.walltime, 'color': '151,187,205'}], $('#walltime_legend').get(0));
 		}
 	});
 	
@@ -33,7 +33,17 @@ $(document).ready(function(){
 			type: 'POST',
 			contentType: 'application/json',
 			success: function(data){
-				var labels = [], cpuUsage = [];
+				var labels = [],  
+					cpuData = {
+						'label': 'CPU Usage',
+						'color': '170,57,57',
+						'data': []
+					},
+					memData = {
+						'label': 'Memory Usage',
+						'color': '151,187,205',
+						'data': []
+					};
 				for(i = 0; i < data.length; i ++){
 					var m = new Date(data[i].start_time)
 					labels.push(m.getUTCFullYear() 
@@ -42,31 +52,34 @@ $(document).ready(function(){
 						+ " " + m.getUTCHours() 
 						+ ":" + m.getUTCMinutes() 
 						+ ":" + m.getUTCSeconds());
-					cpuUsage.push(data[i].avg_cpu_percent);
-					plotLine(new Chart($('#cpu_mem_paint canvas').get(0).getContext('2d')), labels, 'CPU Usage', cpuUsage, $('#cpu_mem_paint div').get(0));
+					cpuData.data.push(data[i].avg_cpu_percent);
+					memData.data.push(data[i].avg_cpu_percent);
 				}
+				
+				plotLine(new Chart($('#cpu_mem_paint canvas').get(0).getContext('2d')), [cpuData, memData], cpuUsage, $('#cpu_mem_paint div').get(0));
 			}
 		})
 	});
 });
 
-function plotLine(chart, labels, label, data, legend_area){
-	var color = 'rgba(151, 187, 205';
+function plotLine(chart, labels, ds, legend_area){
 	var lineData = {
 			labels: labels,
-			datasets: [
-			   {
-				   label: label,
-				   fillColor: color +',0.2)',
-		           strokeColor: color + ',1)',
-		           pointColor: color + ',1)',
+			datasets: []
+	};
+	
+	for(i = 0; i < datasets.length; i ++){
+		lineData.datasets.push({
+				   label: ds[i].label,
+				   fillColor: 'rgba(' + ds[i].color +',0.2)',
+		           strokeColor: 'rgba(' + ds[i].color + ',1)',
+		           pointColor: 'rgba(' + ds[i].color + ',1)',
 		           pointStrokeColor: '#fff',
 		           pointHighlightFill: '#fff',
-		           pointHighlightStroke: color + ',1)',
-		           data: data
-			   }
-			]
-	};
+		           pointHighlightStroke: 'rgba(' + color + ',1)',
+		           data: ds[i].data
+		});
+	}
 	
 	chart.Line(lineData, {bezierCurve: false});
 	legend(legend_area, lineData);
