@@ -57,7 +57,11 @@ class JobRender(tornado.web.RedirectHandler):
             }).sort('start_time')
         if rs.count() != 0:
             self.set_header('Content-Type', 'application/json;charset="utf-8"')
-            self.write(json.dump([d for d in rs]))
+            data = []
+            for d in rs:
+                del d['_id']
+                data.append(d)
+            self.write(data)
         else:
             self.set_status(404)
         self.finish()
@@ -87,8 +91,8 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         update_rs = self._db[DB_NAME]['update'].find({'name': name, 'status': 'terminated'}).sort('start_time')
         jobs = set([])
         for d in update_rs:
-            if d['count'] > 10:
-                jobs.add(d['cmdline'])
+            #if d['count'] > 10:
+            jobs.add(d['cmdline'])
         
         self.render('experiment.html', experiments=[e for e in rs], jobs=jobs)
     
