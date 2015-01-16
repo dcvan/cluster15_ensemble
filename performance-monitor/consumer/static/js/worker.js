@@ -32,10 +32,10 @@ $(document).ready(function(){
 					totalWriteBytes.push(data[i].total_write_bytes / 1024 / 1024);
 				}
 				else{
-					if(data[i].status == 'started')
+					if(data[i].status == 'started'){
 						console.log(data[i]);
 						runtimeLabels.push(data[i].cmdline);
-					else
+					}else
 						runtimeLabels.push('');
 					cpuPct.push(data[i].cpu_percent);
 					memPct.push(data[i].memory_percent);
