@@ -4,7 +4,7 @@
 $(document).ready(function(){
 	var firstTab = $('.nav li').first();
 	firstTab.addClass('active');
-
+	firstTab.find('a').click();
 	$.ajax({
 		url: window.location.pathname,
 		type: 'POST',
