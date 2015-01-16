@@ -51,6 +51,8 @@ class ProcessMonitor(object):
                     'host': self._hostname,
                     'expid': self._expid,
                     'name': self._name, 
+                    'start_time': 0,
+                    'terminate_time': 0,
                     'timestamp': 0,
                     'count':0,
                     'executable': None,
@@ -77,6 +79,7 @@ class ProcessMonitor(object):
 #         if self._stat['count'] > 1:
         with self._lock:
             self._stat['status'] = 'terminated'
+            self._stat['terminate_time'] = int(time.time() * 1000)
             self._stat['runtime'] = time.time() - proc.create_time()
             if self._stat['count'] > 1:
                 self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
@@ -175,7 +178,12 @@ class ProcessMonitor(object):
                     self._stat['total_write_count'] = self._cur.io_counters().write_count
                     self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                     self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
-                    self._stat['status'] = 'started' if not self._stat['status'] else 'running'
+                    if not self._stat['status']:
+                        self._stat['status'] = 'started'
+                        self._stat['start_time'] = int(time.time() * 1000)
+                    else:
+                        self._stat['status'] = 'running'
+                        
                     print(self._cur.pid, self._stat['executable'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
                     self._msg_q.put({
                         'host': self._hostname,
@@ -186,6 +194,7 @@ class ProcessMonitor(object):
                         'cmdline': self._stat['cmdline'],
                         'cpu_percent': cpu_percent,
                         'memory_percent': self._cur.memory_percent(),
+                        'start_time': self._stat['start_time'],
                         'total_read_count': self._stat['total_read_count'],
                         'total_write_count': self._stat['total_write_count'],
                         'total_read_bytes': self._stat['total_read_bytes'],
@@ -200,6 +209,8 @@ class ProcessMonitor(object):
                         self._stat['executable'] = None 
                         self._stat['cmdline'] = None
                         self._stat['runtime'] = 0.0
+                        self._stat['start_time'] = 0
+                        self._stat['terminate_time'] = 0
                         self._stat['avg_cpu_percent']= 0.0
                         self._stat['avg_mem_percent'] = 0.0
                         self._stat['total_read_count'] = 0
