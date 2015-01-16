@@ -46,7 +46,6 @@ class ProcessMonitor(object):
         self._cur = None
         self._interval = 1
         self._timeout_counter = 0
-        self._step = manager.Value('i', 0)
         self._lock = RLock()
         self._stat = manager.dict({
                     'host': self._hostname,
@@ -54,8 +53,8 @@ class ProcessMonitor(object):
                     'name': self._name, 
                     'timestamp': 0,
                     'count':0,
-                    'step': 0,
                     'executable': None,
+                    'cmdline': None,
                     'runtime': 0.0,
                     'avg_cpu_percent': 0.0,
                     'avg_mem_percent': 0.0,
@@ -77,8 +76,6 @@ class ProcessMonitor(object):
         '''
         if self._stat['count'] > 1:
             with self._lock:
-                self._step.set(self._step.get() + 1) 
-                self._stat['step'] = self._step.get()
                 self._stat['runtime'] = time.time() - proc.create_time()
                 self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
                 self._stat['avg_mem_percent'] /= self._stat['count']
@@ -100,12 +97,36 @@ class ProcessMonitor(object):
             for proc in psutil.process_iter():
                 try:
                     if proc.name() == 'condor_starter':
-                        self._stat['step'] = self._step.get()
                         children = proc.children(recursive=True)
                         for p in children:
                             if p.name() in self._procs:
                                 wait = Process(target=psutil.wait_procs, args=([p], None, self.on_terminate))
                                 wait.start()
+                                with self._lock:
+                                    if self._cur.name() == 'python':
+                                        self._stat['cmdline'] = ' '.join(self._cur.cmdline())
+                                        self._stat['executable'] = self._cur.cmdline()[1].split('/')[-1]
+                                    elif self._cur.name() == 'java':
+                                        self._stat['cmdline'] = ' '.join(self._cur.parent().cmdline())
+                                        self._stat['executable'] = self._cur.parent().cmdline()[1].split('/')[-1]
+                                    else:
+                                        self._stat['cmdline'] = ' '.join(self._cur.cmdline())
+                                        self._stat['executable'] = self._cur.name() 
+                                    self._msg_q.put({
+                                        'name': self._name,
+                                        'hostname': self._hostname,
+                                        'expid': self._expid,
+                                        'timestamp': int(time.time() * 1000),
+                                        'executable': self._stat['executable'],
+                                        'cmdline': self._stat['cmdline'],
+                                        'cpu_percent': 0,
+                                        'memory_percent': 0,
+                                        'total_read_count': self._stat['total_read_count'],
+                                        'total_write_count': self._stat['total_write_count'],
+                                        'total_read_bytes': self._stat['total_read_bytes'],
+                                        'total_write_bytes': self._stat['total_write_bytes'],
+                                        'status': 'started'        
+                                        })
                                 return p
                 except psutil.NoSuchProcess:
                     pass
@@ -149,14 +170,6 @@ class ProcessMonitor(object):
             with self._lock:
                 try:
                     self._stat['count'] += 1
-                    if not self._stat['executable']:
-                        if self._cur.name() == 'python':
-                            self._stat['executable'] = self._cur.cmdline()[1].split('/')[-1]
-                        elif self._cur.name() == 'java':
-                            self._stat['executable'] = self._cur.parent().cmdline()[1].split('/')[-1]
-                        else:
-                            self._stat['executable'] = self._cur.name() 
-                    
                     # determine check-in interval by executable 
                     if self._stat['executable'] == 'bwa':
                         self._interval = 30
@@ -179,6 +192,7 @@ class ProcessMonitor(object):
                         'expid': self._expid,
                         'timestamp': int(time.time() * 1000),
                         'executable': self._stat['executable'],
+                        'cmdline': self._stat['cmdline'],
                         'cpu_percent': cpu_percent,
                         'memory_percent': self._cur.memory_percent(),
                         'total_read_count': self._stat['total_read_count'],
@@ -191,9 +205,9 @@ class ProcessMonitor(object):
                 except psutil.NoSuchProcess:
                     self._cur = None
                     with self._lock:
-                        self._stat['step'] = 0
                         self._stat['count'] = 0
                         self._stat['executable'] = None 
+                        self._stat['cmdline'] = None
                         self._stat['runtime'] = 0.0
                         self._stat['avg_cpu_percent']= 0.0
                         self._stat['avg_mem_percent'] = 0.0

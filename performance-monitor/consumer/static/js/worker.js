@@ -17,9 +17,11 @@ $(document).ready(function(){
 				  totalReadCount = [], totalWriteCount = [],
 				  avgCpuPct = [], avgMemPct = [];
 			for(i = 0; i < data.length; i ++){
-				if(data[i].status == 'terminated'){
-					runtimeLabels[runtimeLabels.length - 1] = data[i].executable;
-					sumLabels.push(data[i].executable);
+				if(data[i].status == 'started'){
+					//runtimeLabels[runtimeLabels.length - 1] = data[i].executable;
+					runtimeLabels[runtimeLabels.length - 1] = data[i].cmdline;
+					//sumLabels.push(data[i].executable);
+					sumLabels.push(data[i].cmdline);
 					runtime.push(data[i].runtime);
 					avgCpuPct.push(data[i].avg_cpu_percent);
 					avgMemPct.push(data[i].avg_mem_percent);
