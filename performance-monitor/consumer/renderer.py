@@ -91,8 +91,8 @@ class ExperimentStatusRenderer(tornado.web.RedirectHandler):
         update_rs = self._db[DB_NAME]['update'].find({'name': name, 'status': 'terminated'}).sort('start_time')
         jobs = set([])
         for d in update_rs:
-            #if d['count'] > 10:
-            jobs.add(d['cmdline'])
+            if d['count'] > 10:
+                jobs.add(d['cmdline'])
         
         self.render('experiment.html', experiments=[e for e in rs], jobs=jobs)
     
