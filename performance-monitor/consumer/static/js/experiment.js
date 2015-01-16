@@ -68,7 +68,7 @@ function plotLine(chart, labels, ds, legend_area){
 			datasets: []
 	};
 	
-	for(i = 0; i < datasets.length; i ++){
+	for(i = 0; i < ds.length; i ++){
 		lineData.datasets.push({
 				   label: ds[i].label,
 				   fillColor: 'rgba(' + ds[i].color +',0.2)',
