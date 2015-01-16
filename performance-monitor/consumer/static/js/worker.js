@@ -106,11 +106,11 @@ $(document).ready(function(){
 			cpuMemData.labels = runtimeLabels;
 			cpuMemData.datasets = [];
 			var cpuDs = $.extend({}, lineTemp1);
-			cpuDs.label = 'CPU Usage at Runtime';
+			cpuDs.label = 'CPU Usage';
 			cpuDs.data = cpuPct;
 			cpuMemData.datasets.push(cpuDs);
 			var memDs= $.extend({}, lineTemp2);
-			memDs.label = 'Memory Usage at Runtime';
+			memDs.label = 'Memory Usage';
 			memDs.data = memPct;
 			cpuMemData.datasets.push(memDs);
 			
@@ -119,11 +119,11 @@ $(document).ready(function(){
 			rwCountData.labels = runtimeLabels;
 			rwCountData.datasets = [];
 			var readCountDs = $.extend({}, lineTemp1);
-			readCountDs.label = 'Read Count at Runtime';
+			readCountDs.label = 'Read Count';
 			readCountDs.data = readCount
 			rwCountData.datasets.push(readCountDs);
 			var writeCountDs = $.extend({}, lineTemp2);
-			writeCountDs.label = 'Write Count at Runtime';
+			writeCountDs.label = 'Write Count';
 			writeCountDs.data = writeCount;
 			rwCountData.datasets.push(writeCountDs);
 			
@@ -132,11 +132,11 @@ $(document).ready(function(){
 			rwBytesData.labels = runtimeLabels;
 			rwBytesData.datasets = [];
 			var readBytesDs = $.extend({}, lineTemp1);
-			readBytesDs.label = 'Read Bytes at Runtime';
+			readBytesDs.label = 'Read Bytes';
 			readBytesDs.data = readBytes;
 			rwBytesData.datasets.push(readBytesDs);
 			var writeBytesDs = $.extend({}, lineTemp2);
-			writeBytesDs.label = 'Write Bytes at Runtime';
+			writeBytesDs.label = 'Write Bytes';
 			writeBytesDs.data = writeBytes;
 			rwBytesData.datasets.push(writeBytesDs);
 			

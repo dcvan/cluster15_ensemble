@@ -1,9 +1,18 @@
 @CHARSET "UTF-8";
 
+canvas{
+	float: left;
+}
+
+h2, h3{
+	width: 1500px;
+}
+
 .legend {
     width: 10em;
     border: 1px solid #aaaaaa; 
     padding: 5px;
+    float: left;
 }
 
 .legend .title {
