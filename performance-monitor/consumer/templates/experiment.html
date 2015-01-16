@@ -5,11 +5,13 @@
 <meta charset="UTF-8">
 <title>Experiment</title>
 <link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<link rel="stylesheet" href="{{static_url('css/experiment.css')}}"/>
 <script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
 <script src="{{static_url('js/bootstrap.min.js')}}"></script>
 <script src="{{static_url('js/Chart.min.js')}}">
 var Chartjs = Chart.noConflict();
 </script>
+<script src="{{static_url('js/legend.js')}}"></script>
 <script src="{{static_url('js/experiment.js')}}"></script>
 </head>
 <body>
@@ -40,25 +42,9 @@ var Chartjs = Chart.noConflict();
 	</tbody>
 </table>
 <h2>Trend</h2>
-<h3>Walltime</h3>
-<canvas id="walltime" width="1500" height="500"></canvas>
-<h3>CPU Usage</h3>
-<canvas id="cpu_usage" width="1500" height="500"></canvas>
-<h3>Memory Usage</h3>
-<canvas id="mem_usage" width="1500" height="500"></canvas>
-<h3>Number of Reads</h3>
-<canvas id="read_count" width="1500" height="500"></canvas>
-<h3>Number of Writes</h3>
-<canvas id="write_count" width="1500" height="500"></canvas>
-<h3>Number of Bytes Read</h3>
-<canvas id="read_bytes" width="1500" height="500"></canvas>
-<h3>Number of Bytes Written</h3>
-<canvas id="write_bytes" width="1500" height="500"></canvas>
-<h3>Read Rate</h3>
-<canvas id="read_rate" width="1500" height="500"></canvas>
-<h3>Write rate</h3>
-<canvas id="write_rate" width="1500" height="500"></canvas>
-<h3>Runtime</h3>
-<canvas id="runtime" width="1500" height="500"></canvas>
-</body>
+<div class="chart">
+	<h3>Walltime</h3>
+	<canvas id="walltime" width="1500" height="500"></canvas>
+	<div id="walltime_legend"></div>
+</div>
 </html>

@@ -18,7 +18,7 @@ $(document).ready(function(){
 				  avgCpuPct = [], avgMemPct = [];
 			for(i = 0; i < data.length; i ++){
 				if(data[i].status == 'terminated'){
-					sumLabels.push(data[i].cmdline);
+					sumLabels.push(data[i].executable);
 					runtime.push(data[i].runtime);
 					avgCpuPct.push(data[i].avg_cpu_percent);
 					avgMemPct.push(data[i].avg_mem_percent);
@@ -31,7 +31,7 @@ $(document).ready(function(){
 				}
 				else{
 					if(data[i].status == 'started'){
-						runtimeLabels.push(data[i].cmdline);
+						runtimeLabels.push(data[i].executable);
 					}else{
 						runtimeLabels.push('');
 					}
