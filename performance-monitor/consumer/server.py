@@ -32,7 +32,7 @@ class Application(tornado.web.Application):
                 (r'/', WorkflowRender, dict(db=self._mongo_conn)),
                 # experiments
                 (r'/types/([a-z-]+)', ExperimentStatusRenderer, dict(db=self._mongo_conn)),
-                (r'/types/([a-z-]+/jobs/(.+)', JobRender, dict(db=self._mongo_conn)),
+                (r'/types/([a-z-]+)/jobs/(.+)', JobRender, dict(db=self._mongo_conn)),
                 # nodes
                 (r'/types/([a-z-]+)/experiments/([0-9]+)', NodeRenderer, dict(db=self._mongo_conn)),
                 # node
