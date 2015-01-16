@@ -217,7 +217,7 @@ $(document).ready(function(){
 			legend(document.getElementById('sum_rw_count_legend'), sumRwCountData);
 			legend(document.getElementById('sum_rw_bytes_legend'), sumRwBytesData);
 			legend(document.getElementById('runtime_legend'), sumRuntimeData);
-			legend(document.getElementById('sum_rw_rates_legend'), sumRwRatesMemData);
+			legend(document.getElementById('sum_rw_rates_legend'), sumRwRatesData);
 		}
 	});
 });
