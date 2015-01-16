@@ -2,7 +2,8 @@
 
 .legend {
     width: 10em;
-    border: 1px solid black;
+    border: 1px solid #aaaaaa; 
+    padding: 5px;
 }
 
 .legend .title {
