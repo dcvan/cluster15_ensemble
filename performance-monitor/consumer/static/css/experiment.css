@@ -3,11 +3,7 @@ body{
 	font-family: arial;
 }
 
-canvas{
-	height: 500px;
-}
-
-h2, h3, canvas .nav{
+h2, h3, .nav{
 	width: 1500px;
 }
 
