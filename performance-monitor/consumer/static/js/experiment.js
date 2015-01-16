@@ -2,7 +2,9 @@
  * 
  */
 $(document).ready(function(){
-	$('.nav li').first().addClass('active');
+	var firstTab = $('.nav li').first();
+	firstTab.addClass('active');
+
 	$.ajax({
 		url: window.location.pathname,
 		type: 'POST',
@@ -56,7 +58,7 @@ $(document).ready(function(){
 					memData.data.push(data[i].avg_cpu_percent);
 				}
 				
-				plotLine(new Chart($('#cpu_mem_paint canvas').get(0).getContext('2d')), [cpuData, memData], cpuUsage, $('#cpu_mem_paint div').get(0));
+				plotLine(new Chart($('#cpu_mem_paint canvas').get(0).getContext('2d')), labels, [cpuData, memData], $('#cpu_mem_paint div').get(0));
 			}
 		})
 	});
