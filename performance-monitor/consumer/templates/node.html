@@ -11,22 +11,38 @@ var Chartjs = Chart.noConflict();
 </head>
 <body>
 <h2>Runtime</h2>
-<h3>CPU & Memory Usage</h3>
-<canvas id="cpu_mem_pct" width="1500" height="500"></canvas>
-<h3>Number of Reads/Writes</h3>
-<canvas id="io_count" width="1500" height="500"></canvas>
-<h3>Number of Bytes Read/Written</h3>
-<canvas id="io_bytes" width="1500" height="500"></canvas>
+<div id="cpu_mem">
+	<h3>CPU & Memory Usage</h3>
+	<canvas id="cpu_mem_pct" width="1500" height="500"></canvas>
+</div>
+<div id='rw_count'>
+	<h3>Number of Reads/Writes</h3>
+	<canvas id="io_count" width="1500" height="500"></canvas>
+</div>
+<div id='rw_bytes'>
+	<h3>Number of Bytes Read/Written</h3>
+	<canvas id="io_bytes" width="1500" height="500"></canvas>
+</div>
 <h2>Summary</h2>
-<h3>Runtime</h3>
-<canvas id="sum_runtime" width="1500" height="500"></canvas>
-<h3>CPU & Memory Average Usage</h3>
-<canvas id="sum_cpu_mem_pct" width="1500" height="500"></canvas>
-<h3>Total Number of Reads/Writes</h3>
-<canvas id="sum_rw_count" width="1500" height="500"></canvas>
-<h3>Total Number of Bytes Read/Written</h3>
-<canvas id="sum_rw_bytes" width="1500" height="500"></canvas>
-<h3>Read/Write Rate</h3>
-<canvas id="sum_rw_rates" width="1500" height="500"></canvas>
+<div id='runtime'>
+	<h3>Runtime</h3>
+	<canvas id="sum_runtime" width="1500" height="500"></canvas>
+</div>
+<div id='sum_cpu_mem'>
+	<h3>CPU & Memory Average Usage</h3>
+	<canvas id="sum_cpu_mem_pct" width="1500" height="500"></canvas>
+</div>
+<div id='sum_io_count'>
+	<h3>Total Number of Reads/Writes</h3>
+	<canvas id="sum_rw_count" width="1500" height="500"></canvas>
+</div>
+<div id='sum_io_bytes'>
+	<h3>Total Number of Bytes Read/Written</h3>
+	<canvas id="sum_rw_bytes" width="1500" height="500"></canvas>
+</div>
+<div id='sum_io_rates'>
+	<h3>Read/Write Rate</h3>
+	<canvas id="sum_rw_rates" width="1500" height="500"></canvas>
+</div>
 </body>
 </html>

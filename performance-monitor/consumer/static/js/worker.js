@@ -94,7 +94,28 @@ $(document).ready(function(){
 		            data: null	
 			};
 			
-			
+			var lineOpts = {
+				bezierCurve: false,
+				legendTemplate : '<ul>'
+						+'<% for (var i=0; i<datasets.length; i++) { %>'
+	                    +'<li>'
+	                    +'<span style=\"background-color:<%=datasets[i].fillColor%>\"></span>'
+	                    +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
+	                  +'</li>'
+	                +'<% } %>'
+	              +'</ul>'
+			},
+				barOpts = {
+					barShowStroke: true,
+					legendTemplate : '<ul>'
+						+'<% for (var i=0; i<datasets.length; i++) { %>'
+	                    +'<li>'
+	                    +'<span style=\"background-color:<%=datasets[i].fillColor%>\"></span>'
+	                    +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
+	                  +'</li>'
+	                +'<% } %>'
+	              +'</ul>'
+			};
 			
 			// CPU and memory runtime usage data
 			var cpuMemData = $.extend({}, dataTemplate);
@@ -196,14 +217,23 @@ $(document).ready(function(){
 			sumWriteRatesDs.data = writeRates;
 			sumRwRatesData.datasets.push(sumWriteRatesDs);
 			
-			var cpuMemLine = cpuMemChart.Line(cpuMemData, {bezierCurve: false});
-			var ioCountLine = ioCountChart.Line(rwCountData, {bezierCurve: false});
-			var ioBytesLine = ioBytesChart.Line(rwBytesData, {bezierCurve: false});
-			var sumCpuMemLine = sumCpuMemChart.Bar(sumCpuMemData, {barShowStroke: true});
-			var sumRwCountLine = sumRwCountChart.Bar(sumRwCountData, {barShowStroke: true});
-			var sumRwBytesLine = sumRwBytesChart.Bar(sumRwBytesData, {barShowStroke: true});
-			var sumRuntimeLine = sumRuntimeChart.Bar(sumRuntimeData, {barShowStroke: true});
-			var sumRwRatesLine = sumRwRatesChart.Bar(sumRwRatesData, {barShowStroke: true});
+			var cpuMemLine = cpuMemChart.Line(cpuMemData, lineOpts);
+			var ioCountLine = ioCountChart.Line(rwCountData, lineOpts);
+			var ioBytesLine = ioBytesChart.Line(rwBytesData, lineOpts);
+			var sumCpuMemLine = sumCpuMemChart.Bar(sumCpuMemData, barOpts);
+			var sumRwCountLine = sumRwCountChart.Bar(sumRwCountData, barOpts);
+			var sumRwBytesLine = sumRwBytesChart.Bar(sumRwBytesData, barOpts);
+			var sumRuntimeLine = sumRuntimeChart.Bar(sumRuntimeData, barOpts);
+			var sumRwRatesLine = sumRwRatesChart.Bar(sumRwRatesData, barOpts);
+			
+			$('#cpu_mem').append(cpuMemLine.generateLegend());
+			$('#rw_count').append(ioCountLine.generateLegend());
+			$('#rw_bytes').append(ioBytesLine.generateLegend());
+			$('#sum_cpu_mem').append(sumCpuMemLine.generateLegend());
+			$('#sum_io_count').append(sumRwCountLine.generateLegend());
+			$('#sum_io_bytes').append(sumRwBytesLine.generateLegend());
+			$('#sum_io_rates').append(sumRwRatesLine.generateLegend());
+			$('#runtime').append(sumRuntimeLine.generateLegend());
 		}
 	});
 });
