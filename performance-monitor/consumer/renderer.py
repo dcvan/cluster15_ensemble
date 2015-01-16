@@ -50,7 +50,7 @@ class JobRender(tornado.web.RedirectHandler):
         POST method
         
         '''
-        rs = self._db[DB_NAME].find({
+        rs = self._db[DB_NAME]['update'].find({
               'name': name,
               'cmdline': job,
               'status': 'terminated'

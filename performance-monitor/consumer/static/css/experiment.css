@@ -7,9 +7,10 @@ canvas{
 	float: left;
 }
 
-h2, h3{
+h2, h3, .nav{
 	width: 1500px;
 }
+
 
 .legend {
     width: 10em;

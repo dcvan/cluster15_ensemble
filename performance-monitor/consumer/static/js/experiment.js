@@ -2,7 +2,7 @@
  * 
  */
 $(document).ready(function(){
-	$('.nav li').get(0).addClass('active');
+	$('.nav li').first().addClass('active');
 	$.ajax({
 		url: window.location.pathname,
 		type: 'POST',
@@ -27,8 +27,8 @@ $(document).ready(function(){
 	$('.nav li a').click(function(e){
 		e.preventDefault();
 		var job = $(this).text();
-		.ajax({
-			url: '/types/genomic/jobs/' + job.
+		$.ajax({
+			url: '/types/genomic/jobs/' + job,
 			type: 'POST',
 			contentType: 'application/json',
 			success: function(data){
