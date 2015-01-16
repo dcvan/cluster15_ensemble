@@ -1,4 +1,7 @@
 @CHARSET "UTF-8";
+body{
+	font-family: arial;
+}
 
 canvas{
 	float: left;
