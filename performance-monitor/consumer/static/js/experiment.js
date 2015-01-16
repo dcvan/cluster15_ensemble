@@ -24,7 +24,7 @@ $(document).ready(function(){
 	});
 });
 
-function plotLine(chart, labels, label, data, lengend_area){
+function plotLine(chart, labels, label, data, legend_area){
 	var color = 'rgba(151, 187, 205';
 	var lineData = {
 			labels: labels,
