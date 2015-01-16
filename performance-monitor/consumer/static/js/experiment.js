@@ -2,9 +2,6 @@
  * 
  */
 $(document).ready(function(){
-	var firstTab = $('.nav li').first();
-	firstTab.addClass('active');
-	firstTab.find('a').click();
 	$.ajax({
 		url: window.location.pathname,
 		type: 'POST',
@@ -62,6 +59,10 @@ $(document).ready(function(){
 			}
 		})
 	});
+	
+	var firstTab = $('.nav li').first();
+	firstTab.addClass('active');
+	firstTab.find('a').click();
 });
 
 function plotLine(chart, labels, ds, legend_area){
