@@ -161,7 +161,7 @@ class ProcessMonitor(object):
                         self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.parent().cmdline()])
                         self._stat['executable'] = self._cur.parent().cmdline()[1].split('/')[-1]
                     else:
-                        self._stat['cmdline'] = ' '.join(self._cur.cmdline())
+                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.cmdline()])
                         self._stat['executable'] = self._cur.name() 
                     # determine check-in interval by executable 
                     if self._stat['executable'] == 'bwa':
