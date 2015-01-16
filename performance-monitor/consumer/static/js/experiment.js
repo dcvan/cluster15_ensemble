@@ -27,6 +27,7 @@ $(document).ready(function(){
 	$('.nav li a').click(function(e){
 		e.preventDefault();
 		var job = $(this).data('cmdline');
+		$(this).tab('show');
 		$.ajax({
 			url: '/types/genomic/jobs/' + job,
 			type: 'POST',
@@ -41,7 +42,7 @@ $(document).ready(function(){
 						+ " " + m.getUTCHours() 
 						+ ":" + m.getUTCMinutes() 
 						+ ":" + m.getUTCSeconds());
-					cpuUsage.push(data.avg_cpu_percent);
+					cpuUsage.push(data[i].avg_cpu_percent);
 					plotLine(new Chart($('#cpu_mem_paint canvas').get(0).getContext('2d')), labels, 'CPU Usage', cpuUsage, $('#cpu_mem_paint div').get(0));
 				}
 			}
