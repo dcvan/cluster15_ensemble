@@ -96,23 +96,23 @@ $(document).ready(function(){
 			
 			var lineOpts = {
 				bezierCurve: false,
-				legendTemplate : '<ul>'
+				legendTemplate : '<div class="legned_box">'
 						+'<% for (var i=0; i<datasets.length; i++) { %>'
-	                    +'<li>'
-	                    +'<span class="legend" style=\"background-color:<%=datasets[i].fillColor%>\"></span>'
+	                    +'<span class="legend_entry">'+
+	                    + '<div class="sample" style=\"border-color:<%=datasets[i].fillColor%>; background-color:<%=datasets[i].fillColor%>;\"></div>'
 	                    +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
-	                  +'</li>'
+	                    + '</span>'
 	                +'<% } %>'
 	              +'</ul>'
 			},
 				barOpts = {
 					barShowStroke: true,
-					legendTemplate : '<ul>'
+					legendTemplate : '<div class="legned_box">'
 						+'<% for (var i=0; i<datasets.length; i++) { %>'
-	                    +'<li>'
-	                    +'<span class="legend" style=\"background-color:<%=datasets[i].fillColor%>\"></span>'
+	                    +'<span class="legend_entry">'+
+	                    + '<div class="sample" style=\"border-color:<%=datasets[i].fillColor%>; background-color:<%=datasets[i].fillColor%>;\"></div>'
 	                    +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
-	                  +'</li>'
+	                    + '</span>'
 	                +'<% } %>'
 	              +'</ul>'
 			};
