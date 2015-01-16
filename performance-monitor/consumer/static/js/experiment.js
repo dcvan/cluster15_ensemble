@@ -26,7 +26,7 @@ $(document).ready(function(){
 	
 	$('.nav li a').click(function(e){
 		e.preventDefault();
-		var job = $(this).text();
+		var job = $(this).data('cmdline');
 		$.ajax({
 			url: '/types/genomic/jobs/' + job,
 			type: 'POST',
