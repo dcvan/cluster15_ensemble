@@ -4,10 +4,10 @@ body{
 }
 
 canvas{
-	float: left;
+	height: 500px;
 }
 
-h2, h3, .nav{
+h2, h3, canvas .nav{
 	width: 1500px;
 }
 

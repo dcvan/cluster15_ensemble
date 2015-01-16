@@ -61,7 +61,7 @@ class JobRender(tornado.web.RedirectHandler):
             for d in rs:
                 del d['_id']
                 data.append(d)
-            self.write(data)
+            self.write(json.dumps(data))
         else:
             self.set_status(404)
         self.finish()
