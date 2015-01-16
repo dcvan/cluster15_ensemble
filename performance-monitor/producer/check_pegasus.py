@@ -78,8 +78,12 @@ class ProcessMonitor(object):
         with self._lock:
             self._stat['status'] = 'terminated'
             self._stat['runtime'] = time.time() - proc.create_time()
-            self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
-            self._stat['avg_mem_percent'] /= self._stat['count']
+            if self._stat['count'] > 1:
+                self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
+                self._stat['avg_mem_percent'] /= self._stat['count']
+            else:
+                self._stat['avg_cpu_percent'] = 0
+                self._stat['avg_mem_percent'] = 0
             self._stat['read_rate'] = self._stat['total_read_bytes' ]/self._stat['runtime']
             self._stat['write_rate'] = self._stat['total_write_bytes' ]/self._stat['runtime']
             self._stat['timestamp'] = int(time.time() * 1000)
