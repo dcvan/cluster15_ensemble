@@ -76,7 +76,7 @@ function plotLine(chart, labels, ds, legend_area){
 		           pointColor: 'rgba(' + ds[i].color + ',1)',
 		           pointStrokeColor: '#fff',
 		           pointHighlightFill: '#fff',
-		           pointHighlightStroke: 'rgba(' + color + ',1)',
+		           pointHighlightStroke: 'rgba(' + ds[i].color + ',1)',
 		           data: ds[i].data
 		});
 	}
