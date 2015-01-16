@@ -151,7 +151,8 @@ class NodeStatusRenderer(tornado.web.RedirectHandler):
                 }).sort('timestamp')
         if rs.count() != 0:
             data = []
-            for d in rs:
+            db_data = [d for d in rs]
+            for d in db_data:
                 del d['_id']
                 data.append(d)
             self.set_header('Content-Type', 'application/json;charset="utf-8"')

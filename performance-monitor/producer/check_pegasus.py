@@ -64,7 +64,7 @@ class ProcessMonitor(object):
                     'total_write_bytes': 0,
                     'read_rate': 0,
                     'write_rate': 0,
-                    'status': 'terminated',
+                    'status': None,
                     })
     
     def on_terminate(self, proc):
@@ -74,16 +74,17 @@ class ProcessMonitor(object):
         :param psutil.Process proc: the process just terminated
         
         '''
-        if self._stat['count'] > 1:
-            with self._lock:
-                self._stat['runtime'] = time.time() - proc.create_time()
-                self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
-                self._stat['avg_mem_percent'] /= self._stat['count']
-                self._stat['read_rate'] = self._stat['total_read_bytes' ]/self._stat['runtime']
-                self._stat['write_rate'] = self._stat['total_write_bytes' ]/self._stat['runtime']
-                self._stat['timestamp'] = int(time.time() * 1000)
-                self._msg_q.put(dict(self._stat))
-                print(self._stat)
+#         if self._stat['count'] > 1:
+        with self._lock:
+            self._stat['status'] = 'terminated'
+            self._stat['runtime'] = time.time() - proc.create_time()
+            self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
+            self._stat['avg_mem_percent'] /= self._stat['count']
+            self._stat['read_rate'] = self._stat['total_read_bytes' ]/self._stat['runtime']
+            self._stat['write_rate'] = self._stat['total_write_bytes' ]/self._stat['runtime']
+            self._stat['timestamp'] = int(time.time() * 1000)
+            self._msg_q.put(dict(self._stat))
+            print(self._stat)
 
     def find_process(self):
         '''
@@ -102,31 +103,6 @@ class ProcessMonitor(object):
                             if p.name() in self._procs:
                                 wait = Process(target=psutil.wait_procs, args=([p], None, self.on_terminate))
                                 wait.start()
-                                with self._lock:
-                                    if p.name() == 'python':
-                                        self._stat['cmdline'] = ' '.join(self._cur.cmdline())
-                                        self._stat['executable'] = p.cmdline()[1].split('/')[-1]
-                                    elif p.name() == 'java':
-                                        self._stat['cmdline'] = ' '.join(p.parent().cmdline())
-                                        self._stat['executable'] = p.parent().cmdline()[1].split('/')[-1]
-                                    else:
-                                        self._stat['cmdline'] = ' '.join(p.cmdline())
-                                        self._stat['executable'] = p.name() 
-                                    self._msg_q.put({
-                                        'name': self._name,
-                                        'hostname': self._hostname,
-                                        'expid': self._expid,
-                                        'timestamp': int(time.time() * 1000),
-                                        'executable': self._stat['executable'],
-                                        'cmdline': self._stat['cmdline'],
-                                        'cpu_percent': 0,
-                                        'memory_percent': 0,
-                                        'total_read_count': 0,
-                                        'total_write_count': 0,
-                                        'total_read_bytes': 0,
-                                        'total_write_bytes': 0,
-                                        'status': 'started'        
-                                        })
                                 return p
                 except psutil.NoSuchProcess:
                     pass
@@ -170,6 +146,16 @@ class ProcessMonitor(object):
             with self._lock:
                 try:
                     self._stat['count'] += 1
+                    
+                    if self._cur.name() == 'python':
+                        self._stat['cmdline'] = ' '.join(self._cur.cmdline())
+                        self._stat['executable'] = self._cur.cmdline()[1].split('/')[-1]
+                    elif self._cur.name() == 'java':
+                        self._stat['cmdline'] = ' '.join(self._cur.parent().cmdline())
+                        self._stat['executable'] = self._cur.parent().cmdline()[1].split('/')[-1]
+                    else:
+                        self._stat['cmdline'] = ' '.join(self._cur.cmdline())
+                        self._stat['executable'] = self._cur.name() 
                     # determine check-in interval by executable 
                     if self._stat['executable'] == 'bwa':
                         self._interval = 30
@@ -185,6 +171,7 @@ class ProcessMonitor(object):
                     self._stat['total_write_count'] = self._cur.io_counters().write_count
                     self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                     self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
+                    self._stat['status'] = 'started' if not self._stat['status'] else 'running'
                     print(self._cur.pid, self._stat['executable'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
                     self._msg_q.put({
                         'host': self._hostname,
@@ -199,7 +186,7 @@ class ProcessMonitor(object):
                         'total_write_count': self._stat['total_write_count'],
                         'total_read_bytes': self._stat['total_read_bytes'],
                         'total_write_bytes': self._stat['total_write_bytes'],
-                        'status': 'running',
+                        'status': self._stat['status'],
                     })
                     
                 except psutil.NoSuchProcess:
@@ -218,6 +205,7 @@ class ProcessMonitor(object):
                         self._stat['read_rate'] = 0
                         self._stat['write_rate'] = 0
                         self._stat['timestamp'] = 0
+                        self._stat['status'] = None
             time.sleep(self._interval)
             
     def _get_walltime(self, workdir):

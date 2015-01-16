@@ -19,7 +19,6 @@ $(document).ready(function(){
 			for(i = 0; i < data.length; i ++){
 				if(data[i].status == 'started'){
 					//runtimeLabels[runtimeLabels.length - 1] = data[i].executable;
-					runtimeLabels[runtimeLabels.length - 1] = data[i].cmdline;
 					//sumLabels.push(data[i].executable);
 					sumLabels.push(data[i].cmdline);
 					runtime.push(data[i].runtime);
@@ -33,7 +32,10 @@ $(document).ready(function(){
 					totalWriteBytes.push(data[i].total_write_bytes / 1024 / 1024);
 				}
 				else{
-					runtimeLabels.push('');
+					if(data[i].status == 'started')
+						runtimeLabels.push(data[i].cmdline);
+					else
+						runtimeLabels.push('');
 					cpuPct.push(data[i].cpu_percent);
 					memPct.push(data[i].memory_percent);
 					readCount.push(data[i].total_read_count / 1000);
