@@ -17,7 +17,7 @@ $(document).ready(function(){
 				  totalReadCount = [], totalWriteCount = [],
 				  avgCpuPct = [], avgMemPct = [];
 			for(i = 0; i < data.length; i ++){
-				if(data[i].status == 'started'){
+				if(data[i].status == 'terminated'){
 					//runtimeLabels[runtimeLabels.length - 1] = data[i].executable;
 					//sumLabels.push(data[i].executable);
 					sumLabels.push(data[i].cmdline);
@@ -33,6 +33,7 @@ $(document).ready(function(){
 				}
 				else{
 					if(data[i].status == 'started')
+						console.log(data[i]);
 						runtimeLabels.push(data[i].cmdline);
 					else
 						runtimeLabels.push('');
