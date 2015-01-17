@@ -240,9 +240,11 @@ class ArchiveConsumer(MessageConsumer):
                     self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$set': data}, upsert=True)
             else:
                 if data['status'] == 'terminated':
+                    '''
                     if data['count'] <= 1:
                         self._db[DB_NAME]['update'].remove({'expid': data['expid'], 'start_time': data['start_time']})
-                        return 
+                        return
+                    ''' 
                 self._db[DB_NAME]['update'].insert(data)
         else:
             # garbled message
