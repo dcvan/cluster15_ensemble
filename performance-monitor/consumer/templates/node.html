@@ -4,55 +4,57 @@
 <meta charset="UTF-8">
 <title>Worker</title>
 <link rel="stylesheet" href="{{static_url('css/node.css')}}" />
+<link rel="stylesheet" href="{{static_url('css/legend.css')}}" />
 <script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
 <script src="{{static_url('js/Chart.min.js')}}">
 	var Chartjs = Chart.noConflict();
 </script>
 <script src="{{static_url('js/legend.js')}}"></script>
+<script src="{{static_url('js/utils.js')}}"></script>
 <script src="{{static_url('js/worker.js')}}"></script>
 </head>
 <body>
 <h2>Runtime</h2>
-<div>
+<div class="chart">
 	<h3>CPU & Memory Usage</h3>
-	<canvas id="cpu_mem_pct"></canvas>
-	<div id="cpu_mem_pct_legend" ></div>
+	<canvas id="cpu_mem_usage"></canvas>
+	<div id="cpu_mem_usage_legend" ></div>
 </div>
-<div>
+<div class="chart">
 	<h3>Number of Reads/Writes</h3>
-	<canvas id="io_count"></canvas>
-	<div id="io_count_legend"></div>
+	<canvas id="rw_count"></canvas>
+	<div id="rw_count_legend"></div>
 </div>
-<div>
+<div class="chart">
 	<h3>Number of Bytes Read/Written</h3>
-	<canvas id="io_bytes"></canvas>
-	<div id="io_bytes_legend"></div>
+	<canvas id="rw_bytes"></canvas>
+	<div id="rw_bytes_legend"></div>
 </div>
 <h2>Summary</h2>
-<div>
+<div class="chart">
 	<h3>Runtime</h3>
 	<canvas id="sum_runtime"></canvas>
 	<div id="runtime_legend"></div>
 </div>
-<div>
+<div class="chart">
 	<h3>CPU & Memory Average Usage</h3>
-	<canvas id="sum_cpu_mem_pct"></canvas>
-	<div id="sum_cpu_mem_pct_legend"></div>
+	<canvas id="sum_cpu_mem"></canvas>
+	<div id="sum_cpu_mem_legend"></div>
 </div>
-<div>
+<div class="chart">
 	<h3>Total Number of Reads/Writes</h3>
 	<canvas id="sum_rw_count"></canvas>
 	<div id="sum_rw_count_legend"></div>
 </div>
-<div>
+<div class="chart">
 	<h3>Total Number of Bytes Read/Written</h3>
 	<canvas id="sum_rw_bytes"></canvas>
 	<div id="sum_rw_bytes_legend"></div>
 </div>
-<div>
+<div class="chart">
 	<h3>Read/Write Rate</h3>
-	<canvas id="sum_rw_rates"></canvas>
-	<div id="sum_rw_rates_legend"></div>
+	<canvas id="sum_rw_rate"></canvas>
+	<div id="sum_rw_rate_legend"></div>
 </div>
 </body>
 </html>
