@@ -82,8 +82,8 @@ $(document).ready(function(){
 							'data': []	
 					};
 					for(i = 0; i < data.length; i ++){
-						readRate.data.push(data[i].read_rate);
-						writeRate.data.push(data[i].write_rate);
+						readRate.data.push(data[i].read_rate / 1024 / 1024);
+						writeRate.data.push(data[i].write_rate / 1024 / 1024);
 					}
 					console.log(JSON.stringify([readRate, writeRate]));
 					plotLine($('#rw_rate_paint canvas').get(0), labels, [readRate, writeRate], $('#rw_rate_paint div').get(0));
