@@ -2,6 +2,10 @@
  * 
  */
 $(document).ready(function(){
+	$('canvas').each(function(){
+		$(this).width = 1300;
+		$(this).height = 500;
+	});
 	$.ajax({
 		url: window.location.pathname,
 		type: 'POST',

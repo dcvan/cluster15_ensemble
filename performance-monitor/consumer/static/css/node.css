@@ -6,14 +6,8 @@ body{
 	margin-right: auto;
 }
 
-.chart{
-	float: left;
-	width: 1500px;
-	height: 500px;
-}
-
 canvas{
-	width: 1300px;
+	float: left;
 }
 
 h2, h3{
