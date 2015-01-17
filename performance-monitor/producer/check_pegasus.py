@@ -32,7 +32,7 @@ class ProcessMonitor(object):
        
         self._name = name
         self._msg_q = msg_q
-        self._procs = list(executables)
+        self._procs = set(executables)
         self._workdir = workdir
         self._expid = int(time.time() * 1000)
         self._hostname = socket.gethostname()
