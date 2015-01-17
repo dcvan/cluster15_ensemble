@@ -46,13 +46,14 @@ $(document).ready(function(){
 				if(aspect == 'runtime'){
 					var runtime = {
 							'label': 'Runtime',
-							'color': '170,57,57',
+							'color': '151,187,205',
 							'data': []
 						};
 					for(i = 0; i < data.length; i ++){
 						runtime.data.push(data[i].runtime);
-						plotLine($('#runtime_paint canvas').get(0), labels, [runtime], $('#runtime_paint div').get(0));
 					}
+					console.log(JSON.stringify(runtime));
+					plotLine($('#runtime_paint canvas').get(0), labels, [runtime], $('#runtime_paint div').get(0));
 				}else if(aspect == 'cpu_mem'){
 					var cpuData = {
 							'label': 'CPU Usage',
@@ -77,13 +78,14 @@ $(document).ready(function(){
 					},
 						writeRate = {
 							'label': 'Write Rate',
-							'color': '170,57,57',
+							'color': '151,187,205',
 							'data': []	
 					};
 					for(i = 0; i < data.length; i ++){
 						readRate.data.push(data[i].read_rate);
 						writeRate.data.push(data[i].write_rate);
 					}
+					console.log(JSON.stringify([readRate, writeRate]));
 					plotLine($('#rw_rate_paint canvas').get(0), labels, [readRate, writeRate], $('#rw_rate_paint div').get(0));
 				}
 			}
