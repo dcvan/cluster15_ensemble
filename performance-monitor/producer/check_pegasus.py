@@ -155,10 +155,10 @@ class ProcessMonitor(object):
                     self._stat['count'] += 1
                     
                     if self._cur.name() == 'python':
-                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.cmdline()])
+                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.cmdline() if arg != 'python'])
                         self._stat['executable'] = self._cur.cmdline()[1].split('/')[-1]
                     elif self._cur.name() == 'java':
-                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.parent().cmdline()])
+                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.parent().cmdline() if arg != 'bash'])
                         self._stat['executable'] = self._cur.parent().cmdline()[1].split('/')[-1]
                     else:
                         self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.cmdline()])
