@@ -35,10 +35,10 @@ function plotBar(canvas, labels, ds, legend_area){
 	for(i = 0; i < ds.length; i ++){
 		barData.datasets.push({
 			label: ds[i].label,
-            fillColor: 'rgba(' + color + ',0.5)',
-            strokeColor: 'rgba('+ color + ',0.8)',
-            highlightFill: 'rgba(' + color + ',0.75)',
-            highlightStroke: 'rgba(' + color + ',1)',
+            fillColor: 'rgba(' + ds[i].color + ',0.5)',
+            strokeColor: 'rgba('+ ds[i].color + ',0.8)',
+            highlightFill: 'rgba(' + ds[i].color + ',0.75)',
+            highlightStroke: 'rgba(' + ds[i].color + ',1)',
 			data: ds[i].data
 		});
 	}
