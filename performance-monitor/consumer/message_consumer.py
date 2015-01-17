@@ -4,6 +4,7 @@ Created on Jan 12, 2015
 @author: dc
 '''
 import json
+import uuid
 
 from config import EXCHANGE_NAME, DB_NAME
 
@@ -215,6 +216,24 @@ class ArchiveConsumer(MessageConsumer):
        
         '''
         data = json.loads(body)
+        if 'cmdline' in data:
+            if 'cmdline'  not in self._db[DB_NAME].collection_names():
+                self._db[DB_NAME]['cmdline'].insert({
+                        'id': uuid.uuid4(),
+                        'cmdline': data['cmdline']
+                    })
+            else:
+                rs =  self._db[DB_NAME]['cmdline'].find({'cmdline': data['cmdline']})
+                if rs.count() == 0:
+                    self._db[DB_NAME]['cmdline'].insert({
+                        'id': uuid.uuid4(),
+                        'cmdline': data['cmdline']
+                    })
+                else:
+                    data['job_id'] = self._db[DB_NAME]['cmdline'].find_one({
+                        'cmdline': data['cmdline']
+                    })['id']
+                    del data['cmdline']
         if 'status' in data:
             if data['status'] == 'nascent':
                 data['status'] = 'running'

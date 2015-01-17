@@ -257,7 +257,7 @@ if __name__ == '__main__':
         ProcessMonitor(
                 'genomic', 
                 Queue(), 
-                set(['bwa', 'java', 'python', 'samtools', 'pegasus-transfer']),
+                set(['bwa', 'java', 'python', 'samtools']),
                 '/home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf/run0001').run()
     except KeyboardInterrupt:
         pass
