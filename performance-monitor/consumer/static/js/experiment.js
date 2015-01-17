@@ -51,7 +51,7 @@ $(document).ready(function(){
 						};
 					for(i = 0; i < data.length; i ++){
 						runtime.data.push(data[i].runtime);
-						plotLine($('#runtime_paint canvas').get(0), labels, [cpuData, memData], $('#runtime_paint div').get(0));
+						plotLine($('#runtime_paint canvas').get(0), labels, [runtime], $('#runtime_paint div').get(0));
 					}
 				}else if(aspect == 'cpu_mem'){
 					var cpuData = {
@@ -84,7 +84,7 @@ $(document).ready(function(){
 						readRate.data.push(data[i].read_rate);
 						writeRate.data.push(data[i].write_rate);
 					}
-					plotLine($('#rw_rate_paint canvas').get(0), labels, [cpuData, memData], $('#rw_rate_paint div').get(0));
+					plotLine($('#rw_rate_paint canvas').get(0), labels, [readRate, writeRate], $('#rw_rate_paint div').get(0));
 				}
 			}
 		});
