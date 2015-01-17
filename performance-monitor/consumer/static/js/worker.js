@@ -60,6 +60,7 @@ $(document).ready(function(){
 			plotBar($('#sum_rw_bytes').get(0), sumLabels, [sumReadBytes, sumWriteBytes], $('#sum_rw_bytes_legend').get(0));
 			plotBar($('#sum_rw_rate').get(0), sumLabels, [sumReadRate, sumWriteRate], $('#sum_rw_rate_legend').get(0));
 			plotBar($('#sum_runtime').get(0), sumLabels, [sumRuntime], $('#runtime_legend').get(0));
+		}
 	});
 });
 
