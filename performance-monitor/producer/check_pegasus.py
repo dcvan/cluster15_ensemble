@@ -78,6 +78,8 @@ class ProcessMonitor(object):
         '''
 #         if self._stat['count'] > 1:
         with self._lock:
+            if not self._stat['executable']: 
+                return
             self._stat['status'] = 'terminated'
             self._stat['terminate_time'] = int(time.time() * 1000)
             self._stat['runtime'] = time.time() - proc.create_time()
@@ -255,7 +257,7 @@ if __name__ == '__main__':
         ProcessMonitor(
                 'genomic', 
                 Queue(), 
-                set(['bwa', 'java', 'python', 'pegasus-transfer']),
+                set(['bwa', 'java', 'python', 'samtools', 'pegasus-transfer']),
                 '/home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf/run0001').run()
     except KeyboardInterrupt:
         pass
