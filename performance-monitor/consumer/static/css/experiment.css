@@ -8,6 +8,8 @@ body{
 
 canvas{
 	float:left;
+	width: 1300px;
+	height: 500px;
 }
 
 h2, h3, .nav{
