@@ -147,7 +147,7 @@ class ProcessMonitor(object):
                     sys.exit(0)
                 print('Waiting ...')
                 self._cur = self.find_process()
-                time.sleep(1)
+                time.sleep(self._interval)
                 self._timeout_counter += 1
             self._timeout_counter = 0
             with self._lock:

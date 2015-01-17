@@ -24,24 +24,16 @@ $(document).ready(function(){
 	
 	$('.nav li a').click(function(e){
 		e.preventDefault();
-		var job = $(this).data('cmdline');
+		var job = $(this).data('cmdline'),
+			aspect = $(this).data('aspect');
 		$(this).tab('show');
 		$.ajax({
 			url: '/types/genomic/jobs/' + job,
 			type: 'POST',
 			contentType: 'application/json',
 			success: function(data){
-				var labels = [],  
-					cpuData = {
-						'label': 'CPU Usage',
-						'color': '170,57,57',
-						'data': []
-					},
-					memData = {
-						'label': 'Memory Usage',
-						'color': '151,187,205',
-						'data': []
-					};
+				// create labels
+				var labels = [];
 				for(i = 0; i < data.length; i ++){
 					var m = new Date(data[i].start_time)
 					labels.push(m.getUTCFullYear() 
@@ -50,16 +42,57 @@ $(document).ready(function(){
 						+ " " + m.getUTCHours() 
 						+ ":" + m.getUTCMinutes() 
 						+ ":" + m.getUTCSeconds());
-					cpuData.data.push(data[i].avg_cpu_percent);
-					memData.data.push(data[i].avg_mem_percent);
 				}
-				
-				plotLine($('#cpu_mem_paint canvas').get(0), labels, [cpuData, memData], $('#cpu_mem_paint div').get(0));
+				if(aspect == 'runtime'){
+					var runtime = {
+							'label': 'Runtime',
+							'color': '170,57,57',
+							'data': []
+						};
+					for(i = 0; i < data.length; i ++){
+						runtime.data.push(data[i].runtime);
+						plotLine($('#runtime_paint canvas').get(0), labels, [cpuData, memData], $('#runtime_paint div').get(0));
+					}
+				}else if(aspect == 'cpu_mem'){
+					var cpuData = {
+							'label': 'CPU Usage',
+							'color': '170,57,57',
+							'data': []
+						},
+						memData = {
+							'label': 'Memory Usage',
+							'color': '151,187,205',
+							'data': []
+						};
+					for(i = 0; i < data.length; i ++){
+						cpuData.data.push(data[i].avg_cpu_percent);
+						memData.data.push(data[i].avg_mem_percent);
+					}
+					plotLine($('#cpu_mem_paint canvas').get(0), labels, [cpuData, memData], $('#cpu_mem_paint div').get(0));
+				}else if(aspect == 'rw_rate'){
+					var readRate = {
+							'label': 'Read Rate',
+							'color': '170,57,57',
+							'data': []
+					},
+						writeRate = {
+							'label': 'Write Rate',
+							'color': '170,57,57',
+							'data': []	
+					};
+					for(i = 0; i < data.length; i ++){
+						readRate.data.push(data[i].read_rate);
+						writeRate.data.push(data[i].write_rate);
+					}
+					plotLine($('#rw_rate_paint canvas').get(0), labels, [cpuData, memData], $('#rw_rate_paint div').get(0));
+				}
 			}
-		})
+		});
 	});
 	
-	var firstTab = $('.nav li').first();
-	firstTab.addClass('active');
-	firstTab.find('a').click();
+	$('.nav').each(function(){
+		var firstTab = $(this).find('li').first();
+		firstTab.addClass('active');
+		firstTab.find('a').click();
+	});
 });
