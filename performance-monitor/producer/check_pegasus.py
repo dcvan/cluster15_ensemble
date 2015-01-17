@@ -163,14 +163,15 @@ class ProcessMonitor(object):
                     else:
                         self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.cmdline()])
                         self._stat['executable'] = self._cur.name() 
-                    # determine check-in interval by executable 
+                    '''
+                    # determine check-in interval by executable
                     if self._stat['executable'] == 'bwa':
                         self._interval = 30
                     elif self._stat['executable'] == 'gatk':
                         self._interval = 60
                     else:
                         self._interval = 1
-                    
+                    '''
                     cpu_percent = self._cur.cpu_percent()
                     self._stat['avg_cpu_percent'] += cpu_percent
                     self._stat['avg_mem_percent'] += self._cur.memory_percent()
