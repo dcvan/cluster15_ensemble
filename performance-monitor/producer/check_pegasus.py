@@ -2,6 +2,7 @@
 
 import psutil
 import time
+import uuid
 import pika
 import socket
 import subprocess
@@ -34,7 +35,7 @@ class ProcessMonitor(object):
         self._msg_q = msg_q
         self._procs = set(executables)
         self._workdir = workdir
-        self._expid = int(time.time() * 1000)
+        self._expid = uuid.uuid4()
         self._hostname = socket.gethostname()
         self._sender = MessageSender(
                 self._name, 
@@ -55,7 +56,6 @@ class ProcessMonitor(object):
                     'terminate_time': 0,
                     'timestamp': 0,
                     'count':0,
-                    'executable': None,
                     'cmdline': None,
                     'runtime': 0.0,
                     'avg_cpu_percent': 0.0,
@@ -76,9 +76,8 @@ class ProcessMonitor(object):
         :param psutil.Process proc: the process just terminated
         
         '''
-#         if self._stat['count'] > 1:
         with self._lock:
-            if not self._stat['executable']: 
+            if not self._stat['cmdline']: 
                 return
             self._stat['status'] = 'terminated'
             self._stat['terminate_time'] = int(time.time() * 1000)
@@ -89,8 +88,6 @@ class ProcessMonitor(object):
             else:
                 self._stat['avg_cpu_percent'] = 0
                 self._stat['avg_mem_percent'] = 0
-            self._stat['read_rate'] = self._stat['total_read_bytes' ]/self._stat['runtime']
-            self._stat['write_rate'] = self._stat['total_write_bytes' ]/self._stat['runtime']
             self._stat['timestamp'] = int(time.time() * 1000)
             self._msg_q.put(dict(self._stat))
             print(self._stat)
@@ -109,7 +106,20 @@ class ProcessMonitor(object):
                     if proc.name() == 'condor_starter':
                         children = proc.children(recursive=True)
                         for p in children:
-                            if p.name() in self._procs:
+                            executable = None
+                            if p.name() == 'python':
+                                executable = p.cmdline()[1].split('/')[-1]
+                            elif p.name() == 'java':
+                                executable = p.parent().cmdline()[1].split('/')[-1]
+                            else:
+                                executable = p.name()
+                            if executable and executable in self._procs:
+                                if p.name() == 'python':
+                                    self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline() if arg != 'python'])
+                                elif p.name() == 'java':
+                                    self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.parent().cmdline() if arg != 'bash'])
+                                else:
+                                    self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()])
                                 wait = Process(target=psutil.wait_procs, args=([p], None, self.on_terminate))
                                 wait.start()
                                 return p
@@ -155,25 +165,6 @@ class ProcessMonitor(object):
             with self._lock:
                 try:
                     self._stat['count'] += 1
-                    
-                    if self._cur.name() == 'python':
-                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.cmdline() if arg != 'python'])
-                        self._stat['executable'] = self._cur.cmdline()[1].split('/')[-1]
-                    elif self._cur.name() == 'java':
-                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.parent().cmdline() if arg != 'bash'])
-                        self._stat['executable'] = self._cur.parent().cmdline()[1].split('/')[-1]
-                    else:
-                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in self._cur.cmdline()])
-                        self._stat['executable'] = self._cur.name() 
-                    '''
-                    # determine check-in interval by executable
-                    if self._stat['executable'] == 'bwa':
-                        self._interval = 30
-                    elif self._stat['executable'] == 'gatk':
-                        self._interval = 60
-                    else:
-                        self._interval = 1
-                    '''
                     cpu_percent = self._cur.cpu_percent()
                     self._stat['avg_cpu_percent'] += cpu_percent
                     self._stat['avg_mem_percent'] += self._cur.memory_percent()
@@ -187,13 +178,12 @@ class ProcessMonitor(object):
                     else:
                         self._stat['status'] = 'running'
                         
-                    print(self._cur.pid, self._stat['executable'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
+                    print(self._cur.pid, self._stat['cmdline'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
                     self._msg_q.put({
                         'host': self._hostname,
                         'name': self._name,
                         'expid': self._expid,
                         'timestamp': int(time.time() * 1000),
-                        'executable': self._stat['executable'],
                         'cmdline': self._stat['cmdline'],
                         'cpu_percent': cpu_percent,
                         'memory_percent': self._cur.memory_percent(),
@@ -209,7 +199,6 @@ class ProcessMonitor(object):
                     self._cur = None
                     with self._lock:
                         self._stat['count'] = 0
-                        self._stat['executable'] = None 
                         self._stat['cmdline'] = None
                         self._stat['runtime'] = 0.0
                         self._stat['start_time'] = 0
@@ -220,8 +209,6 @@ class ProcessMonitor(object):
                         self._stat['total_write_count'] = 0
                         self._stat['total_read_bytes'] = 0
                         self._stat['total_write_bytes'] = 0
-                        self._stat['read_rate'] = 0
-                        self._stat['write_rate'] = 0
                         self._stat['timestamp'] = 0
                         self._stat['status'] = None
             time.sleep(self._interval)
