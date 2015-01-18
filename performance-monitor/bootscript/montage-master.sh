@@ -108,8 +108,8 @@ cat > sites.xml <<END
             </scratch>
             <storage>
                 <shared>
-                    <file-server protocol="file" url="file://" mount-point="/mnt/outputs"/>
-                    <internal-mount-point mount-point="/mnt/outputs"/>
+                    <file-server protocol="file" url="file://" mount-point="/mnt/scratch/outputs"/>
+                    <internal-mount-point mount-point="/mnt/scratch/outputs"/>
                 </shared>
             </storage>
         </head-fs>

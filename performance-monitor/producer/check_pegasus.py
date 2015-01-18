@@ -35,7 +35,7 @@ class ProcessMonitor(object):
         self._msg_q = msg_q
         self._procs = set(executables)
         self._workdir = workdir
-        self._expid = uuid.uuid4()
+        self._expid = str(uuid.uuid4())
         self._hostname = socket.gethostname()
         self._sender = MessageSender(
                 self._name, 
