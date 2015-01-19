@@ -189,7 +189,7 @@ class ProcessMonitor(object):
            'status': 'workflow_init'
         })
         
-        if self._hostname == 'master':
+        if self._workdirs:
             # master-specific config
             self._status_monitor.start()
 
@@ -260,21 +260,21 @@ class ProcessMonitor(object):
                             self._stat['timestamp'] = 0
                             self._stat['status'] = None
                 time.sleep(self._interval)
-            else:
-                while self._done.value < len(self._workdirs):
-                    time.sleep(10)
+        else:
+            while self._done.value < len(self._workdirs):
+                time.sleep(10)
                   
-            if self._workdirs: 
-                for w in self._workdirs:
-                    self._msg_q.put({
-                        'exp_id': self._exp_id,
-                        'run_id': int(w[-2] if w[-1] == '/' else w[-1]),
-                        'hostname': self._hostname,
-                        'timestamp': int(time.time() * 1000),
-                        'status': 'workflow_finished',
-                        'walltime': self._get_walltime(w)
-                    })
-            self._msg_q.put(None)
+        if self._workdirs: 
+            for w in self._workdirs:
+                self._msg_q.put({
+                    'exp_id': self._exp_id,
+                    'run_id': int(w[-2] if w[-1] == '/' else w[-1]),
+                    'hostname': self._hostname,
+                    'timestamp': int(time.time() * 1000),
+                    'status': 'workflow_finished',
+                    'walltime': self._get_walltime(w)
+                })
+        self._msg_q.put(None)
                 
             
     def _get_walltime(self, workdir):
@@ -328,13 +328,18 @@ if __name__ == '__main__':
             'genomic':['bwa', 'picard', 'gatk', 'samtools'],
         }
     try:
+        worker = False
+        for p in psutil.process_iter():
+            if p.name() == 'condor_startd':
+                worker = True
+                 
         workflow = 'montage'
         ProcessMonitor(
-                str(uuid.uuid4()),
+                '2c916df1-4cbb-4338-a0cc-169692d850fc',
                 workflow,
                 set(executables[workflow]),
                 ['/home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage/run0001',
                  '/home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage/run0002',
-                 ]).run()
+                 ] if not worker else None).run()
     except KeyboardInterrupt:
         pass
