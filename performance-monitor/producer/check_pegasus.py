@@ -144,6 +144,7 @@ class ProcessMonitor(object):
             while not self._cur:
                 # timeout 
                 if self._timeout_counter >= TIMEOUT:
+                    print('Timeout!')
                     if self._hostname == 'master':
                         self._msg_q.put({
                             'runid': self._runid,
