@@ -200,7 +200,7 @@ class MessageSender(Process):
                         timestamp=int(time.time() * 1000)),
                      )
         
-        if msg and msg['status'] != 'workflow_finished':
+        if msg:
             self._conn.add_timeout(1, self._publish)
         else:
             self.stop()

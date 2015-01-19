@@ -9,7 +9,7 @@ import subprocess
 import os
 import re
 import shutil
-from multiprocessing import Process, Manager, RLock, Queue, Value
+from multiprocessing import Process, Manager, RLock, Queue, Array, Value
 
 from message_sender import MessageSender
 from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR, TIMEOUT
@@ -19,76 +19,86 @@ class WorkflowMonitor(Process):
     Monitor workflow status
     
     '''
-    def __init__(self, status, workdir):
+    def __init__(self, done, status, workdirs):
         '''
         
-        :param subprocess.Value status: whether the workflow is done
-        :param str workdir: workflow working directory
+        :param subprocess.Value done: number of done workflows
+        :param subprocess.Array status: whether the workflow is done
+        :param str workdirs: workflow working directories
         
         '''
         Process.__init__(self)
         self._status = status
-        self._workdir = workdir
-        self._cmd = ('pegasus-status -l %s' % workdir).split(' ')
+        self._workdirs = workdirs
+        self._cmd = (('pegasus-status -l %s' % self._workdirs[i]).split(' ') for i in range(0, len(self._workdirs)))
+        self._done = done
         
     def run(self):
         '''
         Override
         
         '''
-        while self._status.value == 1:
-            while not os.path.isdir(self._workdir):
-                time.sleep(5)
-            p = subprocess.Popen(self._cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            if not err:
-                for l in out.split('\n'):
-                    if re.match('[ \t]+[0-9]+', l):
-                        self._status.value = 1 if re.split('[ \t]+', l)[9] == 'Running' else 0
-                        break 
-            else:
-                pass
-            time.sleep(10)
-
+        while self._done.value < len(self._workdirs):
+            for i in range(0, len(self._workdirs)):
+                if os.path.isdir(self._workdir[i]):
+                    p = subprocess.Popen(self._cmd[i], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    out, err = p.communicate()
+                if not err:
+                    for l in out.split('\n'):
+                        if re.match('[ \t]+[0-9]+', l):
+                            if re.split('[ \t]+', l)[9] == 'Running':
+                                self._status[i] = 1
+                            else:
+                                self._status[i] = 0
+                                self._done.value += 1
+                            break
+                else:
+                    pass
+                time.sleep(10)
+                             
 class ProcessMonitor(object):
     '''
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, run_id, workflow, executables, workdir):
+    def __init__(self, exp_id, workflow, executables, workdirs=None):
         '''
         Init
 
-        :param str run_id: experiment ID
+        :param str exp_id: experiment ID
         :param str workflow: workflow type
         :param set executables: executables to be monitored
-        :param str workdir: workflow working directory
+        :param str workdirs: workflow working directories
         
         '''
         manager = Manager()
        
         
-        self._run_id = run_id
+        self._exp_id = self._exp_id
         self._workflow = workflow
         self._msg_q = Queue()
         self._procs = set(executables)
-        self._workdir = workdir
+        self._workdirs = workdirs
         self._hostname = socket.gethostname()
-        self._status = Value('b', 1)
-        self._status_monitor = WorkflowMonitor(self._status, self._workdir)
         self._sender = MessageSender(
                 self._workflow, 
-                self._run_id,
+                self._exp_id,
                 pika.URLParameters(MESSAGE_BROKER_URI), 
                 self._msg_q,
                 self._hostname,
                 )
+        if self._workdirs:
+            self._status = Array('b', [1] * len(self._workdirs))
+            self._done = Value('i', 0)
+            self._status_monitor = WorkflowMonitor(self._status, self._done, self._workdirs)
+        self._is_worker = False if not self._workdirs else self._find_startd()
         self._cur = None
         self._interval = 1
-        self._timeout_counter = 0
+        if self._is_worker:
+            self._timeout_counter = 0
         self._lock = RLock()
         self._stat = manager.dict({
-                    'run_id': self._run_id,
+                    'exp_id': self._exp_id,
                     'host': self._hostname,
                     'start_time': 0,
                     'terminate_time': 0,
@@ -170,30 +180,37 @@ class ProcessMonitor(object):
          
         '''
         self._sender.start()
-        self._status_monitor.start()
-        
-        # start workflow monitor
+            
         self._msg_q.put({
-           'run_id': self._run_id,
+           'exp_id': self._exp_id,
            'workflow': self._workflow,
            'hostname': self._hostname,
            'timestamp': int(time.time() * 1000),
            'status': 'workflow_init'
         })
-        while self._status.value == 1: # check workflow status
-            while not self._cur:
-                print('Waiting ...')
-                # timeout
-                if self._hostname != 'master' and self._timeout_counter >= TIMEOUT:
-                    self._status.value = 0
-                if self._status.value != 1:
-                    break
-                self._cur = self.find_process()
-                time.sleep(self._interval)
-                self._timeout_counter += 1
-                
-            if self._status.value == 1:
-                self._timeout_counter = 0
+        
+        if self._hostname == 'master':
+            # master-specific config
+            self._status_monitor.start()
+            pass
+
+        if self._is_worker:
+            while True:
+                while not self._cur: 
+                    print('Waiting ...')
+                    if (self._workdirs and self._done >= len(self._workdirs)):
+                        break;
+                    if self._timeout_counter:
+                        if self._timeout_counter >= TIMEOUT:
+                            break
+                        self._timeout_counter += 1
+                    time.sleep(self._interval)
+                if self._workdirs and self._done >= len(self._workdirs):
+                    break;
+                if self._timeout_counter:
+                    if self._timeout_counter >= TIMEOUT:
+                        break
+                    self._timeout_counter = 0
                 with self._lock:
                     try:
                         if not self._stat['status']:
@@ -212,7 +229,7 @@ class ProcessMonitor(object):
                             
                         print(self._cur.pid, self._stat['cmdline'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
                         self._msg_q.put({
-                            'run_id': self._run_id,
+                            'exp_id': self._exp_id,
                             'host': self._hostname,
                             'timestamp': int(time.time() * 1000),
                             'cmdline': self._stat['cmdline'],
@@ -243,17 +260,19 @@ class ProcessMonitor(object):
                             self._stat['timestamp'] = 0
                             self._stat['status'] = None
                 time.sleep(self._interval)
-            
-            if self._hostname == 'master':
-                self._msg_q.put({
-                    'run_id': self._run_id,
-                    'hostname': self._hostname,
-                    'timestamp': int(time.time() * 1000),
-                    'status': 'workflow_finished',
-                    'walltime': self._get_walltime(self._workdir)
+                  
+            if self._workdirs: 
+                for w in self._workdirs:
+                    self._msg_q.put({
+                        'exp_id': self._exp_id,
+                        'run_id': int(w[-2] if w[-1] == '/' else w[-1]),
+                        'hostname': self._hostname,
+                        'timestamp': int(time.time() * 1000),
+                        'status': 'workflow_finished',
+                        'walltime': self._get_walltime(w)
                     })
-            else:
-                self._msg_q.put(None)
+            self._msg_q.put(None)
+                
             
     def _get_walltime(self, workdir):
         '''
@@ -280,13 +299,25 @@ class ProcessMonitor(object):
             # pegasus-statistics error
             # can be pre-mature workflow run or working directory does not exist
             return None
-            
+        
+    def _find_startd(self):
+        '''
+        Find if the host has condor_startd. If it has, it is a worker
+        
+        :rtype bool
+        
+        '''
+        for p in psutil.process_iter():
+            if p.name() == 'condor_startd':
+                return True
+        return False
+    
 if __name__ == '__main__':
     try:
         ProcessMonitor(
                 str(uuid.uuid4()),
                 'genomic-single', 
                 set(['bwa', 'picard', 'gatk', 'samtools']),
-                '/home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf/run0001').run()
+                ['/home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf/run0001']).run()
     except KeyboardInterrupt:
         pass

@@ -7,3 +7,5 @@ MESSAGE_BROKER_URI = 'amqp://dc:cluster15@152.54.14.32:5672/%2F'
 CONDOR_EXE_DIR = '/var/lib/condor/execute'
 
 TIMEOUT = 6000
+
+FIND_JOB_ATTEMPT_LIMIT = 20

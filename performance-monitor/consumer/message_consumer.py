@@ -4,7 +4,6 @@ Created on Jan 12, 2015
 @author: dc
 '''
 import json
-import uuid
 
 from config import EXCHANGE_NAME, DB_NAME, BUF_SIZE
 
@@ -221,7 +220,7 @@ class ArchiveConsumer(MessageConsumer):
             if data['status'] == 'workflow_init':
                 self._db[DB_NAME]['workflow_run'].insert({
                         'workflow': data['workflow'],
-                        'run_id': data['run_id'],
+                        'exp_id': data['exp_id'],
                         'timestamp': data['timestamp'],
                     }) 
                 self._db[DB_NAME]['run'].insert(data)
