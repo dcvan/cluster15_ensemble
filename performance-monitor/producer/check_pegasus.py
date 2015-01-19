@@ -12,7 +12,7 @@ import shutil
 from multiprocessing import Process, Manager, RLock, Queue, Value
 
 from message_sender import MessageSender
-from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR
+from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR, TIMEOUT
 
 class WorkflowMonitor(Process):
     '''
@@ -41,7 +41,7 @@ class WorkflowMonitor(Process):
             if not err:
                 for l in out.split('\n'):
                     if re.match('[ \t]+[0-9]+', l):
-                        self._status.value = 1 if l.split('[ \t]+')[9] == 'Running' else 0
+                        self._status.value = 1 if re.split('[ \t]+', l)[9] == 'Running' else 0
                         break 
             else:
                 pass
@@ -82,6 +82,7 @@ class ProcessMonitor(object):
                 )
         self._cur = None
         self._interval = 1
+        self._timeout_counter = 0
         self._lock = RLock()
         self._stat = manager.dict({
                     'run_id': self._run_id,
@@ -179,57 +180,66 @@ class ProcessMonitor(object):
         while self._status.value == 1: # check workflow status
             while not self._cur:
                 print('Waiting ...')
+                # timeout
+                if self._hostname != 'master' and self._timeout_counter >= TIMEOUT:
+                    self._status.value = 0
+                if self._status.value != 1:
+                    break
                 self._cur = self.find_process()
                 time.sleep(self._interval)
-            with self._lock:
-                try:
-                    if not self._stat['status']:
-                        self._stat['status'] = 'started'
-                        self._stat['start_time'] = int(time.time() * 1000)
-                    else:
-                        self._stat['status'] = 'running'
-                    self._stat['count'] += 1
-                    cpu_percent = self._cur.cpu_percent()
-                    self._stat['avg_cpu_percent'] += cpu_percent
-                    self._stat['avg_mem_percent'] += self._cur.memory_percent()
-                    self._stat['total_read_count'] = self._cur.io_counters().read_count
-                    self._stat['total_write_count'] = self._cur.io_counters().write_count
-                    self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
-                    self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
+                self._timeout_counter += 1
+                
+            if self._status.value == 1:
+                self._timeout_counter = 0
+                with self._lock:
+                    try:
+                        if not self._stat['status']:
+                            self._stat['status'] = 'started'
+                            self._stat['start_time'] = int(time.time() * 1000)
+                        else:
+                            self._stat['status'] = 'running'
+                        self._stat['count'] += 1
+                        cpu_percent = self._cur.cpu_percent()
+                        self._stat['avg_cpu_percent'] += cpu_percent
+                        self._stat['avg_mem_percent'] += self._cur.memory_percent()
+                        self._stat['total_read_count'] = self._cur.io_counters().read_count
+                        self._stat['total_write_count'] = self._cur.io_counters().write_count
+                        self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
+                        self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
+                            
+                        print(self._cur.pid, self._stat['cmdline'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
+                        self._msg_q.put({
+                            'run_id': self._run_id,
+                            'host': self._hostname,
+                            'timestamp': int(time.time() * 1000),
+                            'cmdline': self._stat['cmdline'],
+                            'cpu_percent': cpu_percent,
+                            'memory_percent': self._cur.memory_percent(),
+                            'start_time': self._stat['start_time'],
+                            'total_read_count': self._stat['total_read_count'],
+                            'total_write_count': self._stat['total_write_count'],
+                            'total_read_bytes': self._stat['total_read_bytes'],
+                            'total_write_bytes': self._stat['total_write_bytes'],
+                            'status': self._stat['status'],
+                        })
                         
-                    print(self._cur.pid, self._stat['cmdline'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
-                    self._msg_q.put({
-                        'run_id': self._run_id,
-                        'host': self._hostname,
-                        'timestamp': int(time.time() * 1000),
-                        'cmdline': self._stat['cmdline'],
-                        'cpu_percent': cpu_percent,
-                        'memory_percent': self._cur.memory_percent(),
-                        'start_time': self._stat['start_time'],
-                        'total_read_count': self._stat['total_read_count'],
-                        'total_write_count': self._stat['total_write_count'],
-                        'total_read_bytes': self._stat['total_read_bytes'],
-                        'total_write_bytes': self._stat['total_write_bytes'],
-                        'status': self._stat['status'],
-                    })
-                    
-                except psutil.NoSuchProcess:
-                    self._cur = None
-                    with self._lock:
-                        self._stat['count'] = 0
-                        self._stat['cmdline'] = None
-                        self._stat['runtime'] = 0.0
-                        self._stat['start_time'] = 0
-                        self._stat['terminate_time'] = 0
-                        self._stat['avg_cpu_percent']= 0.0
-                        self._stat['avg_mem_percent'] = 0.0
-                        self._stat['total_read_count'] = 0
-                        self._stat['total_write_count'] = 0
-                        self._stat['total_read_bytes'] = 0
-                        self._stat['total_write_bytes'] = 0
-                        self._stat['timestamp'] = 0
-                        self._stat['status'] = None
-            time.sleep(self._interval)
+                    except psutil.NoSuchProcess:
+                        self._cur = None
+                        with self._lock:
+                            self._stat['count'] = 0
+                            self._stat['cmdline'] = None
+                            self._stat['runtime'] = 0.0
+                            self._stat['start_time'] = 0
+                            self._stat['terminate_time'] = 0
+                            self._stat['avg_cpu_percent']= 0.0
+                            self._stat['avg_mem_percent'] = 0.0
+                            self._stat['total_read_count'] = 0
+                            self._stat['total_write_count'] = 0
+                            self._stat['total_read_bytes'] = 0
+                            self._stat['total_write_bytes'] = 0
+                            self._stat['timestamp'] = 0
+                            self._stat['status'] = None
+                time.sleep(self._interval)
             
             if self._hostname == 'master':
                 self._msg_q.put({
