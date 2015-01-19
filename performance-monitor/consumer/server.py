@@ -29,15 +29,15 @@ class Application(tornado.web.Application):
         self._start_archive_consumer()
         handlers = [
                 # workflows
-                (r'/', WorkflowRender, dict(db=self._mongo_conn)),
+#                 (r'/', WorkflowRender, dict(db=self._mongo_conn)),
                 # experiments
-                (r'/types/([a-z-]+)', ExperimentStatusRenderer, dict(db=self._mongo_conn)),
-                (r'/types/([a-z-]+)/jobs/(.+)', JobRender, dict(db=self._mongo_conn)),
+#                 (r'/types/([a-z-]+)', ExperimentStatusRenderer, dict(db=self._mongo_conn)),
+#                 (r'/types/([a-z-]+)/jobs/(.+)', JobRender, dict(db=self._mongo_conn)),
                 # nodes
-                (r'/types/([a-z-]+)/experiments/([0-9]+)', NodeRenderer, dict(db=self._mongo_conn)),
+#                 (r'/types/([a-z-]+)/experiments/([0-9]+)', NodeRenderer, dict(db=self._mongo_conn)),
                 # node
-                (r'/types/([a-z-]+)/experiments/([0-9]+)/nodes/([a-z0-9]+)', NodeStatusRenderer, dict(db=self._mongo_conn)),
-                (r'/types/([a-z-]+)/experiments/([0-9]+)/nodes/([0-9]+)/([a-z#]+)', UpdateHandler, dict(conn=self._amqp_conn, consumers={})),
+#                 (r'/types/([a-z-]+)/experiments/([0-9]+)/nodes/([a-z0-9]+)', NodeStatusRenderer, dict(db=self._mongo_conn)),
+#                 (r'/types/([a-z-]+)/experiments/([0-9]+)/nodes/([0-9]+)/([a-z#]+)', UpdateHandler, dict(conn=self._amqp_conn, consumers={})),
                 ]
         settings = {
                 'template_path': 'templates/',
