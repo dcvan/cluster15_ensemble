@@ -71,7 +71,7 @@ class ProcessMonitor(object):
         self._procs = set(executables)
         self._workdir = workdir
         self._hostname = socket.gethostname()
-        self._status = Value('b', '1')
+        self._status = Value('b', 1)
         self._status_monitor = WorkflowMonitor(self._status, self._workdir)
         self._sender = MessageSender(
                 self._workflow, 
