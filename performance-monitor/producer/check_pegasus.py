@@ -180,17 +180,16 @@ class ProcessMonitor(object):
          
         '''
         self._sender.start()
-            
-        self._msg_q.put({
-           'exp_id': self._exp_id,
-           'workflow': self._workflow,
-           'hostname': self._hostname,
-           'timestamp': int(time.time() * 1000),
-           'status': 'workflow_init'
-        })
         
         if self._workdirs:
             # master-specific config
+            self._msg_q.put({
+               'exp_id': self._exp_id,
+               'workflow': self._workflow,
+               'hostname': self._hostname,
+               'timestamp': int(time.time() * 1000),
+               'status': 'workflow_init'
+            })
             self._status_monitor.start()
 
         if self._is_worker:
@@ -317,14 +316,18 @@ class ProcessMonitor(object):
     
 if __name__ == '__main__':
     executables = {
-            'montage': ['mMakeHdr', 'mExecTG', 'mMakeImg', 'mDAGFiles', 'mImgtbl', 'mAddExec', 'mTileHdr', 
-                        'mPresentation', 'mSubset', 'mGetHdr', 'mConvert', 'mHdrtbl', 'mAdd', 'mArchiveList', 'mExamine', 
-                        'mExec', 'mArchiveGet', 'mDAG', 'mFixNaN', 'mDAGGalacticPlane', 'mBestImage', 'mTblSort', 'mQuickSearch', 
-                        'mHdr', 'mDiffFit', 'mCoverageCheck', 'mArchiveExec', 'mConcatFit', 'mProjectPP', 'mNotifyTG', 'mJPEG', 
-                        'mFlattenExec', 'mSubimage', 'mCatMap', 'mShrinkHdr', 'mPutHdr', 'mDiffFitExec', 'mGridExec', 
-                        'mHdrCheck', 'mFixHdr', 'mPix2Coord', 'mTileImage', 'mDiff', 'mFitplane', 'mShrink', 'mRotate', 
-                        'mDAGTbls', 'mBgExec', 'mFitExec', 'mNotify', 'mDiffExec', 'mTblExec', 'mBackground', 'mOverlaps', 
-                        'mBgModel', 'mProjExec', 'mProject', 'mTANHdr'],
+            'montage': ['mMakeHdr-3.3', 'mExecTG-3.3', 'mMakeImg-3.3', 'mDAGFiles-3.3', 'mImgtbl-3.3', 
+                        'mAddExec-3.3', 'mTileHdr-3.3', 'mPresentation-3.3', 'mSubset-3.3', 'mGetHdr-3.3',
+                        'mConvert-3.3', 'mHdrtbl-3.3', 'mAdd-3.3', 'mArchiveList-3.3', 'mExamine-3.3', 
+                        'mExec-3.3', 'mArchiveGet-3.3', 'mDAG-3.3', 'mFixNaN-3.3', 'mDAGGalacticPlane-3.3', 
+                        'mBestImage-3.3', 'mTblSort-3.3', 'mQuickSearch-3.3', 'mHdr-3.3', 'mDiffFit-3.3', 
+                        'mCoverageCheck-3.3', 'mArchiveExec-3.3', 'mConcatFit-3.3', 'mProjectPP-3.3', 
+                        'mNotifyTG-3.3', 'mJPEG-3.3', 'mFlattenExec-3.3', 'mSubimage-3.3', 'mCatMap-3.3', 
+                        'mShrinkHdr-3.3', 'mPutHdr-3.3', 'mDiffFitExec-3.3', 'mGridExec-3.3', 
+                        'mHdrCheck-3.3', 'mFixHdr-3.3', 'mPix2Coord-3.3', 'mTileImage-3.3', 'mDiff-3.3', 'mFitplane-3.3', 
+                        'mShrink-3.3', 'mRotate-3.3', 'mDAGTbls-3.3', 'mBgExec-3.3', 'mFitExec-3.3', 'mNotify-3.3', 
+                        'mDiffExec-3.3', 'mTblExec-3.3', 'mBackground-3.3', 'mOverlaps-3.3', 'mBgModel-3.3', 'mProjExec-3.3', 
+                        'mProject-3.3', 'mTANHdr-3.3'],
             'genomic':['bwa', 'picard', 'gatk', 'samtools'],
         }
     try:
