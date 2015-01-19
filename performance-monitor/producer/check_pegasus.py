@@ -19,13 +19,12 @@ class ProcessMonitor(object):
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, runid, type, msg_q, executables, workdir):
+    def __init__(self, runid, type, executables, workdir):
         '''
         Init
 
         :param str runid: experiment ID
         :param str type: workflow type
-        :param multiprocessing.Queue msg_q: system message queue for communication between the monitor and AMQP sender
         :param set executables: executables to be monitored
         :param str workdir: workflow working directory
         
@@ -35,7 +34,7 @@ class ProcessMonitor(object):
         
         self._runid = runid
         self._type = type
-        self._msg_q = msg_q
+        self._msg_q = Queue()
         self._procs = set(executables)
         self._workdir = workdir
         self._hostname = socket.gethostname()
@@ -133,6 +132,7 @@ class ProcessMonitor(object):
          
         '''
         self._sender.start()
+        # start workflow monitor
         self._msg_q.put({
            'runid': self._runid,
            'type': self._type,
@@ -142,6 +142,7 @@ class ProcessMonitor(object):
         })
         while self._procs: # always true except no executable is passed in
             while not self._cur:
+                # check workflow status
                 # timeout 
                 if self._timeout_counter >= TIMEOUT:
                     print('Timeout!')
@@ -236,13 +237,34 @@ class ProcessMonitor(object):
             # can be pre-mature workflow run or working directory does not exist
             return None
             
+class WorkflowMonitor(subprocess.Process):
+    '''
+    Monitor workflow status
+    
+    '''
+    def __init__(self,  queue):
+        '''
+        
+        :param subprocess.Queue queue: shared queue to signal workflow is done and send 
+                                                                   workflow statistics back
+        '''
+        subprocess.Process.__init__(self)
+        self._queue = queue
+        
+    def run(self):
+        '''
+        Override
+        
+        '''
+        pass
+        
+    
 
 if __name__ == '__main__':
     try:
         ProcessMonitor(
                 str(uuid.uuid4()),
                 'genomic-single', 
-                Queue(), 
                 set(['bwa', 'java', 'python', 'samtools']),
                 '/home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf/run0001').run()
     except KeyboardInterrupt:
