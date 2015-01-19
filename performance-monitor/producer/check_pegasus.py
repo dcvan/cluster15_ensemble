@@ -292,7 +292,7 @@ class ProcessMonitor(object):
                     l = l.lower()
                     if 'workflow wall time' in l:
                         walltime_text = l.split(':')[1].strip()
-                        if walltime_text:
+                        if walltime_text and walltime_text != '-':
                             fs = walltime_text.split(',')
                             return int(fs[0].split(' ')[0]) * 60 + int(fs[1].split(' ')[1])
         else:
