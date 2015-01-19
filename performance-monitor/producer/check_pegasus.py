@@ -8,12 +8,11 @@ import socket
 import subprocess
 import os
 import re
-import sys
 import shutil
 from multiprocessing import Process, Manager, RLock, Queue, Value
 
 from message_sender import MessageSender
-from config import MESSAGE_BROKER_URI, TIMEOUT, CONDOR_EXE_DIR
+from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR
 
 class WorkflowMonitor(Process):
     '''
@@ -142,8 +141,6 @@ class ProcessMonitor(object):
             children = proc.children(recursive=True)
             for p in children:
                 executable = None               # timeout 
-                if self._timeout_counter >= TIMEOUT:
-                    sys.exit(0)
                 if p.name() == 'python':
                     executable = p.cmdline()[1].split('/')[-1]
                 elif p.name() == 'java':
