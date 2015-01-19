@@ -1,0 +1,125 @@
+<rdf:RDF
+    xmlns:request="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#"
+    xmlns:kansei="http://geni-orca.renci.org/owl/kansei.owl#"
+    xmlns:compute="http://geni-orca.renci.org/owl/compute.owl#"
+    xmlns:app-color="http://geni-orca.renci.org/owl/app-color.owl#"
+    xmlns:ethernet="http://geni-orca.renci.org/owl/ethernet.owl#"
+    xmlns:dtn="http://geni-orca.renci.org/owl/dtn.owl#"
+    xmlns:time="http://www.w3.org/2006/time#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:openflow="http://geni-orca.renci.org/owl/openflow.owl#"
+    xmlns:modify-schema="http://geni-orca.renci.org/owl/modify.owl#"
+    xmlns:layer="http://geni-orca.renci.org/owl/layer.owl#"
+    xmlns:planetlab="http://geni-orca.renci.org/owl/planetlab.owl#"
+    xmlns:geni="http://geni-orca.renci.org/owl/geni.owl#"
+    xmlns:request-schema="http://geni-orca.renci.org/owl/request.owl#"
+    xmlns:ip4="http://geni-orca.renci.org/owl/ip4.owl#"
+    xmlns:orca="http://geni-orca.renci.org/owl/orca.owl#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:eucalyptus="http://geni-orca.renci.org/owl/eucalyptus.owl#"
+    xmlns:domain="http://geni-orca.renci.org/owl/domain.owl#"
+    xmlns:collections="http://geni-orca.renci.org/owl/collections.owl#"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    xmlns:ec2="http://geni-orca.renci.org/owl/ec2.owl#"
+    xmlns:topology="http://geni-orca.renci.org/owl/topology.owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" > 
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#geno-peg-irods">
+    <topology:hasURL>http://geni-images.renci.org/images/claris/genopegirods/geno-peg-irods.xml</topology:hasURL>
+    <topology:hasGUID>076e6834f5c7ebd9eb1ecf481e72ef0befed8eb5</topology:hasGUID>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#DiskImage"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#TermDuration">
+    <time:days rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1</time:days>
+    <rdf:type rdf:resource="http://www.w3.org/2006/time#DurationDescription"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#Term">
+    <time:hasDurationDescription rdf:resource="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#TermDuration"/>
+    <rdf:type rdf:resource="http://www.w3.org/2006/time#Interval"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#">
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#geno-single-lg"/>
+    <request-schema:hasTerm rdf:resource="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#Term"/>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/request.owl#Reservation"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#geno-single-lg">
+    <request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">#!/usr/bin/env bash
+
+condor_log="/var/log/condor"
+pegasus_home="/home/pegasus-user"
+geno_home="$pegasus_home/genomics"
+reference_tar="$geno_home/references.tgz"
+
+# host setup
+while [ ! "$(ifconfig eth0)" ];do
+    sleep 5
+done
+
+cat &gt; /etc/hosts &lt;&lt;EOF
+$(ifconfig eth0|grep 'inet addr'|awk -F':' '{print $2}'|awk '{print $1}')  master.expnet   master   salt
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+EOF
+hostname master.expnet
+
+# condor setup
+echo "" &gt; /etc/condor/condor_config.local
+cat &gt; /etc/condor/config.d/90-worker &lt;&lt;EOF
+DAEMON_LIST = MASTER, STARTD, NEGOTIATOR, SCHEDD, COLLECTOR
+CONDOR_HOST = master.expnet
+ALLOW_WRITE = *
+HOSTALLOW_READ = *
+HOSTALLOW_WRITE = *
+EOF
+
+cat &gt; /etc/condor/config.d/20-security &lt;&lt;EOF
+SEC_PASSWORD_FILE = /etc/condor/pool.password
+SEC_DAEMON_AUTHENTICATION = REQUIRED
+SEC_DAEMON_INTEGRITY = REQUIRED
+SEC_DAEMON_AUTHENTICATION_METHODS = PASSWORD
+SEC_NEGOTIATOR_AUTHENTICATION = REQUIRED
+SEC_NEGOTIATOR_INTEGRITY = REQUIRED
+SEC_NEGOTIATOR_AUTHENTICATION_METHODS = PASSWORD
+SEC_CLIENT_AUTHENTICATION_METHODS = FS, PASSWORD
+
+ALLOW_ADMINISTRATOR = $(FULL_HOSTNAME), $(CONDOR_HOST), master.expnet
+ALLOW_OWNER = $(ALLOW_ADMINISTRATOR)
+ALLOW_READ = *
+ALLOW_WRITE = *
+
+ALLOW_DAEMON = $(ALLOW_WRITE)
+ALLOW_ADVERTISE_STARTD = $(ALLOW_WRITE)
+ALLOW_NEGOTIATOR = $(COLLECTOR_HOST)
+ALLOW_NEGOTIATOR_SCHEDD = $(COLLECTOR_HOST)
+ALLOW_WRITE_COLLECTOR = $(ALLOW_WRITE)
+ALLOW_WRITE_STARTD    = $(ALLOW_WRITE)
+ALLOW_READ_COLLECTOR  = $(ALLOW_READ)
+ALLOW_READ_STARTD     = $(ALLOW_READ)
+ALLOW_CLIENT = *
+EOF
+
+mkdir -m 775 $condor_log
+chown condor:condor $condor_log
+
+service condor restart
+
+# workflow setup
+tar zxf $reference_tar -C $geno_home
+sed -i 's/transfer="false"/transfer="true"/g' $geno_home/wf_exon_irods/dax.xml
+
+# monitor setup
+yum -y install git python-pip python-devel
+pip install pika psutil tornado
+
+git clone https://github.com/dcvan/cluster15_ensemble.git ~</request-schema:postBootScript>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
+    <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#geno-peg-irods"/>
+    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOLarge"/>
+    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
+    <layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</layer:numCE>
+    <request-schema:groupName>geno-single-lg</request-schema:groupName>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ServerCloud"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain">
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkDomain"/>
+  </rdf:Description>
+</rdf:RDF>

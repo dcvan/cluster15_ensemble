@@ -240,7 +240,7 @@ if __name__ == '__main__':
     try:
         ProcessMonitor(
                 str(uuid.uuid4()),
-                'genomic', 
+                'genomic-single', 
                 Queue(), 
                 set(['bwa', 'java', 'python', 'samtools']),
                 '/home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf/run0001').run()
