@@ -91,7 +91,7 @@ class ProcessMonitor(object):
             self._status = Array('b', [1] * len(self._workdirs))
             self._done = Value('i', 0)
             self._status_monitor = WorkflowMonitor(self._done, self._status, self._workdirs)
-        self._is_worker = False if not self._workdirs else self._find_startd()
+        self._is_worker = True if not self._workdirs else self._find_startd()
         self._cur = None
         self._interval = 1
         if self._is_worker:
