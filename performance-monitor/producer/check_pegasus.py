@@ -35,13 +35,13 @@ class WorkflowMonitor(Process):
         Override
         
         '''
-        while self._status == 1:
+        while self._status.value == 1:
             p = subprocess.Popen(self._cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = p.communicate()
             if not err:
                 for l in out.split('\n'):
                     if re.match('[ \t]+[0-9]+', l):
-                        self._status = 1 if l.split('[ \t]+')[9] == 'Running' else 0
+                        self._status.value = 1 if l.split('[ \t]+')[9] == 'Running' else 0
                         break 
             else:
                 pass
@@ -176,7 +176,7 @@ class ProcessMonitor(object):
            'timestamp': int(time.time() * 1000),
            'status': 'workflow_init'
         })
-        while self._status == 1: # check workflow status
+        while self._status.value == 1: # check workflow status
             while not self._cur:
                 print('Waiting ...')
                 self._cur = self.find_process()
