@@ -220,8 +220,8 @@ class ArchiveConsumer(MessageConsumer):
         if 'status' in data:
             if data['status'] == 'workflow_init':
                 self._db[DB_NAME]['workflow_run'].insert({
-                        'type': data['type'],
-                        'runid': data['runid'],
+                        'workflow': data['workflow'],
+                        'run_id': data['run_id'],
                         'timestamp': data['timestamp'],
                     }) 
                 self._db[DB_NAME]['run'].insert(data)
