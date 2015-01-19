@@ -30,7 +30,7 @@ class WorkflowMonitor(Process):
         Process.__init__(self)
         self._status = status
         self._workdirs = workdirs
-        self._cmd = (('pegasus-status -l %s' % self._workdirs[i]).split(' ') for i in range(0, len(self._workdirs)))
+        self._cmd = [('pegasus-status -l %s' % self._workdirs[i]).split(' ') for i in range(0, len(self._workdirs))]
         self._done = done
         
     def run(self):
@@ -40,20 +40,20 @@ class WorkflowMonitor(Process):
         '''
         while self._done.value < len(self._workdirs):
             for i in range(0, len(self._workdirs)):
-                if os.path.isdir(self._workdir[i]):
+                if os.path.isdir(self._workdirs[i]):
                     p = subprocess.Popen(self._cmd[i], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                     out, err = p.communicate()
-                if not err:
-                    for l in out.split('\n'):
-                        if re.match('[ \t]+[0-9]+', l):
-                            if re.split('[ \t]+', l)[9] == 'Running':
-                                self._status[i] = 1
-                            else:
-                                self._status[i] = 0
-                                self._done.value += 1
-                            break
-                else:
-                    pass
+                    if not err:
+                        for l in out.split('\n'):
+                            if re.match('[ \t]+[0-9]+', l):
+                                if re.split('[ \t]+', l)[9] == 'Running':
+                                    self._status[i] = 1
+                                else:
+                                    self._status[i] = 0
+                                    self._done.value += 1
+                                break
+                    else:
+                        pass
                 time.sleep(10)
                              
 class ProcessMonitor(object):
@@ -74,7 +74,7 @@ class ProcessMonitor(object):
         manager = Manager()
        
         
-        self._exp_id = self._exp_id
+        self._exp_id = exp_id
         self._workflow = workflow
         self._msg_q = Queue()
         self._procs = set(executables)
@@ -90,7 +90,7 @@ class ProcessMonitor(object):
         if self._workdirs:
             self._status = Array('b', [1] * len(self._workdirs))
             self._done = Value('i', 0)
-            self._status_monitor = WorkflowMonitor(self._status, self._done, self._workdirs)
+            self._status_monitor = WorkflowMonitor(self._done, self._status, self._workdirs)
         self._is_worker = False if not self._workdirs else self._find_startd()
         self._cur = None
         self._interval = 1
@@ -198,14 +198,15 @@ class ProcessMonitor(object):
             while True:
                 while not self._cur: 
                     print('Waiting ...')
-                    if (self._workdirs and self._done >= len(self._workdirs)):
+                    if (self._workdirs and self._done.value >= len(self._workdirs)):
                         break;
                     if self._timeout_counter:
                         if self._timeout_counter >= TIMEOUT:
                             break
                         self._timeout_counter += 1
+                    self._cur = self.find_process()
                     time.sleep(self._interval)
-                if self._workdirs and self._done >= len(self._workdirs):
+                if self._workdirs and self._done.value >= len(self._workdirs):
                     break;
                 if self._timeout_counter:
                     if self._timeout_counter >= TIMEOUT:
@@ -313,11 +314,25 @@ class ProcessMonitor(object):
         return False
     
 if __name__ == '__main__':
+    executables = {
+            'montage': ['mMakeHdr', 'mExecTG', 'mMakeImg', 'mDAGFiles', 'mImgtbl', 'mAddExec', 'mTileHdr', 
+                        'mPresentation', 'mSubset', 'mGetHdr', 'mConvert', 'mHdrtbl', 'mAdd', 'mArchiveList', 'mExamine', 
+                        'mExec', 'mArchiveGet', 'mDAG', 'mFixNaN', 'mDAGGalacticPlane', 'mBestImage', 'mTblSort', 'mQuickSearch', 
+                        'mHdr', 'mDiffFit', 'mCoverageCheck', 'mArchiveExec', 'mConcatFit', 'mProjectPP', 'mNotifyTG', 'mJPEG', 
+                        'mFlattenExec', 'mSubimage', 'mCatMap', 'mShrinkHdr', 'mPutHdr', 'mDiffFitExec', 'mGridExec', 
+                        'mHdrCheck', 'mFixHdr', 'mPix2Coord', 'mTileImage', 'mDiff', 'mFitplane', 'mShrink', 'mRotate', 
+                        'mDAGTbls', 'mBgExec', 'mFitExec', 'mNotify', 'mDiffExec', 'mTblExec', 'mBackground', 'mOverlaps', 
+                        'mBgModel', 'mProjExec', 'mProject', 'mTANHdr'],
+            'genomic':['bwa', 'picard', 'gatk', 'samtools'],
+        }
     try:
+        workflow = 'montage'
         ProcessMonitor(
                 str(uuid.uuid4()),
-                'genomic-single', 
-                set(['bwa', 'picard', 'gatk', 'samtools']),
-                ['/home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf/run0001']).run()
+                workflow,
+                set(executables[workflow]),
+                ['/home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage/run0001',
+                 '/home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage/run0002',
+                 ]).run()
     except KeyboardInterrupt:
         pass
