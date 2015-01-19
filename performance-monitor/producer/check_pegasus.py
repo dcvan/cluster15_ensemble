@@ -28,6 +28,7 @@ class WorkflowMonitor(Process):
         '''
         Process.__init__(self)
         self._status = status
+        self._workdir = workdir
         self._cmd = ('pegasus-status -l %s' % workdir).split(' ')
         
     def run(self):
@@ -36,6 +37,8 @@ class WorkflowMonitor(Process):
         
         '''
         while self._status.value == 1:
+            while not os.path.isdir(self._workdir):
+                time.sleep(5)
             p = subprocess.Popen(self._cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             out, err = p.communicate()
             if not err:
@@ -270,8 +273,9 @@ class ProcessMonitor(object):
                     l = l.lower()
                     if 'workflow wall time' in l:
                         walltime_text = l.split(':')[1].strip()
-                        fs = walltime_text.split(',')
-                        return int(fs[0].split(' ')[0]) * 60 + int(fs[1].split(' ')[1])
+                        if walltime_text:
+                            fs = walltime_text.split(',')
+                            return int(fs[0].split(' ')[0]) * 60 + int(fs[1].split(' ')[1])
         else:
             # pegasus-statistics error
             # can be pre-mature workflow run or working directory does not exist
