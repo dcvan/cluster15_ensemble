@@ -192,7 +192,6 @@ class ProcessMonitor(object):
         if self._hostname == 'master':
             # master-specific config
             self._status_monitor.start()
-            pass
 
         if self._is_worker:
             while True:
@@ -261,6 +260,9 @@ class ProcessMonitor(object):
                             self._stat['timestamp'] = 0
                             self._stat['status'] = None
                 time.sleep(self._interval)
+            else:
+                while self._done.value < len(self._workdirs):
+                    time.sleep(10)
                   
             if self._workdirs: 
                 for w in self._workdirs:
