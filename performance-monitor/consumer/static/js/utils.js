@@ -50,3 +50,7 @@ function resize(canvas){
 	canvas.width = 1200;
 	canvas.height = 500;
 }
+
+function get_url(path){
+	return "http://" + document.location.host + window.location.pathname + path; 
+}

@@ -4,8 +4,69 @@ Created on Jan 13, 2015
 @author: dc
 '''
 import json
+import uuid
 import tornado.web
 from config import DB_NAME
+
+class WorkflowsRenderer(tornado.web.RedirectHandler):
+    '''
+    Renders worklow listing
+    
+    '''
+    def initialize(self, db):
+        '''
+        Init 
+        
+        :param pymongo.MongoClient db: the MongoDB connection
+        
+        '''
+        self._db = db
+    
+    def get(self):
+        '''
+        GET method
+        
+        '''
+        rs = self._db[DB_NAME]['workflows'].find(fields={'_id': 0}).sort('name')
+        self.render('workflows.html', workflows=[w for w in rs])
+    
+    def post(self):
+        '''
+        POST method
+        
+        '''
+        data = json.loads(self.request.body)
+        data['exp_id'] = str(uuid.uuid4())
+        data['status'] = 'submitted'
+        self._db[DB_NAME]['experiments'].insert(data)
+        self.set_header('Content-Type', 'application/json;charset="utf-8"')
+        self.write(json.dumps({
+                'exp_id': data['exp_id'],
+                'type': data['type'],
+            }))
+        
+        
+        
+class ExperimentRenderer(tornado.web.RedirectHandler):
+    '''
+    Renders specific experiment info
+    
+    '''
+    def initialize(self, db):
+        '''
+        Init 
+        
+        :param pymongo.MongoClient db: the MongoDB connection
+        
+        '''
+        self._db = db
+    
+    def get(self, workflow, exp_id):
+        '''
+        GET method
+        
+        '''
+        self.render('experiment.html')
 
 class WorkflowRender(tornado.web.RedirectHandler):
     '''

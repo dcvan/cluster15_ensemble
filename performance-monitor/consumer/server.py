@@ -11,7 +11,7 @@ import pymongo
 from message_consumer import ArchiveConsumer
 from connection import MessageConnection
 from message import UpdateHandler
-from renderer import WorkflowRender, JobRender, ExperimentStatusRenderer, NodeRenderer, NodeStatusRenderer
+from renderer import WorkflowsRenderer, ExperimentRenderer
 from config import MESSAGE_BROKER_URI, ARCHIVE_HOST, ARCHIVE_PORT
 
 class Application(tornado.web.Application):
@@ -28,6 +28,8 @@ class Application(tornado.web.Application):
         self._mongo_conn = pymongo.MongoClient(ARCHIVE_HOST, ARCHIVE_PORT)
         self._start_archive_consumer()
         handlers = [
+                  (r'/', WorkflowsRenderer, dict(db=self._mongo_conn)),
+                  (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)', ExperimentRenderer, dict(db=self._mongo_conn)),
                 # workflows
 #                 (r'/', WorkflowRender, dict(db=self._mongo_conn)),
                 # experiments

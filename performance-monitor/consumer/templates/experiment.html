@@ -1,92 +1,10 @@
-{% import datetime %}
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <title>Experiment</title>
-<link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
-<link rel="stylesheet" href="{{static_url('css/experiment.css')}}"/>
-<link rel="stylesheet" href="{{static_url('css/legend.css')}}" />
-<script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
-<script src="{{static_url('js/bootstrap.min.js')}}"></script>
-<script src="{{static_url('js/Chart.min.js')}}">
-var Chartjs = Chart.noConflict();
-</script>
-<script src="{{static_url('js/legend.js')}}"></script>
-<script src="{{static_url('js/utils.js')}}"></script>
-<script src="{{static_url('js/experiment.js')}}"></script>
 </head>
 <body>
-<h1>Experiments</h1>
-<h2>Listing</h2>
-<table id="experiments" class="table table-hover">
-	<thead>
-		<tr>
-			<th>ID</th>
-			<th>Type</th>
-			<th>Status</th>
-			<th>Nodes</th>
-			<th>Last updated time</th>
-			<th>Walltime</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% for e in experiments %}
-				<tr>
-					<td><a href="/types/{{e['name']}}/experiments/{{e['expid']}}">{{e['expid']}}</a></td>
-					<td>{{e['name']}}</td>
-					<td>{{e['status']}}</td>
-					<td>{{ ','.join(e['nodes']) }}</td>
-					<td>{{datetime.datetime.fromtimestamp(e['timestamp'] / 1000).strftime("%Y-%m-%d %H:%M:%S")}}</td>
-					<td>{{e['walltime'] if 'walltime' in e else '-'}}</td>
-				</tr>
-		{% end %}
-	</tbody>
-</table>
-<h2>Trend</h2>
-<div class="chart">
-	<h3>Walltime</h3>
-	<canvas id="walltime"></canvas>
-	<div id="walltime_legend"></div>
-</div>
 
-<div id="runtime_chart">
-	<h3>Runtime</h3>
-	<ul id="runtime_tabs" class="nav nav-tabs">
-	{% for j in jobs %}
-		<li><a data-cmdline="{{j['job_id']}}" data-aspect="runtime">{{'%s ..' % j[:9] if len(j['cmdline']) >= 10 else j}}</a></li>
-	{% end %}
-	</ul>
-	<div id="runtime_paint" class="tab-content">
-		<canvas></canvas>
-		<div></div>
-	</div>
-</div>
-
-<div id="cpu_mem_chart">
-	<h3>CPU & Memory Usage</h3>
-	<ul id="cpu_mem_tabs" class="nav nav-tabs">
-	{% for j in jobs %}
-		<li><a data-cmdline="{{j['job_id']}}" data-aspect="cpu_mem">{{'%s ..' % j[:9] if len(j['cmdline']) >= 10 else j}}</a></li>
-	{% end %}
-	</ul>
-	<div id="cpu_mem_paint" class="tab-content">
-		<canvas></canvas>
-		<div></div>
-	</div>
-</div>
-
-<div id="rw_rate_chart">
-	<h3>Read/Write Rate</h3>
-	<ul id="rw_rate_tabs" class="nav nav-tabs">
-	{% for j in jobs %}
-		<li><a data-cmdline="{{j['job_id']}}" data-aspect="rw_rate">{{'%s ..' % j[:9] if len(j['cmdline']) >= 10 else j}}</a></li>
-	{% end %}
-	</ul>
-	<div id="rw_rate_paint" class="tab-content">
-		<canvas></canvas>
-		<div></div>
-	</div>
-</div>
-
+</body>
 </html>

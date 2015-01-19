@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Workflows</title>
+<link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
+<script src="{{static_url('js/bootstrap.min.js')}}"></script>
+<script src="{{static_url('js/utils.js')}}"></script>
+<script src="{{static_url('js/workflows.js')}}"></script>
+</head>
+<body>
+<section class="container">
+	<h1>Workflows</h1>
+	<h2>Listing</h2>
+	<table class="table table-hover">
+		<thead>
+			<tr>
+				<th>Workflow Type</th>
+				<th>Notes</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for w in workflows %}
+			<tr>
+				<td><a href="/workflows/{{w['name']}}">{{w['name']}}</a></td>
+				<td>{{w['notes']}}</td>
+			</tr>
+			{% end %}
+		</tbody>
+	</table>
+	<h2>Start A New Workflow</h2>
+	<div class="control-group">
+		<div id="types" class="field">
+			<label for="type">Workflow Type</label>
+			<div id="type">
+			{% for w in workflows %}
+				<label>
+					{{w['name']}}
+					<input type="radio" id="{{w['name']}}" name="type" value="{{w['name']}}" class="opts"/>
+				</label>
+			{% end %}	
+			</div>
+		</div>
+		<label for="topology">Topology</label>
+		<div id="topology">
+			<label>
+				intra-rack
+				<input type="radio" id="intra-rack" name="topology" value="intra-rack" class="opts"/>
+			</label>
+			<label>
+				inter-rack
+				<input type="radio" id="inter-rack" name="topology" value="inter-rack" class="opts"/>
+			</label>
+		</div>
+		<div id="node-num" class="field">
+			<label for="node-num">Node Number</label>
+			<input type="number" name="node-num" class="form-control" />
+		</div>
+		<button id="submit" class="btn btn-success pull-right">Submit</button>
+	</div>
+</section>
+</body>
+</html>
