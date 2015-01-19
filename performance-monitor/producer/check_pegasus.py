@@ -12,18 +12,19 @@ import shutil
 from multiprocessing import Process, Manager, RLock, Queue
 
 from message_sender import MessageSender
-from config import MESSAGE_BROKER_URI, TIMEOUT
+from config import MESSAGE_BROKER_URI, TIMEOUT, CONDOR_EXE_DIR
 
 class ProcessMonitor(object):
     '''
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, name, msg_q, executables, workdir):
+    def __init__(self, runid, type, msg_q, executables, workdir):
         '''
         Init
-        
-        :param str name: workflow name(montage or genomic)
+
+        :param str runid: experiment ID
+        :param str type: workflow type
         :param multiprocessing.Queue msg_q: system message queue for communication between the monitor and AMQP sender
         :param set executables: executables to be monitored
         :param str workdir: workflow working directory
@@ -31,15 +32,16 @@ class ProcessMonitor(object):
         '''
         manager = Manager()
        
-        self._name = name
+        
+        self._runid = runid
+        self._type = type
         self._msg_q = msg_q
         self._procs = set(executables)
         self._workdir = workdir
-        self._expid = str(uuid.uuid4())
         self._hostname = socket.gethostname()
         self._sender = MessageSender(
-                self._name, 
-                self._expid,
+                self._type, 
+                self._runid,
                 pika.URLParameters(MESSAGE_BROKER_URI), 
                 self._msg_q,
                 self._hostname,
@@ -49,9 +51,8 @@ class ProcessMonitor(object):
         self._timeout_counter = 0
         self._lock = RLock()
         self._stat = manager.dict({
+                    'runid': self._runid,
                     'host': self._hostname,
-                    'expid': self._expid,
-                    'name': self._name, 
                     'start_time': 0,
                     'terminate_time': 0,
                     'timestamp': 0,
@@ -100,31 +101,31 @@ class ProcessMonitor(object):
         :rtype - psutil.Process
         
         '''
-        if self._procs: # always true except no executable is passed in
-            for proc in psutil.process_iter():
-                try:
-                    if proc.name() == 'condor_starter':
-                        children = proc.children(recursive=True)
-                        for p in children:
-                            executable = None
-                            if p.name() == 'python':
-                                executable = p.cmdline()[1].split('/')[-1]
-                            elif p.name() == 'java':
-                                executable = p.parent().cmdline()[1].split('/')[-1]
-                            else:
-                                executable = p.name()
-                            if executable and executable in self._procs:
-                                if p.name() == 'python':
-                                    self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline() if arg != 'python'])
-                                elif p.name() == 'java':
-                                    self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.parent().cmdline() if arg != 'bash'])
-                                else:
-                                    self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()])
-                                wait = Process(target=psutil.wait_procs, args=([p], None, self.on_terminate))
-                                wait.start()
-                                return p
-                except psutil.NoSuchProcess:
-                    pass
+        if not os.listdir(CONDOR_EXE_DIR):
+            return None
+        proc = psutil.Process(int(os.listdir(CONDOR_EXE_DIR)[0][4:]))
+        try:
+            children = proc.children(recursive=True)
+            for p in children:
+                executable = None
+                if p.name() == 'python':
+                    executable = p.cmdline()[1].split('/')[-1]
+                elif p.name() == 'java':
+                    executable = p.parent().cmdline()[1].split('/')[-1]
+                else:
+                    executable = p.name()
+                if executable and executable in self._procs:
+                    if p.name() == 'python':
+                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline() if arg != 'python'])
+                    elif p.name() == 'java':
+                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.parent().cmdline() if arg != 'bash'])
+                    else:
+                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()])
+                    wait = Process(target=psutil.wait_procs, args=([p], None, self.on_terminate))
+                    wait.start()
+                    return p
+        except psutil.NoSuchProcess:
+            return None
 
     def run(self):
         '''
@@ -132,26 +133,23 @@ class ProcessMonitor(object):
          
         '''
         self._sender.start()
-        
-        # initialize
         self._msg_q.put({
-            'name': self._name,
-            'hostname': self._hostname,
-            'expid': self._expid,
-            'timestamp': int(time.time() * 1000),
-            'status': 'nascent',             
-            })
+           'runid': self._runid,
+           'type': self._type,
+           'hostname': self._hostname,
+           'timestamp': int(time.time() * 1000),
+           'status': 'workflow_init'
+        })
         while self._procs: # always true except no executable is passed in
             while not self._cur:
                 # timeout 
                 if self._timeout_counter >= TIMEOUT:
                     if self._hostname == 'master':
                         self._msg_q.put({
-                            'name': self._name,
+                            'runid': self._runid,
                             'hostname': self._hostname,
-                            'expid': self._expid,
                             'timestamp': int(time.time() * 1000),
-                            'status': 'finished',
+                            'status': 'workflow_finished',
                             'walltime': self._get_walltime(self._workdir)
                             })
                     else:
@@ -164,6 +162,11 @@ class ProcessMonitor(object):
             self._timeout_counter = 0
             with self._lock:
                 try:
+                    if not self._stat['status']:
+                        self._stat['status'] = 'started'
+                        self._stat['start_time'] = int(time.time() * 1000)
+                    else:
+                        self._stat['status'] = 'running'
                     self._stat['count'] += 1
                     cpu_percent = self._cur.cpu_percent()
                     self._stat['avg_cpu_percent'] += cpu_percent
@@ -172,17 +175,11 @@ class ProcessMonitor(object):
                     self._stat['total_write_count'] = self._cur.io_counters().write_count
                     self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                     self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
-                    if not self._stat['status']:
-                        self._stat['status'] = 'started'
-                        self._stat['start_time'] = int(time.time() * 1000)
-                    else:
-                        self._stat['status'] = 'running'
                         
                     print(self._cur.pid, self._stat['cmdline'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
                     self._msg_q.put({
+                        'runid': self._runid,
                         'host': self._hostname,
-                        'name': self._name,
-                        'expid': self._expid,
                         'timestamp': int(time.time() * 1000),
                         'cmdline': self._stat['cmdline'],
                         'cpu_percent': cpu_percent,
@@ -242,6 +239,7 @@ class ProcessMonitor(object):
 if __name__ == '__main__':
     try:
         ProcessMonitor(
+                str(uuid.uuid4()),
                 'genomic', 
                 Queue(), 
                 set(['bwa', 'java', 'python', 'samtools']),

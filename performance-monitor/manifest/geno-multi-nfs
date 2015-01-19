@@ -1,0 +1,259 @@
+<rdf:RDF
+    xmlns:j.0="http://geni-orca.renci.org/owl/storage.owl#"
+    xmlns:compute="http://geni-orca.renci.org/owl/compute.owl#"
+    xmlns:kansei="http://geni-orca.renci.org/owl/kansei.owl#"
+    xmlns:ethernet="http://geni-orca.renci.org/owl/ethernet.owl#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:modify-schema="http://geni-orca.renci.org/owl/modify.owl#"
+    xmlns:openflow="http://geni-orca.renci.org/owl/openflow.owl#"
+    xmlns:planetlab="http://geni-orca.renci.org/owl/planetlab.owl#"
+    xmlns:geni="http://geni-orca.renci.org/owl/geni.owl#"
+    xmlns:layer="http://geni-orca.renci.org/owl/layer.owl#"
+    xmlns:ip4="http://geni-orca.renci.org/owl/ip4.owl#"
+    xmlns:request-schema="http://geni-orca.renci.org/owl/request.owl#"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+    xmlns:domain="http://geni-orca.renci.org/owl/domain.owl#"
+    xmlns:ec2="http://geni-orca.renci.org/owl/ec2.owl#"
+    xmlns:topology="http://geni-orca.renci.org/owl/topology.owl#"
+    xmlns:app-color="http://geni-orca.renci.org/owl/app-color.owl#"
+    xmlns:dtn="http://geni-orca.renci.org/owl/dtn.owl#"
+    xmlns:time="http://www.w3.org/2006/time#"
+    xmlns:request="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#"
+    xmlns:owl="http://www.w3.org/2002/07/owl#"
+    xmlns:orca="http://geni-orca.renci.org/owl/orca.owl#"
+    xmlns:eucalyptus="http://geni-orca.renci.org/owl/eucalyptus.owl#"
+    xmlns:collections="http://geni-orca.renci.org/owl/collections.owl#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" > 
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-workers">
+    <ip4:localIPAddress rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-workers-ip-172-16-1-100"/>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#Interface"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107">
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107-master"/>
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107-Storage"/>
+    <layer:atLayer rdf:resource="http://geni-orca.renci.org/owl/ethernet.owl#EthernetNetworkElement"/>
+    <layer:bandwidth rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">500000000</layer:bandwidth>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkConnection"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#TermDuration">
+    <time:days rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1</time:days>
+    <rdf:type rdf:resource="http://www.w3.org/2006/time#DurationDescription"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Term">
+    <time:hasDurationDescription rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#TermDuration"/>
+    <rdf:type rdf:resource="http://www.w3.org/2006/time#Interval"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain">
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkDomain"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1">
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-workers"/>
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-master"/>
+    <layer:atLayer rdf:resource="http://geni-orca.renci.org/owl/ethernet.owl#EthernetNetworkElement"/>
+    <layer:bandwidth rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">500000000</layer:bandwidth>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#BroadcastConnection"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#master">
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107-master"/>
+    <request-schema:dependOn rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Storage"/>
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-master"/>
+    <request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">#!/usr/bin/env bash
+
+# host setup
+cat &gt;/etc/hosts &lt;&lt;EOF
+172.16.1.1  master.expnet   master   salt
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+EOF
+
+hostname master
+
+for i in {100..200}; do
+   name=$(($i - 100))
+   echo 172.16.1.$i  condor-w$name condor-w$name\.expnet &gt;&gt; /etc/hosts
+done
+
+# condor setup
+cat &gt;  /etc/condor/config.d/90-master &lt;&lt; EOF
+DAEMON_LIST = COLLECTOR, MASTER, NEGOTIATOR, SCHEDD
+CONDOR_HOST = master.expnet
+ALLOW_WRITE = *
+HOSTALLOW_READ = *
+HOSTALLOW_WRITE = *
+EOF
+mkdir -m 775 /var/log/condor
+chown condor:condor /var/log/condor
+service condor restart
+
+# NFS server setup
+mkdir -p /mnt/scratch
+chown -R pegasus-user:pegasus-user /mnt/scratch
+
+yum -y install nfs-utils nfs-utils-lib
+cat &gt;&gt; /etc/exports &lt;&lt; EOF
+/mnt/scratch *(rw,sync,no_root_squash,no_subtree_check)
+EOF
+exportfs -a
+/etc/init.d/rpcbind start
+/etc/init.d/nfs start
+
+# workflow setup 
+tar zxf /home/pegasus-user/genomics/references.tgz -C /home/pegasus-user/genomics
+chown -R pegasus-user:pegasus-user /home/pegasus-user/genomics
+sed -i 's/transfer="false"/transfer="true"/g' /home/pegasus-user/genomics/wf_exon_irods/dax.xml
+cat &gt; /home/pegasus-user/genomics/wf_exon_irods/sites.xml &lt;&lt;EOF
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;sitecatalog xmlns="http://pegasus.isi.edu/schema/sitecatalog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pegasus.isi.edu/schema/sitecatalog http://pegasus.isi.edu/schema/sc-4.0.xsd" version="4.0"&gt;
+    &lt;site  handle="local" arch="x86_64" os="LINUX"&gt;
+        &lt;directory type="shared-scratch" path="/mnt/scratch"&gt;
+            &lt;file-server operation="all" url="file:///mnt/scratch"/&gt;
+        &lt;/directory&gt;
+        &lt;directory type="local-storage" path="/mnt/scratch/output"&gt;
+            &lt;file-server operation="all" url="file:///mnt/scratch/output"/&gt;
+        &lt;/directory&gt;
+        &lt;profile namespace="env" key="PATH" &gt;/home/pegasus-user/iRODS/clients/icommands/bin:/bin:/usr/bin&lt;/profile&gt;
+        &lt;profile namespace="env" key="PEGASUS_HOME" &gt;/usr&lt;/profile&gt;
+        &lt;profile namespace="env" key="SSH_PRIVATE_KEY" &gt;/home/pegasus-user/creds/wf_key&lt;/profile&gt;
+        &lt;profile namespace="env" key="irodsEnvFile" &gt;/home/pegasus-user/.irods/.irodsEnv&lt;/profile&gt;
+    &lt;/site&gt;
+    &lt;site  handle="condor_pool" arch="x86_64" os="LINUX"&gt;
+        &lt;directory type="shared-scratch" path="/mnt/scratch"&gt;
+            &lt;file-server operation="all" url="file:///mnt/scratch"/&gt;
+        &lt;/directory&gt;
+        &lt;profile namespace="pegasus" key="style" &gt;condor&lt;/profile&gt;
+        &lt;profile namespace="condor" key="universe" &gt;vanilla&lt;/profile&gt;
+        &lt;profile namespace="env" key="PATH" &gt;/home/pegasus-user/iRODS/clients/icommands/bin:/bin:/usr/bin&lt;/profile&gt;
+        &lt;profile namespace="env" key="PEGASUS_HOME" &gt;/usr&lt;/profile&gt;
+    &lt;/site&gt;
+&lt;/sitecatalog&gt;
+EOF</request-schema:postBootScript>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
+    <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#geno-peg-irods"/>
+    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOLarge"/>
+    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ComputeElement"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107-master">
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#Interface"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#geno-peg-irods">
+    <topology:hasURL>http://geni-images.renci.org/images/claris/genopegirods/geno-peg-irods.xml</topology:hasURL>
+    <topology:hasGUID>076e6834f5c7ebd9eb1ecf481e72ef0befed8eb5</topology:hasGUID>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#DiskImage"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#">
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107"/>
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1"/>
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#workers"/>
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#master"/>
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Storage"/>
+    <request-schema:hasTerm rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Term"/>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/request.owl#Reservation"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-master">
+    <ip4:localIPAddress rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-master-ip-172-16-1-1"/>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#Interface"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-master-ip-172-16-1-1">
+    <ip4:netmask>255.255.255.0</ip4:netmask>
+    <layer:label_ID>172.16.1.1</layer:label_ID>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/ip4.owl#IPAddress"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-workers-ip-172-16-1-100">
+    <ip4:netmask>255.255.255.0</ip4:netmask>
+    <layer:label_ID>172.16.1.100</layer:label_ID>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/ip4.owl#IPAddress"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107-Storage">
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#Interface"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#workers">
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#VLAN1-workers"/>
+    <request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">#!/bin/bash
+function testSSH() {
+        local user=${1}
+        local host=${2}
+        local timeout=${3}
+        
+        SSH_OPTS="-q -o PreferredAuthentications=publickey -o HostbasedAuthentication=no -o PasswordAuthentication=no -o StrictHostKeyChecking=no"
+        
+        ssh -q -q $SSH_OPTS -o "BatchMode=yes" -o "ConnectTimeout ${timeout}"  ${user}@${host} "echo 2&gt;&amp;1" &amp;&amp; return 0 || return 1
+}
+
+# host setup
+while [ ! "$(ifconfig eth1|grep 'inet addr'|cut -d':' -f2|awk '{print $1}'|cut -d'.' -f4)" ];do
+    sleep 10
+done
+ip_end=$(ifconfig eth1|grep 'inet addr'|cut -d':' -f2|awk '{print $1}'|cut -d'.' -f4)
+name=$(($ip_end-100))
+MY_HOSTNAME="condor-w$name"
+hostname $MY_HOSTNAME
+
+MASTER=172.16.1.1
+cat &gt;/etc/hosts &lt;&lt;EOF
+$MASTER   master.expnet   master   salt
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+EOF
+
+for i in {100..200}; do
+   name=$(($i-100))
+   echo 172.16.1.$i  condor-w$name\.expnet condor-w$name &gt;&gt; /etc/hosts
+done
+
+# condor setup
+cat &gt;  /etc/condor/config.d/90-worker &lt;&lt; EOF
+DAEMON_LIST = MASTER, STARTD, SCHEDD
+CONDOR_HOST = master.expnet
+ALLOW_WRITE = *
+HOSTALLOW_READ = *
+HOSTALLOW_WRITE = *
+EOF
+
+UNPINGABLE=true
+for ((i=0;i&lt;60;i+=1));
+do
+      echo "testing ping, try: $i " &gt;&gt; /tmp/bootscript.out
+      PING=`ping -c 3 master &gt; /dev/null 2&gt;&amp;1`
+      if [ "$?" = "0" ]; then
+           UNPINGABLE=false
+           break
+       fi
+       sleep 10
+done
+mkdir -m 775 /var/log/condor
+chown condor:condor /var/log/condor
+service condor restart
+
+# NFS setup
+mkdir -p /mnt/scratch
+chown -R pegasus-user:pegasus-user /mnt/scratch
+yum -y install nfs-utils nfs-utils-lib
+cat &gt;&gt; /etc/fstab &lt;&lt; EOF
+$MASTER:/mnt/scratch       /mnt/scratch    nfs     vers=3,proto=tcp,hard,nolock,intr,timeo=600,retrans=2,wsize=32768,rsize=32768   0       0
+EOF
+mount -a
+
+# workflow setup
+tar zxf /home/pegasus-user/genomics/references.tgz -C /home/pegasus-user/genomics
+chown -R pegasus-user:pegasus-user /home/pegasus-user/genomics</request-schema:postBootScript>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
+    <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#geno-peg-irods"/>
+    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOLarge"/>
+    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
+    <layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">6</layer:numCE>
+    <request-schema:groupName>workers</request-schema:groupName>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ServerCloud"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Storage">
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107-Storage"/>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
+    <j.0:doFormat rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</j.0:doFormat>
+    <j.0:hasMntPoint rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/mnt/scratch </j.0:hasMntPoint>
+    <j.0:hasFSParam rdf:datatype="http://www.w3.org/2001/XMLSchema#string">-F -b 2048</j.0:hasFSParam>
+    <j.0:hasFSType rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ext4</j.0:hasFSType>
+    <j.0:storageCapacity rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">150</j.0:storageCapacity>
+    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/storage.owl#LUN"/>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/storage.owl#ISCSI"/>
+  </rdf:Description>
+</rdf:RDF>

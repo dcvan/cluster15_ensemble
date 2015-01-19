@@ -6,7 +6,7 @@ Created on Jan 12, 2015
 import json
 import uuid
 
-from config import EXCHANGE_NAME, DB_NAME
+from config import EXCHANGE_NAME, DB_NAME, BUF_SIZE
 
 class MessageConsumer(object):
     '''
@@ -196,6 +196,7 @@ class ArchiveConsumer(MessageConsumer):
         
         '''
         super(ArchiveConsumer, self).__init__('#')
+        self._buf = []
         self._db = db
     
     def stop(self):
@@ -216,56 +217,23 @@ class ArchiveConsumer(MessageConsumer):
        
         '''
         data = json.loads(body)
-        if 'cmdline' in data:
-            if 'cmdline'  not in self._db[DB_NAME].collection_names():
-                self._db[DB_NAME]['cmdline'].insert({
-                        'id': uuid.uuid4(),
-                        'cmdline': data['cmdline']
-                    })
-            else:
-                rs =  self._db[DB_NAME]['cmdline'].find({'cmdline': data['cmdline']})
-                if rs.count() == 0:
-                    self._db[DB_NAME]['cmdline'].insert({
-                        'id': uuid.uuid4(),
-                        'cmdline': data['cmdline']
-                    })
-                else:
-                    data['job_id'] = self._db[DB_NAME]['cmdline'].find_one({
-                        'cmdline': data['cmdline']
-                    })['id']
-                    del data['cmdline']
         if 'status' in data:
-            if data['status'] == 'nascent':
-                data['status'] = 'running'
-                if 'workflow' not in self._db[DB_NAME].collection_names() or self._db[DB_NAME]['workflow'].find({'name': data['name']}).count() == 0:
-                    self._db[DB_NAME]['workflow'].insert({
-                            'name': data['name'],
-                            'timestamp': data['timestamp']
-                            })
-                if 'experiment' not in self._db[DB_NAME].collection_names():
-                    data['nodes'] = []
-                    data['nodes'].append(data['hostname'])
-                    del data['hostname']
-                    self._db[DB_NAME]['experiment'].insert(data)
-                elif self._db[DB_NAME]['experiment'].find({'expid': data['expid']}).count() == 0:
-                    data['nodes'] = []
-                    data['nodes'].append(data['hostname'])
-                    del data['hostname']
-                    self._db[DB_NAME]['experiment'].insert(data)
-                else:
-                    self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$addToSet': {'nodes': data['hostname'], 'timestamp': data['timestamp']}})
-            elif data['status'] == 'finished':
-                if data['walltime']:
-                    self._db[DB_NAME]['experiment'].update({'expid': data['expid']}, {'$set': data}, upsert=True)
+            if data['status'] == 'workflow_init':
+                self._db[DB_NAME]['workflow_run'].insert({
+                        'type': data['type'],
+                        'runid': data['runid'],
+                        'timestamp': data['timestamp'],
+                    }) 
+                self._db[DB_NAME]['run'].insert(data)
+            elif data['status'] == 'workflow_finished':
+                self._db[DB_NAME]['run'].insert(data)
             else:
-                '''
-                if data['status'] == 'terminated':
-                    if data['count'] <= 1:
-                        self._db[DB_NAME]['update'].remove({'expid': data['expid'], 'start_time': data['start_time']})
-                        return
-                ''' 
-                self._db[DB_NAME]['update'].insert(data)
+                # running/terminated
+                if len(self._buf) < BUF_SIZE:
+                    self._buf.append(data)
+                else:
+                    self._db[DB_NAME]['update'].insert(self._buf);
+                    self._buf = []    
         else:
             # garbled message
             pass
-        

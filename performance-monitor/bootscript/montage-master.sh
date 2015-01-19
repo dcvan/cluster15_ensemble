@@ -75,8 +75,8 @@ RUN_DIR=\$TOP_DIR
 
 cd \$RUN_DIR
 cp \$TOP_DIR/workflow/dag.xml .
-for BINARY in \$(cd $MONTAGE_HOME/bin && ls); do
-    name=$BINARY:3.3
+for BINARY in \$(cd \$MONTAGE_HOME/bin && ls); do
+    name=\$BINARY:3.3
     if [ "\${BINARY}" = "mFitplane" ] || [ "\$BINARY" = "mDiff" ]; then
 	name=\$BINARY
     fi
