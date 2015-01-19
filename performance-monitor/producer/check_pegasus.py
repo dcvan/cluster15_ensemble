@@ -237,7 +237,7 @@ class ProcessMonitor(object):
             # can be pre-mature workflow run or working directory does not exist
             return None
             
-class WorkflowMonitor(subprocess.Process):
+class WorkflowMonitor(multiprocessing.Process):
     '''
     Monitor workflow status
     
@@ -248,7 +248,7 @@ class WorkflowMonitor(subprocess.Process):
         :param subprocess.Queue queue: shared queue to signal workflow is done and send 
                                                                    workflow statistics back
         '''
-        subprocess.Process.__init__(self)
+        multiprocessing.Process.__init__(self)
         self._queue = queue
         
     def run(self):
