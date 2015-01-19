@@ -11,11 +11,11 @@ function testSSH() {
 }
 
 # host setup
-while [ ! "$(ifconfig eth1)" ];do
+while [ ! "$(ifconfig eth1|grep 'inet addr'|cut -d':' -f2|awk '{print $1}'|cut -d'.' -f4)" ];do
     sleep 10
 done
 
-ip_end=`ifconfig eth1|grep 'inet addr'|cut -d':' -f2|awk '{print $1}'|cut -d'.' -f4`
+ip_end=$(ifconfig eth1|grep 'inet addr'|cut -d':' -f2|awk '{print $1}'|cut -d'.' -f4)
 
 MASTER=172.16.1.1
 
@@ -79,4 +79,9 @@ cat >> /etc/fstab << EOF
 $MASTER:/mnt/scratch       /mnt/scratch    nfs     vers=3,proto=tcp,hard,nolock,intr,timeo=600,retrans=2,wsize=32768,rsize=32768   0       0
 EOF
 mount -a
+
+# monitor setup
+yum -y install python-pip python-devel git
+pip install pika tornado psutil
+git clone https://github.com/dcvan/cluster15_ensemble.git
 

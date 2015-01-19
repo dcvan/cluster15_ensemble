@@ -68,3 +68,8 @@ cat > /home/pegasus-user/genomics/wf_exon_irods/sites.xml <<EOF
     </site>
 </sitecatalog>
 EOF
+
+# monitor setup
+yum -y install python-pip python-devel git
+pip install pika tornado psutil
+git clone https://github.com/dcvan/cluster15_ensemble.git

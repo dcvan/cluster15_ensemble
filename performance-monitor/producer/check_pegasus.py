@@ -129,7 +129,7 @@ class ProcessMonitor(object):
                 return
             self._stat['status'] = 'terminated'
             self._stat['terminate_time'] = int(time.time() * 1000)
-            self._stat['runtime'] = time.time() - proc.create_time()
+            self._stat['runtime'] = self._stat['terminate_time'] - proc.create_time()
             if self._stat['count'] > 1:
                 self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
                 self._stat['avg_mem_percent'] /= self._stat['count']
@@ -214,7 +214,7 @@ class ProcessMonitor(object):
                     try:
                         if not self._stat['status']:
                             self._stat['status'] = 'started'
-                            self._stat['start_time'] = int(time.time() * 1000)
+                            self._stat['start_time'] = self._cur.create_time()
                         else:
                             self._stat['status'] = 'running'
                         self._stat['count'] += 1

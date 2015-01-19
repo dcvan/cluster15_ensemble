@@ -67,4 +67,4 @@ sed -i 's/transfer="false"/transfer="true"/g' $geno_home/wf_exon_irods/dax.xml
 yum -y install git python-pip python-devel
 pip install pika psutil tornado
 
-git clone https://github.com/dcvan/cluster15_ensemble.git ~
+git clone https://github.com/dcvan/cluster15_ensemble.git

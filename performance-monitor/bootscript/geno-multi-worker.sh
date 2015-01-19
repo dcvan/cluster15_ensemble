@@ -66,3 +66,8 @@ mount -a
 # workflow setup
 tar zxf /home/pegasus-user/genomics/references.tgz -C /home/pegasus-user/genomics
 chown -R pegasus-user:pegasus-user /home/pegasus-user/genomics
+
+# monitor setup
+yum -y install python-pip python-devel git
+pip install pika tornado psutil
+git clone https://github.com/dcvan/cluster15_ensemble.git
