@@ -85,7 +85,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             exp['bandwidth'] = 500000000
         if exp['storage_site'] == 'remote' and not exp['storage_size']:
             exp['storage_size'] = 50
-        exp['resource_type'] = 'BareMetalCE'  if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
+        exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
         exp['executables'] = self._db[DB_NAME]['workflow'].find_one({'name': workflow}, {'_id': 0})['executables']
         manifest = jinja2.Template(template).render(param=exp)
         exp['worker_size'] = self._db[DB_NAME]['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
