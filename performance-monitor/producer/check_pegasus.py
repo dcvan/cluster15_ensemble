@@ -8,7 +8,7 @@ import subprocess
 import os
 import re
 import shutil
-import optparse
+import argparse
 from multiprocessing import Process, Manager, RLock, Queue, Value
 
 from message_sender import MessageSender
@@ -332,18 +332,17 @@ class ProcessMonitor(object):
     
 if __name__ == '__main__':
     try:
-        usage = 'usage: %prog [options] arg'
-        parser = optparse.OptionParser(usage)
-        parser.add_option('-i', '--id', dest='exp_id', help='Experiment ID')
-        parser.add_option('-w', '--workdir-base', dest='workdir_base', help='Workflow working directory base')
-        parser.add_option('-n', '--run-nums', dest='run_num', help='Number of planned runs')
-        parser.add_option('-l', '--exec-list', nargs='+', dest='executables', help='Executables to be monitored')
-        (options, args) = parser.parse_args()
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-i', '--id', dest='exp_id', type=str, help='Experiment ID', required=True)
+        parser.add_argument('-w', '--workdir-base', dest='workdir_base', type=str, help='Workflow working directory base')
+        parser.add_argument('-n', '--run-num', dest='run_num', type=int, help='Number of planned runs')
+        parser.add_argument('-l', '--exec-list', nargs='+', type=str, dest='executables', help='Executables to be monitored')
+        args = parser.parse_args()
         
         ProcessMonitor(
-                options.exp_id,
-                options.executables,
-                options.workdir_base,
-                options.run_num).run()
+                args.exp_id,
+                args.executables,
+                args.workdir_base,
+                args.run_num).run()
     except KeyboardInterrupt:
         pass
