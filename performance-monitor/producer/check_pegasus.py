@@ -89,8 +89,8 @@ class SystemMonitor(Process):
                 'sys_mem_percent': psutil.virtual_memory().percent,
                 'sys_read_bytes': psutil.disk_io_counters().read_bytes,
                 'sys_write_bytes': psutil.disk_io_counters().write_bytes,
-                'sys_net_bytes_sent': psutil.net_io_counters().bytes_sent,
-                'sys_net_bytes_recv': psutil.net_io_counters().bytes_recv,
+                'sys_net_bytes_sent': int(psutil.net_io_counters().bytes_sent),
+                'sys_net_bytes_recv': int(psutil.net_io_counters().bytes_recv),
             })
             time.sleep(5)
         

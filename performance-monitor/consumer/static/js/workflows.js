@@ -14,7 +14,8 @@ $(document).ready(function(){
 				'worker_num': $('#worker-num input').val(),
 				'reservation': $('#reservation input').val(),
 				'bandwidth': $('#bandwidth input').val() * 1000 * 1000,
-				'storage_size': $('#storage-size input').val()
+				'storage_size': $('#storage-size input').val(),
+				'interval': $('#interval input').val()
 			};
 		console.log(JSON.stringify(data));
 		$.ajax({
