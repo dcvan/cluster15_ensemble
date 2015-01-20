@@ -8,7 +8,8 @@ import subprocess
 import os
 import re
 import shutil
-from multiprocessing import Process, Manager, RLock, Queue, Array, Value
+import optparse
+from multiprocessing import Process, Manager, RLock, Queue, Value
 
 from message_sender import MessageSender
 from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR
@@ -18,86 +19,124 @@ class WorkflowMonitor(Process):
     Monitor workflow status
     
     '''
-    def __init__(self, done, status, workdirs):
+    def __init__(self, done, workdir_base, run_num):
         '''
         
         :param subprocess.Value done: number of done workflows
-        :param subprocess.Array status: whether the workflow is done
         :param str workdirs: workflow working directories
         
         '''
         Process.__init__(self)
-        self._status = status
-        self._workdirs = workdirs
-        self._cmd = [('pegasus-status -l %s' % self._workdirs[i]).split(' ') for i in range(0, len(self._workdirs))]
+        self._workdir_base = workdir_base
+        self._run_num = run_num
         self._done = done
+        self._finished = set({})
         
     def run(self):
         '''
         Override
         
         '''
-        while self._done.value < len(self._workdirs):
-            for i in range(0, len(self._workdirs)):
-                if os.path.isdir(self._workdirs[i]):
-                    p = subprocess.Popen(self._cmd[i], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    out, err = p.communicate()
-                    if not err:
-                        for l in out.split('\n'):
-                            if re.match('[ \t]+[0-9]+', l):
-                                if re.split('[ \t]+', l)[9] == 'Running':
-                                    self._status[i] = 1
-                                else:
-                                    self._status[i] = 0
-                                    self._done.value += 1
-                                break
-                    else:
-                        pass
+        while self._done.value < self._run_num:
+            if os.path.isdir(self._wordir_base):
+                workdirs = os.listdir(self._workdir_base)
+                for w in workdirs:
+                    if w in self._finished: continue
+                    d = '%s%s' % (self._workdir_base, w) if self._workdir_base[-1] == '/' else '%s/%s' % (self._workdir_base, w)
+                    if os.path.isdir(d):
+                        out, err = subprocess.Popen(('pegasus-status -l %d' % d).split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+                        if not err:
+                            for l in out.split('\n'):
+                                if re.match('[ \t]+[0-9]+', l):
+                                    if re.split('[ \t]+', l)[9] != 'Running':
+                                        self._finished.add(w)
+                                        self._done.value += 1
+                                    break
                 time.sleep(10)
                              
+class SystemMonitor(Process):
+    '''
+    System resource usage monitor
+    
+    '''
+    def __init__(self, exp_id, msg_q):
+        '''
+        
+        :param str exp_id: experiment ID
+        :param subprocess.Queue msg_q: message queue for sending data to message sender
+        
+        '''
+        Process.__init__(self)
+        self._exp_id = exp_id
+        self._msg_q = msg_q
+        self._hostname = socket.gethostname()
+        
+    def run(self):
+        '''
+        Override
+        
+        '''
+        while True:
+            while not os.listdir(CONDOR_EXE_DIR):
+                print('Waiting ...')
+                time.sleep(5)
+            self._msg_q.put({
+                'exp_id': self._exp_id,
+                'type': 'system',
+                'host': self._hostname,
+                'timestamp': time.time(),
+                'sys_cpu_percent': psutil.cpu_percent(),
+                'sys_mem_percent': psutil.virtual_memory().percent,
+                'sys_read_bytes': psutil.disk_io_counters().read_bytes,
+                'sys_write_bytes': psutil.disk_io_counters().write_bytes,
+                'sys_net_bytes_sent': psutil.net_io_counters().bytes_sent,
+                'sys_net_bytes_recv': psutil.net_io_counters().bytes_recv,
+            })
+            time.sleep(5)
+        
+    
 class ProcessMonitor(object):
     '''
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, exp_id, workflow, executables, workdirs=None):
+    def __init__(self, exp_id, executables, interval, workdir_base=None, run_num=0):
         '''
         Init
 
         :param str exp_id: experiment ID
-        :param str workflow: workflow type
         :param set executables: executables to be monitored
         :param str workdirs: workflow working directories
         
         '''
         manager = Manager()
-       
         
         self._exp_id = exp_id
-        self._workflow = workflow
         self._msg_q = Queue()
         self._procs = set(executables)
-        self._workdirs = workdirs
+        self._interval = interval
+        self._workdir_base = workdir_base
+        self._run_num = run_num
         self._hostname = socket.gethostname()
         self._sender = MessageSender(
-                self._workflow, 
                 self._exp_id,
                 pika.URLParameters(MESSAGE_BROKER_URI), 
                 self._msg_q,
                 self._hostname,
                 )
-        if self._workdirs:
-            self._status = Array('b', [1] * len(self._workdirs))
+        if self._workdir_base:
             self._done = Value('i', 0)
-            self._status_monitor = WorkflowMonitor(self._done, self._status, self._workdirs)
-        self._is_worker = True if not self._workdirs else self._find_startd()
+            self._status_monitor = WorkflowMonitor(self._done, self._workdir_base, self._run_num)
+        self._is_worker = True if not self._workdir_base else self._find_startd()
+        if self._is_worker:
+            self._system_monitor = SystemMonitor(self._exp_id, self._msg_q)
         self._cur = None
-        self._interval = 1
         self._lock = RLock()
         self._stat = manager.dict({
                     'exp_id': self._exp_id,
                     'host': self._hostname,
                     'start_time': 0,
+                    'type': 'process',
                     'terminate_time': 0,
                     'timestamp': 0,
                     'count':0,
@@ -105,12 +144,8 @@ class ProcessMonitor(object):
                     'runtime': 0.0,
                     'avg_cpu_percent': 0.0,
                     'avg_mem_percent': 0.0,
-                    'total_read_count': 0,
-                    'total_write_count': 0,
                     'total_read_bytes': 0,
                     'total_write_bytes': 0,
-                    'read_rate': 0,
-                    'write_rate': 0,
                     'status': None,
                     })
     
@@ -125,7 +160,7 @@ class ProcessMonitor(object):
             if not self._stat['cmdline']: 
                 return
             self._stat['status'] = 'terminated'
-            self._stat['terminate_time'] = int(time.time())
+            self._stat['terminate_time'] = time.time()
             self._stat['runtime'] = self._stat['terminate_time'] - proc.create_time()
             if self._stat['count'] > 1:
                 self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
@@ -133,7 +168,7 @@ class ProcessMonitor(object):
             else:
                 self._stat['avg_cpu_percent'] = 0
                 self._stat['avg_mem_percent'] = 0
-            self._stat['timestamp'] = int(time.time())
+            self._stat['timestamp'] = time.time()
             self._msg_q.put(dict(self._stat))
             print(self._stat)
 
@@ -177,28 +212,21 @@ class ProcessMonitor(object):
          
         '''
         self._sender.start()
-        
-        if self._workdirs:
+        if self._workdir_base:
             # master-specific config
-            self._msg_q.put({
-               'exp_id': self._exp_id,
-               'workflow': self._workflow,
-               'hostname': self._hostname,
-               'timestamp': int(time.time()),
-               'status': 'workflow_init'
-            })
             self._status_monitor.start()
 
         if self._is_worker:
+            self._system_monitor.start()
             while True:
                 while not self._cur: 
                     print('Waiting ...')
-                    if (self._workdirs and self._done.value >= len(self._workdirs)):
+                    if (self._workdir_base and self._done.value >= self._run_num):
                         break;
                     self._cur = self.find_process()
                     if self._cur: break
                     time.sleep(self._interval)
-                if self._workdirs and self._done.value >= len(self._workdirs):
+                if self._workdir_base and self._done.value >= self._run_num:
                     break;
                 with self._lock:
                     try:
@@ -220,17 +248,14 @@ class ProcessMonitor(object):
                         self._msg_q.put({
                             'exp_id': self._exp_id,
                             'host': self._hostname,
-                            'timestamp': int(time.time()),
+                            'type': 'process',
+                            'timestamp': time.time(),
                             'cmdline': self._stat['cmdline'],
                             'cpu_percent': cpu_percent,
                             'memory_percent': self._cur.memory_percent(),
                             'start_time': self._stat['start_time'],
-                            'total_read_count': self._stat['total_read_count'],
-                            'total_write_count': self._stat['total_write_count'],
                             'total_read_bytes': self._stat['total_read_bytes'],
                             'total_write_bytes': self._stat['total_write_bytes'],
-                            'sys_cpu_percent': psutil.cpu_percent(),
-                            'sys_mem_percent': psutil.virtual_memory().percent,
                             'status': self._stat['status'],
                         })
                     except psutil.NoSuchProcess:
@@ -243,27 +268,27 @@ class ProcessMonitor(object):
                             self._stat['terminate_time'] = 0
                             self._stat['avg_cpu_percent']= 0.0
                             self._stat['avg_mem_percent'] = 0.0
-                            self._stat['total_read_count'] = 0
-                            self._stat['total_write_count'] = 0
                             self._stat['total_read_bytes'] = 0
                             self._stat['total_write_bytes'] = 0
                             self._stat['timestamp'] = 0
                             self._stat['status'] = None
 #                time.sleep(self._interval)
         else:
-            while self._done.value < len(self._workdirs):
+            while self._done.value < self._run_num:
                 time.sleep(10)
                   
-        if self._workdirs: 
-            for w in self._workdirs:
-                self._msg_q.put({
-                    'exp_id': self._exp_id,
-                    'run_id': int(w[-2] if w[-1] == '/' else w[-1]),
-                    'hostname': self._hostname,
-                    'timestamp': int(time.time()),
-                    'status': 'workflow_finished',
-                    'walltime': self._get_walltime(w)
-                })
+        if self._workdir_base: 
+            if os.path.isdir(self._workdir_base):
+                for w in os.listdir(self._workdir_base):
+                    d = '%s%s' % (self._workdir_base, w) if self._workdir_base[-1] == '/' else '%s/%s' % (self._workdir_base, w)
+                    self._msg_q.put({
+                        'exp_id': self._exp_id,
+                        'run_id': int(d[-1]),
+                        'type': 'workflow',
+                        'timestamp': time.time(),
+                        'status': 'finished',
+                        'walltime': self._get_walltime(d)
+                    })
         self._msg_q.put(None)
                 
             
@@ -306,34 +331,19 @@ class ProcessMonitor(object):
         return False
     
 if __name__ == '__main__':
-    executables = {
-            'montage': ['mMakeHdr-3.3', 'mExecTG-3.3', 'mMakeImg-3.3', 'mDAGFiles-3.3', 'mImgtbl-3.3', 
-                        'mAddExec-3.3', 'mTileHdr-3.3', 'mPresentation-3.3', 'mSubset-3.3', 'mGetHdr-3.3',
-                        'mConvert-3.3', 'mHdrtbl-3.3', 'mAdd-3.3', 'mArchiveList-3.3', 'mExamine-3.3', 
-                        'mExec-3.3', 'mArchiveGet-3.3', 'mDAG-3.3', 'mFixNaN-3.3', 'mDAGGalacticPlane-3.3', 
-                        'mBestImage-3.3', 'mTblSort-3.3', 'mQuickSearch-3.3', 'mHdr-3.3', 'mDiffFit-3.3', 
-                        'mCoverageCheck-3.3', 'mArchiveExec-3.3', 'mConcatFit-3.3', 'mProjectPP-3.3', 
-                        'mNotifyTG-3.3', 'mJPEG-3.3', 'mFlattenExec-3.3', 'mSubimage-3.3', 'mCatMap-3.3', 
-                        'mShrinkHdr-3.3', 'mPutHdr-3.3', 'mDiffFitExec-3.3', 'mGridExec-3.3', 
-                        'mHdrCheck-3.3', 'mFixHdr-3.3', 'mPix2Coord-3.3', 'mTileImage-3.3', 'mDiff-3.3', 'mFitplane-3.3', 
-                        'mShrink-3.3', 'mRotate-3.3', 'mDAGTbls-3.3', 'mBgExec-3.3', 'mFitExec-3.3', 'mNotify-3.3', 
-                        'mDiffExec-3.3', 'mTblExec-3.3', 'mBackground-3.3', 'mOverlaps-3.3', 'mBgModel-3.3', 'mProjExec-3.3', 
-                        'mProject-3.3', 'mTANHdr-3.3'],
-            'genomic':['bwa', 'picard', 'gatk', 'samtools'],
-        }
     try:
-        worker = False
-        for p in psutil.process_iter():
-            if p.name() == 'condor_startd':
-                worker = True
-                 
-        workflow = 'montage'
+        usage = 'usage: %prog [options] arg'
+        parser = optparse.OptionParser(usage)
+        parser.add_option('-i', '--id', dest='exp_id', help='Experiment ID')
+        parser.add_option('-w', '--workdir-base', dest='workdir_base', help='Workflow working directory base')
+        parser.add_option('-n', '--run-nums', dest='run_num', help='Number of planned runs')
+        parser.add_option('-l', '--exec-list', nargs='+', dest='executables', help='Executables to be monitored')
+        (options, args) = parser.parse_args()
+        
         ProcessMonitor(
-                '2c916df1-4cbb-4338-a0cc-169692d850fc',
-                workflow,
-                set(executables[workflow]),
-                ['/home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage/run0001',
-                 '/home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage/run0002',
-                 ] if not worker else None).run()
+                options.exp_id,
+                options.executables,
+                options.workdir_base,
+                options.run_num).run()
     except KeyboardInterrupt:
         pass

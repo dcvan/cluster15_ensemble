@@ -10,6 +10,7 @@ $(document).ready(function(){
 				'worker_size': $('#worker-size input:checked').val(),
 				'storage_site': $('#storage-site input:checked').val(),
 				'storage_type': $('#storage-type input:checked').val(),
+				'run_num': $('#run-num input').val(),
 				'worker_num': $('#worker-num input').val(),
 				'reservation': $('#reservation input').val(),
 				'bandwidth': $('#bandwidth input').val() * 1000 * 1000,

@@ -85,6 +85,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             exp['bandwidth'] = 500000000
         if exp['storage_site'] == 'remote' and not exp['storage_size']:
             exp['storage_size'] = 50
+        exp['executables'] = self._db[DB_NAME]['workflow'].find_one({'name': workflow}, {'_id': 0})['executables']
         manifest = jinja2.Template(template).render(param=exp)
         exp['worker_size'] = self._db[DB_NAME]['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
         exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
@@ -107,6 +108,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             exp['bandwidth'] = 500000000
         if exp['storage_site'] == 'remote' and not exp['storage_size']:
             exp['storage_size'] = 50
+        exp['executables'] = self._db[DB_NAME]['workflow'].find_one({'name': workflow}, {'_id': 0})['executables']
         manifest = jinja2.Template(template).render(param=exp)
         self.set_header('Content-Type', 'application/rdf+xml')
         self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode']]))

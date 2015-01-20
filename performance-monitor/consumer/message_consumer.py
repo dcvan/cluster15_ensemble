@@ -195,7 +195,8 @@ class ArchiveConsumer(MessageConsumer):
         
         '''
         super(ArchiveConsumer, self).__init__('#')
-        self._buf = []
+        self._sys_buf = []
+        self._proc_buf = []
         self._db = db
     
     def stop(self):
@@ -216,23 +217,24 @@ class ArchiveConsumer(MessageConsumer):
        
         '''
         data = json.loads(body)
-        if 'status' in data:
-            if data['status'] == 'workflow_init':
-                self._db[DB_NAME]['workflow_run'].insert({
-                        'workflow': data['workflow'],
-                        'exp_id': data['exp_id'],
-                        'timestamp': data['timestamp'],
-                    }) 
-                self._db[DB_NAME]['run'].insert(data)
-            elif data['status'] == 'workflow_finished':
+        if 'type' in data:
+            if data['type'] == 'system':
+                del data['type']
+                if len(self._sys_buf) < BUF_SIZE:
+                    self._sys_buf.append(data)
+                else:
+                    self._db[DB_NAME]['system'].insert(self._sys_buf)
+                    self._sys_buf = []
+            elif data['type'] == 'workflow':
+                del data['type']
                 self._db[DB_NAME]['run'].insert(data)
             else:
-                # running/terminated
-                if len(self._buf) < BUF_SIZE:
-                    self._buf.append(data)
+                del data['type']
+                if len(self._proc_buf) < BUF_SIZE:
+                    self._proc_buf.append(data)
                 else:
-                    self._db[DB_NAME]['update'].insert(self._buf);
-                    self._buf = []    
+                    self._db[DB_NAME]['update'].insert(data)
+                    self._proc_buf = []
         else:
             # garbled message
             pass

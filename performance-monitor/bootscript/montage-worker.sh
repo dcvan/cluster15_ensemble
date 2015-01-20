@@ -85,3 +85,7 @@ yum -y install python-pip python-devel git
 pip install pika tornado psutil
 git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 
+# start monitor
+python ~/cluster/performance-monitor/producer/check-pegasus.py -i abc -l aaa, bbb, ccc
+
+

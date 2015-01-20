@@ -17,10 +17,9 @@ class MessageSender(Process):
     
     '''
 
-    def __init__(self, name, expid, conn_param, msg_q, hostname):
+    def __init__(self, expid, conn_param, msg_q, hostname):
         '''
         
-        :param str name: workflow name
         :param int expid: experiment ID
         :param pika.connection.ConnectionParameters conn_param: AMQP connection parameters
         :param multiprocessing.Queue: system message queue for communication between the monitor
@@ -29,7 +28,6 @@ class MessageSender(Process):
         
         '''
         Process.__init__(self)
-        self._name = name
         self._conn_param = conn_param
         self._msg_q = msg_q
         self._conn = None
@@ -43,7 +41,7 @@ class MessageSender(Process):
     
     @property
     def name(self):
-        return self._name
+        return 'MessageSender'
     
     def run(self):
         '''
@@ -190,7 +188,9 @@ class MessageSender(Process):
             return
         msg = self._msg_q.get(True)
         if  msg:
-            topics = '%s.%s.%s.%s' % (self._name, self._expid, self._hostname, msg['status'], )
+            topics = '%s.%s.%s' % (self._expid, self._hostname, msg['type'])
+            if msg['type'] == 'process':
+                topics += '.%s' % msg['status']
             self._ch.basic_publish(
                      exchange=EXCHANGE_NAME, 
                      routing_key=topics,
