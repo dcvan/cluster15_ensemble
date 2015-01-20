@@ -7,8 +7,13 @@ $(document).ready(function(){
 				'type': $('#types input:checked').val(),
 				'topology': $('#topology input:checked').val(),
 				'mode': $('#mode input:checked').val(),
-				'node_num': $('#node-num input').val(), 
-				'reserve_days': $('#reserve-days input').val()
+				'worker_size': $('#worker-size input:checked').val(),
+				'storage_site': $('#storage-site input:checked').val(),
+				'storage_type': $('#storage-type input:checked').val(),
+				'worker_num': $('#worker-num input').val(),
+				'reservation': $('#reservation input').val(),
+				'bandwidth': $('#bandwidth input').val() * 1000 * 1000,
+				'storage_size': $('#storage-size input').val()
 			};
 		console.log(JSON.stringify(data));
 		$.ajax({

@@ -20,12 +20,23 @@
 		<dd>{{data['topology']}}</dd>
 		<dt>Mode</dt>
 		<dd>{{data['mode']}}</dd>
+		<dt>Storage Site</dt>
+		<dd>{{data['storage_site']}}</dd>
+		<dt>Storage Type</dt>
+		<dd>{{data['storage_type']}}</dd>
 		<dt>Status</dt>
 		<dd>{{data['status']}}</dd>
+		<dt>Worker Size</dt>
+		<dd>{{data['worker_size']}}</dd>
 		<dt>Worker Number</dt>
-		<dd>{{data['node_num']}}</dd>
+		<dd>{{data['worker_num']}}</dd>
 		<dt>Reservation</dt>
-		<dd>{{data['reserve_days']}} Days</dd>
+		<dd>{{data['reservation']}} Days</dd>
+		<dt>Bandwidth</dt>
+		<dd>{{data['bandwidth'] if data['bandwidth'] else '-'}} Mbps</dd>
+		<dt>Storage Size</dt>
+		<dd>{{data['storage_size'] if data['storage_size'] else '-'}} GB</dd>
+
 	</dl>
 	<form id="download" action="/workflows/{{data['type']}}/experiments/{{data['exp_id']}}" method="POST">
 	<h2>Manifest <small><a href="#" onclick="$('#download').submit();">Download</a></small></h2>

@@ -2,7 +2,6 @@
 
 import psutil
 import time
-import uuid
 import pika
 import socket
 import subprocess
@@ -12,7 +11,7 @@ import shutil
 from multiprocessing import Process, Manager, RLock, Queue, Array, Value
 
 from message_sender import MessageSender
-from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR, TIMEOUT
+from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR
 
 class WorkflowMonitor(Process):
     '''
@@ -94,8 +93,6 @@ class ProcessMonitor(object):
         self._is_worker = True if not self._workdirs else self._find_startd()
         self._cur = None
         self._interval = 1
-        if self._is_worker:
-            self._timeout_counter = 0
         self._lock = RLock()
         self._stat = manager.dict({
                     'exp_id': self._exp_id,
@@ -154,7 +151,7 @@ class ProcessMonitor(object):
         try:
             children = proc.children(recursive=True)
             for p in children:
-                executable = None               # timeout 
+                executable = None                
                 if p.name() == 'python':
                     executable = p.cmdline()[1].split('/')[-1]
                 elif p.name() == 'java':
@@ -198,19 +195,11 @@ class ProcessMonitor(object):
                     print('Waiting ...')
                     if (self._workdirs and self._done.value >= len(self._workdirs)):
                         break;
-                    if self._timeout_counter:
-                        if self._timeout_counter >= TIMEOUT:
-                            break
-                        self._timeout_counter += 1
                     self._cur = self.find_process()
                     if self._cur: break
                     time.sleep(self._interval)
                 if self._workdirs and self._done.value >= len(self._workdirs):
                     break;
-                if self._timeout_counter:
-                    if self._timeout_counter >= TIMEOUT:
-                        break
-                    self._timeout_counter = 0
                 with self._lock:
                     try:
                         if not self._stat['status']:
@@ -233,8 +222,6 @@ class ProcessMonitor(object):
                             'host': self._hostname,
                             'timestamp': int(time.time()),
                             'cmdline': self._stat['cmdline'],
-                            'sys_cpu_percent': psutil.cpu_percent(),
-                            'sys_mem_percent': psutil.virtual_memory().percent,
                             'cpu_percent': cpu_percent,
                             'memory_percent': self._cur.memory_percent(),
                             'start_time': self._stat['start_time'],
@@ -242,6 +229,8 @@ class ProcessMonitor(object):
                             'total_write_count': self._stat['total_write_count'],
                             'total_read_bytes': self._stat['total_read_bytes'],
                             'total_write_bytes': self._stat['total_write_bytes'],
+                            'sys_cpu_percent': psutil.cpu_percent(),
+                            'sys_mem_percent': psutil.virtual_memory().percent,
                             'status': self._stat['status'],
                         })
                     except psutil.NoSuchProcess:

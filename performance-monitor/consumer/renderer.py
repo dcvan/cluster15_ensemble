@@ -29,8 +29,14 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         GET method
         
         '''
-        rs = self._db[DB_NAME]['workflows'].find({}, {'_id': 0}).sort('name')
-        self.render('workflows.html', workflows=[w for w in rs])
+        data = {
+                'topology': [t for t in self._db[DB_NAME]['topology'].find({}, {'_id': 0})],
+                'mode': [m for m in self._db[DB_NAME]['mode'].find({}, {'_id': 0})],
+                'worker_size': [w for w in self._db[DB_NAME]['vm_size'].find({}, {'_id': 0})],
+                'storage_site': [ss for ss in self._db[DB_NAME]['storage_site'].find({}, {'_id': 0})],
+                'storage_type': [st for st in self._db[DB_NAME]['storage_type'].find({}, {'_id': 0})],
+            }
+        self.render('workflows.html', workflows=[w for w in self._db[DB_NAME]['workflow'].find({}, {'_id': 0}).sort('name')], data=data)
     
     def post(self):
         '''
@@ -71,10 +77,18 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         template = self._db[DB_NAME]['manifest'].find_one({
                     'type': exp['type'],
                     'topology': exp['topology'],
-                    'mode': exp['mode']
+                    'mode': exp['mode'],
+                    'storage_site': exp['storage_site'],
+                    'storage_type': exp['storage_type'],
                     }, {'_id': 0})['manifest']
+        if exp['mode'] == 'multinode' and not exp['bandwidth']:
+            exp['bandwidth'] = 500000000
+        if exp['storage_site'] == 'remote' and not exp['storage_size']:
+            exp['storage_size'] = 50
+        manifest = jinja2.Template(template).render(param=exp)
+        exp['worker_size'] = self._db[DB_NAME]['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
         exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
-        manifest = jinja2.Template(template).render(node_num=int(exp['node_num']), reserve_days=int(exp['reserve_days']))
+        if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
         self.render('experiment.html', manifest=manifest, data=exp)
 
     def post(self, workflow, exp_id):
@@ -85,9 +99,15 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         template = self._db[DB_NAME]['manifest'].find_one({
                     'type': exp['type'],
                     'topology': exp['topology'],
-                    'mode': exp['mode']
+                    'mode': exp['mode'],
+                    'storage_site': exp['storage_site'],
+                    'storage_type': exp['storage_type'],
                     }, {'_id': 0})['manifest']
-        manifest = jinja2.Template(template).render(node_num=int(exp['node_num']), reserve_days=int(exp['reserve_days']))
+        if exp['mode'] == 'multinode' and not exp['bandwidth']:
+            exp['bandwidth'] = 500000000
+        if exp['storage_site'] == 'remote' and not exp['storage_size']:
+            exp['storage_size'] = 50
+        manifest = jinja2.Template(template).render(param=exp)
         self.set_header('Content-Type', 'application/rdf+xml')
         self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode']]))
         self.write(manifest)

@@ -44,34 +44,66 @@
 		</div>
 		<label for="topology">Topology</label>
 		<div id="topology">
+			{% for t in data['topology'] %}
 			<label>
-				intra-rack
-				<input type="radio" id="intra-rack" name="topology" value="intra-rack" class="opts"/>
+				{{t['name']}}
+				<input type="radio" id="{{t['name']}}" name="topology" value="{{t['name']}}" class="opts"/>
 			</label>
-			<label>
-				inter-rack
-				<input type="radio" id="inter-rack" name="topology" value="inter-rack" class="opts"/>
-			</label>
+			{% end %}
 		</div>
 		<label for="mode">Mode</label>
 		<div id="mode">
+			{% for m in data['mode'] %}
 			<label>
-				standalone
-				<input type="radio" id="standalone" name="mode" value="standalone" class="opts"/>
+				{{m['name']}}
+				<input type="radio" id="{{m['name']}}" name="mode" value="{{m['name']}}" class="opts"/>
 			</label>
+			{% end %}
+		</div>
+		<label for="worker-size">Worker Size</label>
+		<div id="worker-size">
+			{% for w in data['worker_size'] %}
 			<label>
-				multinode
-				<input type="radio" id="multinode" name="mode" value="multinode" class="opts"/>
+				{{w['name']}}
+				<input type="radio" id="{{w['name']}}" name="worker-size" value="{{w['value']}}" class="opts"/>
 			</label>
+			{% end %}
 		</div>
-		<div id="node-num" class="field">
-			<label for="node-num">Node Number</label>
-			<input type="number" name="node-num" class="form-control" />
+		<label for="storage-site">Storage Site</label>
+		<div id="storage-site">
+			{% for ss in data['storage_site'] %}
+			<label>
+				{{ss['name']}}
+				<input type="radio" id="{{ss['name']}}" name="storage-site" value="{{ss['name']}}" class="opts"/>
+			</label>
+			{% end %}
 		</div>
-		<div id="reserve-days" class="field">
-			<label for="reserve-days">Reserve Days</label>
-			<input type="number" name="reserve-days" class="form-control" />
+		<label for="storage-type">Storage Type</label>
+		<div id="storage-type">
+			{% for st in data['storage_type'] %}
+			<label>
+				{{st['name']}}
+				<input type="radio" id="{{st['name']}}" name="storage-type" value="{{st['name']}}" class="opts"/>
+			</label>
+			{% end %}
 		</div>
+		<div id="worker-num" class="field">
+			<label for="worker-num">Worker Number</label>
+			<input type="number" name="worker-num" class="form-control" />
+		</div>
+		<div id="reservation" class="field">
+			<label for="reservation">Reservation(days)</label>
+			<input type="number" name="reservation" class="form-control" />
+		</div>
+		<div id="bandwidth" class="field">
+			<label for="bandwidth">Bandwidth(in Mbps, optional)</label>
+			<input type="number" name="bandwidth" class="form-control" />
+		</div>
+		<div id="storage-size" class="field">
+			<label for="storage-size">Storage Size(in GBs, optional)</label>
+			<input type="number" name="storage-size" class="form-control" />
+		</div>
+		
 		<button id="submit" class="btn btn-success pull-right">Submit</button>
 	</div>
 </section>
