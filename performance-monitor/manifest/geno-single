@@ -104,13 +104,14 @@ service condor restart
 
 # workflow setup
 tar zxf $reference_tar -C $geno_home
+chown -R pegasus-user:pegasus-user $geno_home
 sed -i 's/transfer="false"/transfer="true"/g' $geno_home/wf_exon_irods/dax.xml
 
 # monitor setup
 yum -y install git python-pip python-devel
 pip install pika psutil tornado
 
-git clone https://github.com/dcvan/cluster15_ensemble.git ~</request-schema:postBootScript>
+git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster</request-schema:postBootScript>
     <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
     <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#geno-peg-irods"/>
     <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOLarge"/>

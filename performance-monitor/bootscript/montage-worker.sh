@@ -83,5 +83,5 @@ mount -a
 # monitor setup
 yum -y install python-pip python-devel git
 pip install pika tornado psutil
-git clone https://github.com/dcvan/cluster15_ensemble.git
+git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 

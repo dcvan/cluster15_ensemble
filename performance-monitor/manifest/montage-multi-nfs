@@ -30,8 +30,8 @@
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#">
     <collections:element rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0"/>
-    <collections:element rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#workers"/>
     <collections:element rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#master"/>
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#workers"/>
     <request-schema:hasTerm rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#Term"/>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/request.owl#Reservation"/>
   </rdf:Description>
@@ -118,8 +118,8 @@ RUN_DIR=\$TOP_DIR
 
 cd \$RUN_DIR
 cp \$TOP_DIR/workflow/dag.xml .
-for BINARY in \$(cd $MONTAGE_HOME/bin &amp;&amp; ls); do
-    name=$BINARY:3.3
+for BINARY in \$(cd \$MONTAGE_HOME/bin &amp;&amp; ls); do
+    name=\$BINARY:3.3
     if [ "\${BINARY}" = "mFitplane" ] || [ "\$BINARY" = "mDiff" ]; then
 	name=\$BINARY
     fi
@@ -191,7 +191,12 @@ pegasus-plan \
     --cluster horizontal \
     --submit
 
-EOF</request-schema:postBootScript>
+EOF
+
+# monitor setup
+yum -y install python-pip python-devel git
+pip install pika tornado psutil
+git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster</request-schema:postBootScript>
     <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
     <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#montage.v2.0.7a"/>
     <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOXlarge"/>
@@ -220,8 +225,8 @@ EOF</request-schema:postBootScript>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkDomain"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0">
-    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0-master"/>
     <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0-workers"/>
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0-master"/>
     <layer:atLayer rdf:resource="http://geni-orca.renci.org/owl/ethernet.owl#EthernetNetworkElement"/>
     <layer:bandwidth rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">500000000</layer:bandwidth>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#BroadcastConnection"/>
@@ -241,11 +246,11 @@ function testSSH() {
 }
 
 # host setup
-while [ ! "$(ifconfig eth1)" ];do
+while [ ! "$(ifconfig eth1|grep 'inet addr'|cut -d':' -f2|awk '{print $1}'|cut -d'.' -f4)" ];do
     sleep 10
 done
 
-ip_end=`ifconfig eth1|grep 'inet addr'|cut -d':' -f2|awk '{print $1}'|cut -d'.' -f4`
+ip_end=$(ifconfig eth1|grep 'inet addr'|cut -d':' -f2|awk '{print $1}'|cut -d'.' -f4)
 
 MASTER=172.16.1.1
 
@@ -309,6 +314,11 @@ cat &gt;&gt; /etc/fstab &lt;&lt; EOF
 $MASTER:/mnt/scratch       /mnt/scratch    nfs     vers=3,proto=tcp,hard,nolock,intr,timeo=600,retrans=2,wsize=32768,rsize=32768   0       0
 EOF
 mount -a
+
+# monitor setup
+yum -y install python-pip python-devel git
+pip install pika tornado psutil
+git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 </request-schema:postBootScript>
     <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
     <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#montage.v2.0.7a"/>
