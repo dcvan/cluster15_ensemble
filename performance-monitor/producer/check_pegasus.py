@@ -38,7 +38,7 @@ class WorkflowMonitor(Process):
         
         '''
         while self._done.value < self._run_num:
-            if os.path.isdir(self._wordir_base):
+            if os.path.isdir(self._workdir_base):
                 workdirs = os.listdir(self._workdir_base)
                 for w in workdirs:
                     if w in self._finished: continue
@@ -52,7 +52,7 @@ class WorkflowMonitor(Process):
                                         self._finished.add(w)
                                         self._done.value += 1
                                     break
-                time.sleep(10)
+            time.sleep(10)
                              
 class SystemMonitor(Process):
     '''
@@ -100,7 +100,7 @@ class ProcessMonitor(object):
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, exp_id, executables, interval, workdir_base=None, run_num=0):
+    def __init__(self, exp_id, executables, interval=1, workdir_base=None, run_num=0):
         '''
         Init
 
@@ -335,14 +335,17 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         parser.add_argument('-i', '--id', dest='exp_id', type=str, help='Experiment ID', required=True)
         parser.add_argument('-w', '--workdir-base', dest='workdir_base', type=str, help='Workflow working directory base')
-        parser.add_argument('-n', '--run-num', dest='run_num', type=int, help='Number of planned runs')
+        parser.add_argument('-n', '--int', dest='interval', type=int, help='Check-in interval for ProcessMonitor')
+        parser.add_argument('-r', '--run-num', dest='run_num', type=int, help='Number of planned runs')
         parser.add_argument('-l', '--exec-list', nargs='+', type=str, dest='executables', help='Executables to be monitored')
         args = parser.parse_args()
         
         ProcessMonitor(
                 args.exp_id,
                 args.executables,
+                args.interval if args.interval else 1,
                 args.workdir_base,
-                args.run_num).run()
+                args.run_num
+            ).run()
     except KeyboardInterrupt:
         pass
