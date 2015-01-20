@@ -6,7 +6,9 @@ $(document).ready(function(){
 		var data = {
 				'type': $('#types input:checked').val(),
 				'topology': $('#topology input:checked').val(),
+				'mode': $('#mode input:checked').val(),
 				'node_num': $('#node-num input').val(), 
+				'reserve_days': $('#reserve-days input').val()
 			};
 		console.log(JSON.stringify(data));
 		$.ajax({

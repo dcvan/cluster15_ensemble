@@ -53,9 +53,24 @@
 				<input type="radio" id="inter-rack" name="topology" value="inter-rack" class="opts"/>
 			</label>
 		</div>
+		<label for="mode">Mode</label>
+		<div id="mode">
+			<label>
+				standalone
+				<input type="radio" id="standalone" name="mode" value="standalone" class="opts"/>
+			</label>
+			<label>
+				multinode
+				<input type="radio" id="multinode" name="mode" value="multinode" class="opts"/>
+			</label>
+		</div>
 		<div id="node-num" class="field">
 			<label for="node-num">Node Number</label>
 			<input type="number" name="node-num" class="form-control" />
+		</div>
+		<div id="reserve-days" class="field">
+			<label for="reserve-days">Reserve Days</label>
+			<input type="number" name="reserve-days" class="form-control" />
 		</div>
 		<button id="submit" class="btn btn-success pull-right">Submit</button>
 	</div>

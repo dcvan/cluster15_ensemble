@@ -128,7 +128,7 @@ class ProcessMonitor(object):
             if not self._stat['cmdline']: 
                 return
             self._stat['status'] = 'terminated'
-            self._stat['terminate_time'] = int(time.time() * 1000)
+            self._stat['terminate_time'] = int(time.time())
             self._stat['runtime'] = self._stat['terminate_time'] - proc.create_time()
             if self._stat['count'] > 1:
                 self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
@@ -136,7 +136,7 @@ class ProcessMonitor(object):
             else:
                 self._stat['avg_cpu_percent'] = 0
                 self._stat['avg_mem_percent'] = 0
-            self._stat['timestamp'] = int(time.time() * 1000)
+            self._stat['timestamp'] = int(time.time())
             self._msg_q.put(dict(self._stat))
             print(self._stat)
 
@@ -187,7 +187,7 @@ class ProcessMonitor(object):
                'exp_id': self._exp_id,
                'workflow': self._workflow,
                'hostname': self._hostname,
-               'timestamp': int(time.time() * 1000),
+               'timestamp': int(time.time()),
                'status': 'workflow_init'
             })
             self._status_monitor.start()
@@ -203,6 +203,7 @@ class ProcessMonitor(object):
                             break
                         self._timeout_counter += 1
                     self._cur = self.find_process()
+                    if self._cur: break
                     time.sleep(self._interval)
                 if self._workdirs and self._done.value >= len(self._workdirs):
                     break;
@@ -218,7 +219,7 @@ class ProcessMonitor(object):
                         else:
                             self._stat['status'] = 'running'
                         self._stat['count'] += 1
-                        cpu_percent = self._cur.cpu_percent()
+                        cpu_percent = self._cur.cpu_percent(interval=self._interval)
                         self._stat['avg_cpu_percent'] += cpu_percent
                         self._stat['avg_mem_percent'] += self._cur.memory_percent()
                         self._stat['total_read_count'] = self._cur.io_counters().read_count
@@ -230,8 +231,10 @@ class ProcessMonitor(object):
                         self._msg_q.put({
                             'exp_id': self._exp_id,
                             'host': self._hostname,
-                            'timestamp': int(time.time() * 1000),
+                            'timestamp': int(time.time()),
                             'cmdline': self._stat['cmdline'],
+                            'sys_cpu_percent': psutil.cpu_percent(),
+                            'sys_mem_percent': psutil.virtual_memory().percent,
                             'cpu_percent': cpu_percent,
                             'memory_percent': self._cur.memory_percent(),
                             'start_time': self._stat['start_time'],
@@ -241,7 +244,6 @@ class ProcessMonitor(object):
                             'total_write_bytes': self._stat['total_write_bytes'],
                             'status': self._stat['status'],
                         })
-                        
                     except psutil.NoSuchProcess:
                         self._cur = None
                         with self._lock:
@@ -258,7 +260,7 @@ class ProcessMonitor(object):
                             self._stat['total_write_bytes'] = 0
                             self._stat['timestamp'] = 0
                             self._stat['status'] = None
-                time.sleep(self._interval)
+#                time.sleep(self._interval)
         else:
             while self._done.value < len(self._workdirs):
                 time.sleep(10)
@@ -269,7 +271,7 @@ class ProcessMonitor(object):
                     'exp_id': self._exp_id,
                     'run_id': int(w[-2] if w[-1] == '/' else w[-1]),
                     'hostname': self._hostname,
-                    'timestamp': int(time.time() * 1000),
+                    'timestamp': int(time.time()),
                     'status': 'workflow_finished',
                     'walltime': self._get_walltime(w)
                 })

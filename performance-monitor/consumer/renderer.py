@@ -5,6 +5,8 @@ Created on Jan 13, 2015
 '''
 import json
 import uuid
+import jinja2
+import time
 import tornado.web
 from config import DB_NAME
 
@@ -27,7 +29,7 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         GET method
         
         '''
-        rs = self._db[DB_NAME]['workflows'].find(fields={'_id': 0}).sort('name')
+        rs = self._db[DB_NAME]['workflows'].find({}, {'_id': 0}).sort('name')
         self.render('workflows.html', workflows=[w for w in rs])
     
     def post(self):
@@ -38,14 +40,13 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         data = json.loads(self.request.body)
         data['exp_id'] = str(uuid.uuid4())
         data['status'] = 'submitted'
-        self._db[DB_NAME]['experiments'].insert(data)
+        data['create_time'] = int(time.time())
+        self._db[DB_NAME]['experiment'].insert(data)
         self.set_header('Content-Type', 'application/json;charset="utf-8"')
         self.write(json.dumps({
                 'exp_id': data['exp_id'],
                 'type': data['type'],
             }))
-        
-        
         
 class ExperimentRenderer(tornado.web.RedirectHandler):
     '''
@@ -66,8 +67,31 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         GET method
         
         '''
-        self.render('experiment.html')
+        exp = self._db[DB_NAME]['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
+        template = self._db[DB_NAME]['manifest'].find_one({
+                    'type': exp['type'],
+                    'topology': exp['topology'],
+                    'mode': exp['mode']
+                    }, {'_id': 0})['manifest']
+        exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
+        manifest = jinja2.Template(template).render(node_num=int(exp['node_num']), reserve_days=int(exp['reserve_days']))
+        self.render('experiment.html', manifest=manifest, data=exp)
 
+    def post(self, workflow, exp_id):
+        '''
+        POST method
+        '''
+        exp = self._db[DB_NAME]['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
+        template = self._db[DB_NAME]['manifest'].find_one({
+                    'type': exp['type'],
+                    'topology': exp['topology'],
+                    'mode': exp['mode']
+                    }, {'_id': 0})['manifest']
+        manifest = jinja2.Template(template).render(node_num=int(exp['node_num']), reserve_days=int(exp['reserve_days']))
+        self.set_header('Content-Type', 'application/rdf+xml')
+        self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode']]))
+        self.write(manifest)
+        
 class WorkflowRender(tornado.web.RedirectHandler):
     '''
     Renders workflow listing

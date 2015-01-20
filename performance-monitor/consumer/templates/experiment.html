@@ -3,8 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <title>Experiment</title>
+<link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
+<script src="{{static_url('js/bootstrap.min.js')}}"></script>
+<script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
+<script src="{{static_url('js/utils.js')}}"></script>
+<script src="{{static_url('js/experiment.js')}}"></script>
 </head>
 <body>
-
+<section class="container">
+	<h1>Experiment <small>created at {{data['create_time']}}</small></h1>
+	<dl class="dl-horizontal">
+		<dt>Type</dt>
+		<dd>{{data['type']}}</dd>
+		<dt>Topology</dt>
+		<dd>{{data['topology']}}</dd>
+		<dt>Mode</dt>
+		<dd>{{data['mode']}}</dd>
+		<dt>Status</dt>
+		<dd>{{data['status']}}</dd>
+		<dt>Worker Number</dt>
+		<dd>{{data['node_num']}}</dd>
+		<dt>Reservation</dt>
+		<dd>{{data['reserve_days']}} Days</dd>
+	</dl>
+	<form id="download" action="/workflows/{{data['type']}}/experiments/{{data['exp_id']}}" method="POST">
+	<h2>Manifest <small><a href="#" onclick="$('#download').submit();">Download</a></small></h2>
+	</form>
+	<pre id="manifest" class="prettyprint lang-xml">
+		{{manifest}}
+	</pre>
+</section>
 </body>
 </html>
