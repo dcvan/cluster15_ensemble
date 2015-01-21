@@ -233,7 +233,7 @@ class ArchiveConsumer(MessageConsumer):
                 if len(self._proc_buf) < BUF_SIZE:
                     self._proc_buf.append(data)
                 else:
-                    self._db[DB_NAME]['update'].insert(data)
+                    self._db[DB_NAME]['update'].insert(self._proc_buf)
                     self._proc_buf = []
         else:
             # garbled message
