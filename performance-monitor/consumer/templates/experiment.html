@@ -27,6 +27,12 @@ var Chartjs = Chart.noConflict();
 		<dd>{{data['topology']}}</dd>
 		<dt>Mode</dt>
 		<dd>{{data['mode']}}</dd>
+		<dt>Master Site</dt>
+		<dd>{{data['master_site'].upper()}}</dd>
+		{% if data['mode'] == 'multinode' %}
+		<dt>Worker Site</dt>
+		<dd>{{data['worker_site'].upper()}}</dd>
+		{% end %} 
 		<dt>Storage Site</dt>
 		<dd>{{data['storage_site']}}</dd>
 		<dt>Storage Type</dt>

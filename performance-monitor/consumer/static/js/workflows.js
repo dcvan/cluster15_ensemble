@@ -7,6 +7,8 @@ $(document).ready(function(){
 				'type': $('#types input:checked').val(),
 				'topology': $('#topology input:checked').val(),
 				'mode': $('#mode input:checked').val(),
+				'master_site': $('#master-site input:checked').val(),
+				'worker_site': $('#topology input:checked').val() == 'intra-rack'?$('#mater-site input:checked').val():$('#worker-site input:checked').val(),
 				'worker_size': $('#worker-size input:checked').val(),
 				'storage_site': $('#storage-site input:checked').val(),
 				'storage_type': $('#storage-type input:checked').val(),

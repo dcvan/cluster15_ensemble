@@ -195,9 +195,23 @@ EOF
 
 # monitor setup
 yum -y install python-pip python-devel git
-pip install pika tornado psutil
-git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster</request-schema:postBootScript>
-    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
+pip install pika tornado psutil argparse
+git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
+
+# start monitor
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w /home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage -r {{param['run_num']}} -l {{' '.join(param['executables'])}}
+
+# start workflow
+sleep 10
+for (( i = 0; i &lt; {{param['run_num']}}; i ++ ))
+do
+	su pegasus-user -c 'cd /home/pegasus-user/20131031/montage/; bash submit'
+	sleep 2
+done
+
+
+</request-schema:postBootScript>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#{{param['worker_site']}}vmsite/Domain"/>
     <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#montage.v2.0.7a"/>
     <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOXlarge"/>
     <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
@@ -207,6 +221,11 @@ git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster</request-sch
     <topology:hasURL>http://geni-images.renci.org/images/pruth/ADAMANT/montage.v2.0.7a.xml</topology:hasURL>
     <topology:hasGUID>f140b31d8257282f08714b6bc94b03abc8a74859</topology:hasGUID>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#DiskImage"/>
+  {% if param['topology'] == 'inter-rack' %}
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#param['worker_site']vmsite/Domain">
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkDomain"/>
+  </rdf:Description>
+  {% endif %}
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0-workers-ip-172-16-1-100">
     <ip4:netmask>255.255.0.0</ip4:netmask>
@@ -214,7 +233,7 @@ git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster</request-sch
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/ip4.owl#IPAddress"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#TermDuration">
-    <time:days rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">14</time:days>
+    <time:days rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">{{param['reservation']}}</time:days>
     <rdf:type rdf:resource="http://www.w3.org/2006/time#DurationDescription"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0-workers">
@@ -228,7 +247,7 @@ git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster</request-sch
     <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0-workers"/>
     <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0-master"/>
     <layer:atLayer rdf:resource="http://geni-orca.renci.org/owl/ethernet.owl#EthernetNetworkElement"/>
-    <layer:bandwidth rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">500000000</layer:bandwidth>
+    <layer:bandwidth rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">{{param['bandwidth']}}</layer:bandwidth>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#BroadcastConnection"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#workers">
@@ -317,14 +336,18 @@ mount -a
 
 # monitor setup
 yum -y install python-pip python-devel git
-pip install pika tornado psutil
+pip install pika tornado psutil argparse
 git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
+
+# start monitor
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -l {{' '.join(param['executables'])}} -n {{param['interval']}}
+
 </request-schema:postBootScript>
-    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{param['master_site']}}vmsite.rdf#{{param['master_site']}}vmsite/Domain"/>
     <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#montage.v2.0.7a"/>
-    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOLarge"/>
-    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
-    <layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">5</layer:numCE>
+    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#{{param['worker_size']}}"/>
+    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#{{param['resource_type']}}"/>
+    <layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">{{param['worker_num']}}</layer:numCE>
     <request-schema:groupName>workers</request-schema:groupName>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ServerCloud"/>
   </rdf:Description>

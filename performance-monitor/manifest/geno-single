@@ -29,7 +29,7 @@
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#DiskImage"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#TermDuration">
-    <time:days rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1</time:days>
+    <time:days rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">{{param['reservation']}}</time:days>
     <rdf:type rdf:resource="http://www.w3.org/2006/time#DurationDescription"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#Term">
@@ -59,7 +59,7 @@ $(ifconfig eth0|grep 'inet addr'|awk -F':' '{print $2}'|awk '{print $1}')  maste
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 EOF
-hostname master.expnet
+hostname master
 
 # condor setup
 echo "" &gt; /etc/condor/condor_config.local
@@ -109,14 +109,26 @@ sed -i 's/transfer="false"/transfer="true"/g' $geno_home/wf_exon_irods/dax.xml
 
 # monitor setup
 yum -y install git python-pip python-devel
-pip install pika psutil tornado
+pip install pika psutil tornado argparse
 
-git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster</request-schema:postBootScript>
-    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/rcivmsite.rdf#rcivmsite/Domain"/>
+git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
+
+# start monitor
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w /home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf -n {{param['interval']}} -r {{param['run_num']}} -l {{' '.join(param['executables'])}}
+
+# start workflow
+sleep 10
+for (( i = 0; i &lt; {{param['run_num']}}; i ++ ))
+do
+	su pegasus-user -c 'cd /home/pegasus-user/genomics/wf_exon_irods; bash genplan.sh'
+	sleep 2
+done
+</request-schema:postBootScript>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{param['master_site']}}vmsite.rdf#{{param['master_site']}}vmsite/Domain"/>
     <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/89acf2c9-8783-412b-93fd-22ffafccf0b9#geno-peg-irods"/>
-    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOLarge"/>
-    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
-    <layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</layer:numCE>
+    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#{{param['worker_size']}}"/>
+    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#{{param['resource_type']}}"/>
+    <layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">{{param['worker_num']}}</layer:numCE>
     <request-schema:groupName>geno-single-lg</request-schema:groupName>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ServerCloud"/>
   </rdf:Description>

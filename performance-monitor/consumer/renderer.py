@@ -32,9 +32,11 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         data = {
                 'topology': [t for t in self._db[DB_NAME]['workflow']['topology'].find({}, {'_id': 0})],
                 'mode': [m for m in self._db[DB_NAME]['workflow']['mode'].find({}, {'_id': 0})],
+                'site': [s for s in self._db[DB_NAME]['workflow']['site'].find({}, {'_id': 0})],
                 'worker_size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find({}, {'_id': 0})],
                 'storage_site': [ss for ss in self._db[DB_NAME]['workflow']['storage_site'].find({}, {'_id': 0})],
                 'storage_type': [st for st in self._db[DB_NAME]['workflow']['storage_type'].find({}, {'_id': 0})],
+                
             }
         self.render('workflows.html', workflows=[w for w in self._db[DB_NAME]['workflow']['type'].find({}, {'_id': 0}).sort('name')], data=data)
     
@@ -79,7 +81,6 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             return 
         template = self._db[DB_NAME]['workflow']['manifest'].find_one({
                     'type': exp['type'],
-                    'topology': exp['topology'],
                     'mode': exp['mode'],
                     'storage_site': exp['storage_site'],
                     'storage_type': exp['storage_type'],
@@ -109,7 +110,6 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             return 
         template = self._db[DB_NAME]['workflow']['manifest'].find_one({
                     'type': exp['type'],
-                    'topology': exp['topology'],
                     'mode': exp['mode'],
                     'storage_site': exp['storage_site'],
                     'storage_type': exp['storage_type'],
@@ -220,192 +220,22 @@ class WorkerRenderer(tornado.web.RedirectHandler):
         self.set_header('Content-Type', 'application/json;charset="utf-8"')
         self.write(json.dumps(res))
         
-class WorkflowRender(tornado.web.RedirectHandler):
+class ExperimentsRenderer(tornado.web.RequestHandler):
     '''
-    Renders workflow listing
-    
-    '''
-    
-    def initialize(self, db):
-        '''
-        Init
-        
-        :param pymongo.MongoClient db: the mongoDB connection
-        
-        '''
-        self._db = db
-        
-    def get(self):
-        '''
-        GET method
-        
-        '''
-        rs = self._db[DB_NAME]['workflow'].find().sort('name')
-        self.render('workflow.html', workflows=[w for w in rs])
-        
-class JobRender(tornado.web.RedirectHandler):
-    '''
-    Renders job stat
-    
-    '''
-    
-    def initialize(self, db):
-        '''
-        Init
-        
-        :param pymongo.MongoClient db: the mongoDB connection
-        
-        '''
-        self._db = db
-        
-    def post(self, name, job_id):
-        '''
-        POST method
-        
-        '''
-        rs = self._db[DB_NAME]['update'].find({
-              'name': name,
-              'job_id': job_id,
-              'status': 'terminated'
-            }).sort('start_time')
-        if rs.count() != 0:
-            self.set_header('Content-Type', 'application/json;charset="utf-8"')
-            data = []
-            for d in rs:
-                del d['_id']
-                data.append(d)
-            self.write(json.dumps(data))
-        else:
-            self.set_status(404)
-        self.finish()
-        
-class ExperimentStatusRenderer(tornado.web.RedirectHandler):
-    '''
-    Renders experiment status
+    Renders experiment listing
     
     '''
     def initialize(self, db):
         '''
-        Init
+        Init 
         
-        :param pymongo.MongoClient db: the mongoDB connection
-        
-        '''
-        self._db = db
-        
-    def get(self, name):
-        '''
-        GET method
-        
-        :param str name: workflow name
-        
-        '''
-        rs = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
-        update_rs = self._db[DB_NAME]['update'].find({'name': name, 'status': 'terminated'}).sort('start_time')
-        jobs = set([])
-        for d in update_rs:
-            #if d['count'] > 10:
-            jobs.add({'id': d['job_id'], 'cmdline': self._db[DB_NAME]['cmdline'].find_one({'job_id': d['job_id']})['cmdline']})
-        self.render('experiment.html', experiments=[e for e in rs], jobs=jobs)
-    
-    def post(self, name):
-        '''
-        POST method
-        
-        :param str name: workflow name/type
-        :raise tornado.web.HTTPError
-
-        '''
-        rs = self._db[DB_NAME]['update'].find({
-                    'name' : name,
-                    'status' : 'terminated'
-                }).sort('start_time')
-        if rs.count() != 0:
-            exp_rs = self._db[DB_NAME]['experiment'].find({'name': name}).sort('timestamp')
-            experiments = [e for e in exp_rs]
-            data = {
-                    'experiments': [e['expid'] for e in experiments],
-                    'walltime': [e['walltime'] if 'walltime' in e else 0 for e in experiments],
-                    }
-            self.set_header('Content-Type', 'application/json;charset="utf-8"')
-            self.write(json.dumps(data))
-        else:
-            self.set_status(404)
-        self.finish()
-        
-class NodeRenderer(tornado.web.RedirectHandler):
-    '''
-    Renders node listing
-    
-    '''
-    def initialize(self, db):
-        '''
-        Init
+        :param pymongo.MongoClient db: the MongoDB connection
         
         '''
         self._db = db
         
-    def get(self, name, expid):
+    def get(self, workflow):
         '''
-        GET method
-        
-        :param str name: workflow name/type
-        :param str expid: experiment ID
         
         '''
-        rs = self._db[DB_NAME]['experiment'].find_one({
-            'name': name,
-            'expid': int(expid),
-            })
-        self.render('node_listing.html', name=name, expid=expid, nodes=rs['nodes'])
-        
-class NodeStatusRenderer(tornado.web.RedirectHandler):
-    '''
-    Renders node status
-    
-    '''
-    def initialize(self, db):
-        '''
-        Init
-        
-        :param pymongo.MongoClient db: the mongoDB connection
-        
-        '''
-        self._db = db
-        
-    def get(self, name, expid, nid):
-        '''
-        GET method
-        
-        :param str name: workflow name/type
-        :param str expid: experiment ID
-        :param str nid: node ID
-        
-        '''
-        self.render('node.html')
-        
-    def post(self, name, expid, nid):
-        '''
-        POST method
-        
-        :param str name: workflow name/type
-        :param str expid: experiment ID
-        :param str nid: node ID
-        
-        '''
-        rs = self._db[DB_NAME]['update'].find({
-                    'name' : name,
-                    'host' : nid,
-                    'expid' : int(expid),
-                }).sort('timestamp')
-        if rs.count() != 0:
-            data = []
-            db_data = [d for d in rs]
-            for d in db_data:
-                del d['_id']
-                data.append(d)
-            self.set_header('Content-Type', 'application/json;charset="utf-8"')
-            self.write(json.dumps(data))
-        else:
-            self.set_status(404)
-        self.finish()
+        pass

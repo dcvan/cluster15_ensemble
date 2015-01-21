@@ -1,0 +1,34 @@
+{% import time %}
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
+<script src="{{static_url('js/bootstrap.min.js')}}"></script>
+<title>Experiments</title>
+</head>
+<body>
+<section class="container">
+	<h1>Experiments</h1>
+	<table class="table table-hover">
+		<thead><tr>
+			<th>Experiment ID</th>
+			<th>Type</th>
+			<th>Create Time</th>
+			<th>Status</th>
+		</tr></thead>
+		<tbody>
+			{% for e in experiments %}
+			<tr>
+				<td><a href="{{'%s/%s' % (current_uri, e['exp_id'])}}">e['exp_id']</a></td>
+				<td><a href="{{'/workflows/%s' % e['type']}}">e['type']</a></td>
+				<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['create_time']))}}</td>
+				<td>{{e['status']}}</td>
+			</tr>
+			{% end %}
+		</tbody>
+	</table>
+</section>
+</body>
+</html>

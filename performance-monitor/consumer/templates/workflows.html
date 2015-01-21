@@ -36,8 +36,8 @@
 			<div id="type">
 			{% for w in workflows %}
 				<label>
-					{{w['name']}}
 					<input type="radio" id="{{w['name']}}" name="type" value="{{w['name']}}" class="opts"/>
+					{{w['name']}}
 				</label>
 			{% end %}	
 			</div>
@@ -46,8 +46,8 @@
 		<div id="topology">
 			{% for t in data['topology'] %}
 			<label>
-				{{t['name']}}
 				<input type="radio" id="{{t['name']}}" name="topology" value="{{t['name']}}" class="opts"/>
+				{{t['name']}}
 			</label>
 			{% end %}
 		</div>
@@ -55,8 +55,26 @@
 		<div id="mode">
 			{% for m in data['mode'] %}
 			<label>
-				{{m['name']}}
 				<input type="radio" id="{{m['name']}}" name="mode" value="{{m['name']}}" class="opts"/>
+				{{m['name']}}
+			</label>
+			{% end %}
+		</div>
+		<label for="master-site">Master Site</label>
+		<div id="master-site">
+			{% for s in data['site'] %}
+			<label>
+				<input type="radio" name="master-site" value="{{s['name']}}" class="opts"/>
+				{{s['name'].upper()}}({{s['location']}})
+			</label>
+			{% end %}
+		</div>
+		<label for="worker-site">Worker Site</label>
+		<div id="worker-site">
+			{% for s in data['site'] %}
+			<label>
+				<input type="radio" name="worker-site" value="{{s['name']}}" class="opts"/>
+				{{s['name'].upper()}}({{s['location']}})
 			</label>
 			{% end %}
 		</div>
@@ -64,8 +82,8 @@
 		<div id="worker-size">
 			{% for w in data['worker_size'] %}
 			<label>
-				{{w['name']}}
 				<input type="radio" id="{{w['name']}}" name="worker-size" value="{{w['value']}}" class="opts"/>
+				{{w['name']}}
 			</label>
 			{% end %}
 		</div>
@@ -73,8 +91,8 @@
 		<div id="storage-site">
 			{% for ss in data['storage_site'] %}
 			<label>
-				{{ss['name']}}
 				<input type="radio" id="{{ss['name']}}" name="storage-site" value="{{ss['name']}}" class="opts"/>
+				{{ss['name']}}
 			</label>
 			{% end %}
 		</div>
@@ -82,8 +100,8 @@
 		<div id="storage-type">
 			{% for st in data['storage_type'] %}
 			<label>
-				{{st['name']}}
 				<input type="radio" id="{{st['name']}}" name="storage-type" value="{{st['name']}}" class="opts"/>
+				{{st['name']}}
 			</label>
 			{% end %}
 		</div>
