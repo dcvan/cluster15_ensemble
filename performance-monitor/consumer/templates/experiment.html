@@ -1,3 +1,4 @@
+{% import time %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,9 +6,14 @@
 <title>Experiment</title>
 <link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
 <link rel="stylesheet" href="{{static_url('css/experiment.css')}}"/>
+<link rel="stylesheet" href="{{static_url('css/legend.css')}}"/>
 <script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
 <script src="{{static_url('js/bootstrap.min.js')}}"></script>
+<script src="{{static_url('js/Chart.min.js')}}">
+var Chartjs = Chart.noConflict();
+</script>
 <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
+<script src="{{static_url('js/legend.js')}}"></script>
 <script src="{{static_url('js/utils.js')}}"></script>
 <script src="{{static_url('js/experiment.js')}}"></script>
 </head>
@@ -39,6 +45,49 @@
 		<dd>{{data['storage_size'] if data['storage_size'] else '-'}} GB</dd>
 
 	</dl>
+	<h2>Active Workers</h2>
+	<table id="workers" class="table table-hover">
+		<thead>
+		<tr>
+			<th>Name</th>
+			<th>Identified at</th>
+		</tr>
+		</thead>	
+		<tbody>
+			{% for w in data['workers']%}
+				<tr>
+					<td><a href="{{'%s/workers/%s' % (current_uri, w['host'])}}">{{w['host']}}</a></td>
+					<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(w['timestamp']))}}</td>
+				</tr>
+			{% end %}
+		</tbody>
+	</table>
+
+	<h2>Finished Runs</h2>
+	<table id="runs" class="table table-hover">
+		<thead>
+		<tr>
+			<th>Run</th>
+			<th>Walltime</th>
+			<th>Finished at</th>
+		</tr>
+		</thead>
+		<tbody>
+			{% for r in data['runs']%}
+				<tr>
+					<td>run-{{r['run_id']}}</td>
+					<td>{{r['walltime']}}</td>
+					<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(r['timestamp']))}}</td>
+				</tr>
+			{% end %}
+		</tbody>
+	</table>
+	{% if data['runs'] %}
+	<div id="walltime" class="chart">
+		<canvas></canvas>
+		<div></div>
+	</div>
+	{% end %}
 	<form id="download" action="/workflows/{{data['type']}}/experiments/{{data['exp_id']}}" method="POST">
 	<h2>Manifest <small><a href="#" onclick="$('#download').submit();">Download</a></small></h2>
 	</form>

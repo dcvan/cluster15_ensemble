@@ -242,11 +242,9 @@ class ProcessMonitor(object):
                         else:
                             self._stat['status'] = 'running'
                         self._stat['count'] += 1
-                        cpu_percent = self._cur.cpu_percent()
+                        cpu_percent = self._cur.cpu_percent(interval=self._interval)
                         self._stat['avg_cpu_percent'] += cpu_percent
                         self._stat['avg_mem_percent'] += self._cur.memory_percent()
-                        self._stat['total_read_count'] = self._cur.io_counters().read_count
-                        self._stat['total_write_count'] = self._cur.io_counters().write_count
                         self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                         self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
                             
@@ -278,7 +276,7 @@ class ProcessMonitor(object):
                             self._stat['total_write_bytes'] = 0
                             self._stat['timestamp'] = 0
                             self._stat['status'] = None
-                time.sleep(self._interval)
+                #time.sleep(self._interval)
         else:
             while self._done.value < self._run_num:
                 time.sleep(10)
@@ -295,6 +293,7 @@ class ProcessMonitor(object):
                         'status': 'finished',
                         'walltime': self._get_walltime(d)
                     })
+        time.sleep(10)
         self._msg_q.put(None)
                 
             

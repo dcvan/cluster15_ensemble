@@ -10,7 +10,7 @@ canvas{
 	float: left;
 }
 
-h2, h3{
+h2, h3, small{
 	width: 1500px;
 	float: left;
 }

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Worker {{worker}}</title>
+<link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<link rel="stylesheet" href="{{static_url('css/worker.css')}}"/>
+<link rel="stylesheet" href="{{static_url('css/legend.css')}}"/>
+<script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
+<script src="{{static_url('js/bootstrap.min.js')}}"></script>
+<script src="{{static_url('js/Chart.min.js')}}">
+var Chartjs = Chart.noConflict();
+</script>
+<script src="{{static_url('js/legend.js')}}"></script>
+<script src="{{static_url('js/utils.js')}}"></script>
+<script src="{{static_url('js/worker.js')}}"></script>
+</head>
+<body>
+<section class="container">
+<h1>Worker {{worker}}</h1>
+<h2>System Usage</h2>
+<div id="sys-cpu-mem" class="system">
+	<h3>CPU & Memory Usage</h3>
+	<canvas></canvas>
+	<div></div>
+</div>
+<div id="sys-rw" class="system">
+	<h3>System Bytes Read/Written</h3>
+	<canvas></canvas>
+	<div></div>	
+</div>
+<div id="sys-sr" class="system">
+	<h3>Bytes Sent/Received</h3>
+	<canvas></canvas>
+	<div></div>	
+</div>
+<h2>Job</h2>
+<div id="cpu-mem-line" class="job">
+	<h3>CPU & Memory Usage</h3>
+	<canvas></canvas>
+	<div></div>	
+</div>
+<div id="rw-line" class="job">
+	<h3>Bytes Read/Written</h3>
+	<canvas></canvas>
+	<div></div>	
+</div>
+<div id="cpu-mem-bar" class="job">
+	<h3>Average CPU & Memory Usage</h3>
+	<canvas></canvas>
+	<div></div>	
+</div>
+<div id="rw-bar" class="job">
+	<h3>Read/Write Rates</h3>
+	<canvas></canvas>
+	<div></div>	
+</div>
+<div id="runtime-bar" class="job">
+	<h3>Runtime</h3>
+	<canvas></canvas>
+	<div></div>	
+</div>
+</section>
+</body>
+</html>
