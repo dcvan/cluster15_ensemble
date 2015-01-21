@@ -44,7 +44,7 @@ class WorkflowMonitor(Process):
                     if w in self._finished: continue
                     d = '%s%s' % (self._workdir_base, w) if self._workdir_base[-1] == '/' else '%s/%s' % (self._workdir_base, w)
                     if os.path.isdir(d):
-                        out, err = subprocess.Popen(('pegasus-status -l %d' % d).split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+                        out, err = subprocess.Popen(('pegasus-status -l %s' % d).split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
                         if not err:
                             for l in out.split('\n'):
                                 if re.match('[ \t]+[0-9]+', l):
