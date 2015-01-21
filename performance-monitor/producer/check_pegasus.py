@@ -293,9 +293,6 @@ class ProcessMonitor(object):
                         'status': 'finished',
                         'walltime': self._get_walltime(d)
                     })
-        time.sleep(10)
-        self._msg_q.put(None)
-                
             
     def _get_walltime(self, workdir):
         '''
