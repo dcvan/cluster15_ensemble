@@ -191,6 +191,7 @@ class MessageSender(Process):
             topics = '%s.%s.%s' % (self._expid, self._hostname, msg['type'])
             if msg['type'] == 'process':
                 topics += '.%s' % msg['status']
+            del msg['type']
             self._ch.basic_publish(
                      exchange=EXCHANGE_NAME, 
                      routing_key=topics,

@@ -218,6 +218,12 @@ class ProcessMonitor(object):
 
         if self._is_worker:
             self._system_monitor.start()
+            self._msg_q.put({
+                    'exp_id': self._exp_id,
+                    'type': 'worker',
+                    'host': self._hostname,
+                    'timestamp': int(time.time()),
+                })
             while True:
                 while not self._cur: 
                     print('Waiting ...')
@@ -284,7 +290,7 @@ class ProcessMonitor(object):
                     self._msg_q.put({
                         'exp_id': self._exp_id,
                         'run_id': int(d[-1]),
-                        'type': 'workflow',
+                        'type': 'run',
                         'timestamp': time.time(),
                         'status': 'finished',
                         'walltime': self._get_walltime(d)

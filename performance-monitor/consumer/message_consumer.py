@@ -195,8 +195,7 @@ class ArchiveConsumer(MessageConsumer):
         
         '''
         super(ArchiveConsumer, self).__init__('#')
-        self._sys_buf = []
-        self._proc_buf = []
+        self._bufs = {}
         self._db = db
     
     def stop(self):
@@ -216,25 +215,16 @@ class ArchiveConsumer(MessageConsumer):
         :param str body: message text body   
        
         '''
+        msg_type = prop.routing_key.split('.')[2]
         data = json.loads(body)
-        if 'type' in data:
-            if data['type'] == 'system':
-                del data['type']
-                if len(self._sys_buf) < BUF_SIZE:
-                    self._sys_buf.append(data)
+        if msg_type == 'system' or msg_type == 'process':
+            if msg_type in self._bufs:
+                if len(self._bufs[msg_type]) < BUF_SIZE:
+                    self._bufs[msg_type].append(data)
                 else:
-                    self._db[DB_NAME]['system'].insert(self._sys_buf)
-                    self._sys_buf = []
-            elif data['type'] == 'workflow':
-                del data['type']
-                self._db[DB_NAME]['run'].insert(data)
+                    self._db[DB_NAME]['experiment'][msg_type].append(self._bufs[msg_type])
+                    self._bufs[msg_type] = []
             else:
-                del data['type']
-                if len(self._proc_buf) < BUF_SIZE:
-                    self._proc_buf.append(data)
-                else:
-                    self._db[DB_NAME]['update'].insert(self._proc_buf)
-                    self._proc_buf = []
+                self._bufs[msg_type] = [data]
         else:
-            # garbled message
-            pass
+            self._db[DB_NAME]['experiment'][msg_type].append(data)
