@@ -136,6 +136,10 @@ git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 # start monitor 
 python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -m  -w -d /home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf -r {{param['run_num']}} &amp;
 
+while [ "$(condor_status -total | grep -E 'Total[ \t]+[0-9]'|awk '{print $2}')" != "{{param['worker_num']}}" ];do
+	sleep 5
+done 
+
 # start workflow
 sleep 10
 for (( i = 0; i &lt; {{param['run_num']}}; i ++ ))
@@ -246,7 +250,21 @@ do
 done
 mkdir -m 775 /var/log/condor
 chown condor:condor /var/log/condor
+
 service condor restart
+
+sleep 20
+
+ATTEMPT=0
+while [ ! "$(condor_status | grep $MY_HOSTNAME)" ];do
+    if [ "$ATTEMPT" -gt 3 ];then
+        ATTEMPT=0
+        service condor restart
+    else
+        ATTEMPT=$(($ATTEMPT + 1))
+    fi
+    sleep 10
+done
 
 # NFS setup
 mkdir -p /mnt/scratch
@@ -255,7 +273,12 @@ yum -y install nfs-utils nfs-utils-lib
 cat &gt;&gt; /etc/fstab &lt;&lt; EOF
 $MASTER:/mnt/scratch       /mnt/scratch    nfs     vers=3,proto=tcp,hard,nolock,intr,timeo=600,retrans=2,wsize=32768,rsize=32768   0       0
 EOF
-mount -a
+mount -a -t nfs
+
+while [ "$?" -gt 0 ];do
+    sleep 10s
+    mount -a -t nfs
+done
 
 # workflow setup
 tar zxf /home/pegasus-user/genomics/references.tgz -C /home/pegasus-user/genomics
