@@ -135,6 +135,13 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode'], exp['worker_size'], exp['master_site']]))
         self.write(manifest)
         
+    def delete(self, workflow, exp_id):
+        '''
+        DELETE method: delete an experiment
+        
+        '''
+        pass
+        
 class RunsRenderer(tornado.web.RedirectHandler):
     '''
     Renders runs
@@ -259,5 +266,10 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         
         '''
         exp = [e for e in self._db[DB_NAME]['workflow']['experiment'].find({'type': workflow}, {'_id': 0})]
+        for e in exp:
+            if e['status'] == 'submitted':
+                if self._db[DB_NAME]['experiment']['worker'].find_one({'exp_id': e['exp_id']}):
+                    e['status'] = 'running'
+                    self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': e['exp_id']}, {'$set': {'status': e['status']}})
         self.render('experiments.html', experiments=exp, current_uri=self.request.uri)
 
