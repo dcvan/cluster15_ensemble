@@ -227,9 +227,9 @@ class ProcessMonitor(object):
             for p in children:
                 executable = None                
                 if p.name() == 'python':
-                    executable = p.cmdline()[1].split('/')[-1]
+                    executable = p.cmdline()[1].split('/')[-1] if len(p.cmdline()) > 1 else None
                 elif p.name() == 'java':
-                    executable = p.parent().cmdline()[1].split('/')[-1]
+                    executable = p.parent().cmdline()[1].split('/')[-1] if len(p.parent().cmdline()) > 1 else None
                 else:
                     executable = p.name()
                 if executable and executable in self._procs:
