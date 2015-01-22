@@ -217,5 +217,5 @@ class ArchiveConsumer(MessageConsumer):
         '''
         msg_type = deliver.routing_key.split('.')[2]
         data = json.loads(body)
-        print data
+        # buf
         self._db[DB_NAME]['update'][msg_type].insert(data)

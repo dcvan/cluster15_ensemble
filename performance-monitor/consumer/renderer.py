@@ -107,7 +107,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         POST method: provides manifest download
         
         '''
-        exp = self._db[DB_NAME][exp_id]['info'].find_one(fields={'_id': 0})
+        exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
         if not exp:
             self.set_status(404, 'Experiment not found')
             return 
