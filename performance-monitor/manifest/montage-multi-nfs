@@ -227,7 +227,7 @@ done
     <topology:hasGUID>f140b31d8257282f08714b6bc94b03abc8a74859</topology:hasGUID>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#DiskImage"/>
   {% if param['topology'] == 'inter-rack' %}
-  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#param['worker_site']vmsite/Domain">
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#{{param['worker_site']}}vmsite/Domain">
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkDomain"/>
   </rdf:Description>
   {% endif %}
