@@ -45,6 +45,14 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         
         '''
         data = json.loads(self.request.body)
+        if not self._db[DB_NAME]['workflow']['manifest'].find_one({
+                'type': data['type'],
+                'mode': data['mode'],
+                'storage_site': data['storage_site'],
+                'storage_type': data['storage_type'],
+            }):
+            self.set_status(404, 'Manifest not available yet')
+            return
         data['exp_id'] = str(uuid.uuid4())
         data['status'] = 'submitted'
         data['create_time'] = int(time.time())
