@@ -57,14 +57,14 @@ var Chartjs = Chart.noConflict();
 		<thead>
 		<tr>
 			<th>Name</th>
-			<th>Identified at</th>
+			<th>Time Elapsed</th>
 		</tr>
 		</thead>	
 		<tbody>
 			{% for w in data['workers']%}
 				<tr>
 					<td><a href="{{'%s/workers/%s' % (current_uri, w['host'])}}">{{w['host']}}</a></td>
-					<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(w['timestamp']))}}</td>
+					<td>{{time.strftime('%H:%M:%S', time.localtime(time.time() - w['timestamp']))}}</td>
 				</tr>
 			{% end %}
 		</tbody>
