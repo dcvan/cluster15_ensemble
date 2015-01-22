@@ -49,6 +49,7 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         data['exp_id'] = str(uuid.uuid4())
         data['status'] = 'submitted'
         data['create_time'] = int(time.time())
+        self._db[DB_NAME]['workflow']['experiments'].insert(data)
         self._db[DB_NAME][data['exp_id']]['info'].insert(data)
         self.set_header('Content-Type', 'application/json;charset="utf-8"')
         self.write(json.dumps({
@@ -121,7 +122,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
         manifest = jinja2.Template(template).render(param=exp)
         self.set_header('Content-Type', 'application/rdf+xml')
-        self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode']]))
+        self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode'], exp['worker_size']]))
         self.write(manifest)
         
 class RunsRenderer(tornado.web.RedirectHandler):
@@ -150,7 +151,10 @@ class RunsRenderer(tornado.web.RedirectHandler):
             self.set_status(204, 'No finished runs')
             return
         self.set_header('Content-Type', 'application/json;charset="utf-8"')
-        self.write(json.dumps({'runs': runs}))
+        self.write(json.dumps({
+                'label': [r['run_id'] for r in runs],
+                'walltime': [r['walltime'] for r in runs]
+            }))
         
 class WorkerRenderer(tornado.web.RedirectHandler):
     '''
@@ -190,10 +194,11 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             return
         if data['aspect'] != 'system' and data['aspect'] != 'process':
             self.set_status(422, 'Unknown query')
+            return
         stat = [s for s in self._db[DB_NAME][exp_id][data['aspect']].find({'host': worker}, {'_id': 0}).sort('timestamp')]
         if not stat or len(stat) < 2:
             self.set_status(204, 'Data not available yet')
-            self.write(None)
+            return
         res = {}
         if data['aspect'] == 'system':
             res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stat[i]['timestamp'])) if i == 0 or i == len(stat) - 1 else '' for i in range(0, len(stat))]
@@ -220,7 +225,7 @@ class WorkerRenderer(tornado.web.RedirectHandler):
         self.set_header('Content-Type', 'application/json;charset="utf-8"')
         self.write(json.dumps(res))
         
-class ExperimentsRenderer(tornado.web.RequestHandler):
+class WorkflowRenderer(tornado.web.RequestHandler):
     '''
     Renders experiment listing
     
@@ -236,6 +241,9 @@ class ExperimentsRenderer(tornado.web.RequestHandler):
         
     def get(self, workflow):
         '''
+        GET method: renders experiments listing page
         
         '''
-        pass
+        exp = [e for e in self._db[DB_NAME]['workflow']['experiments'].find({'type': workflow}, {'_id': 0})]
+        self.render('experiments.html', experiments=exp, current_uri=self.request.uri)
+

@@ -14,21 +14,39 @@
 	<table class="table table-hover">
 		<thead><tr>
 			<th>Experiment ID</th>
-			<th>Type</th>
+			<th>Mode</th>
+			<th>Topology</th>
+			<th>Master Site</th>
+			<th>Worker Site</th>
+			<th>Worker Size</th>
+			<th>Number of Workers</th>
+			<th>Workload Size</th>
+			<th>Bandwidth</th>
 			<th>Create Time</th>
 			<th>Status</th>
 		</tr></thead>
 		<tbody>
 			{% for e in experiments %}
 			<tr>
-				<td><a href="{{'%s/%s' % (current_uri, e['exp_id'])}}">e['exp_id']</a></td>
-				<td><a href="{{'/workflows/%s' % e['type']}}">e['type']</a></td>
+				<td><a href="{{'%s/experiments/%s' % (current_uri, e['exp_id'])}}">{{e['exp_id']}}</a></td>
+				<td>{{e['topology']}}</td>
+				<td>{{e['mode']}}</td>
+				<td>{{e['master_site']}}</td>
+				<td>{{e['worker_site'] if e['mode'] == 'multinode' else '-'}}</td>
+				<td>{{e['worker_size']}}</td>
+				<td>{{e['worker_num']}}</td>
+				<td>{{e['run_num']}}</td>
+				<td>{{e['bandwidth'] if e['mode'] == 'multinode' else '-'}}</td>
 				<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['create_time']))}}</td>
 				<td>{{e['status']}}</td>
 			</tr>
 			{% end %}
 		</tbody>
 	</table>
+	<h2>Analysis</h2>
+	<div id="analysis" class="control-group">
+			
+	</div>
 </section>
 </body>
 </html>

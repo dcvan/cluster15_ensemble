@@ -30,87 +30,61 @@
 		</tbody>
 	</table>
 	<h2>Start A New Workflow</h2>
-	<div class="control-group">
-		<div id="types" class="field">
-			<label for="type">Workflow Type</label>
-			<div id="type">
-			{% for w in workflows %}
-				<label>
-					<input type="radio" id="{{w['name']}}" name="type" value="{{w['name']}}" class="opts"/>
-					{{w['name']}}
-				</label>
-			{% end %}	
-			</div>
-		</div>
+	<div class="form-group">
+		<label for="types">Workflow Type</label>
+		<select id="types" class="form-control">
+		{% for w in workflows %}
+				<option value="{{w['name']}}">{{w['name']}}</option>
+		{% end %}	
+		</select>
 		<label for="topology">Topology</label>
-		<div id="topology">
+		<select id="topology" class="form-control">
 			{% for t in data['topology'] %}
-			<label>
-				<input type="radio" id="{{t['name']}}" name="topology" value="{{t['name']}}" class="opts"/>
-				{{t['name']}}
-			</label>
+			<option value="{{t['name']}}">{{t['name']}}</option>
 			{% end %}
-		</div>
+		</select>
 		<label for="mode">Mode</label>
-		<div id="mode">
+		<select id="mode" class="form-control">
 			{% for m in data['mode'] %}
-			<label>
-				<input type="radio" id="{{m['name']}}" name="mode" value="{{m['name']}}" class="opts"/>
-				{{m['name']}}
-			</label>
+			<option value="{{m['name']}}">{{m['name']}}</option>
 			{% end %}
-		</div>
+		</select>
 		<label for="master-site">Master Site</label>
-		<div id="master-site">
+		<select id="master-site" class="form-control">
 			{% for s in data['site'] %}
-			<label>
-				<input type="radio" name="master-site" value="{{s['name']}}" class="opts"/>
-				{{s['name'].upper()}}({{s['location']}})
-			</label>
+			<option value="{{s['name']}}">{{s['name'].upper()}}({{s['location']}})</option>
 			{% end %}
-		</div>
+		</select>
 		<label for="worker-site">Worker Site</label>
-		<div id="worker-site">
+		<select id="worker-site" class="form-control">
 			{% for s in data['site'] %}
-			<label>
-				<input type="radio" name="worker-site" value="{{s['name']}}" class="opts"/>
-				{{s['name'].upper()}}({{s['location']}})
-			</label>
+			<option value="{{s['name']}}">{{s['name'].upper()}}({{s['location']}})</option>
 			{% end %}
-		</div>
+		</select>
 		<label for="worker-size">Worker Size</label>
-		<div id="worker-size">
+		<select id="worker-size" class="form-control">
 			{% for w in data['worker_size'] %}
-			<label>
-				<input type="radio" id="{{w['name']}}" name="worker-size" value="{{w['value']}}" class="opts"/>
-				{{w['name']}}
-			</label>
+			<option value="{{w['value']}}">{{w['name']}}</option>
 			{% end %}
-		</div>
+		</select>
 		<label for="storage-site">Storage Site</label>
-		<div id="storage-site">
+		<select id="storage-site" class="form-control">
 			{% for ss in data['storage_site'] %}
-			<label>
-				<input type="radio" id="{{ss['name']}}" name="storage-site" value="{{ss['name']}}" class="opts"/>
-				{{ss['name']}}
-			</label>
+			<option value="{{ss['name']}}">{{ss['name']}}</option>
 			{% end %}
-		</div>
+		</select>
 		<label for="storage-type">Storage Type</label>
-		<div id="storage-type">
+		<select id="storage-type" class="form-control">
 			{% for st in data['storage_type'] %}
-			<label>
-				<input type="radio" id="{{st['name']}}" name="storage-type" value="{{st['name']}}" class="opts"/>
-				{{st['name']}}
-			</label>
+			<option value="{{st['name']}}">{{st['name']}}</option>
 			{% end %}
-		</div>
+		</select>			
 		<div id="worker-num" class="field">
-			<label for="worker-num">Worker Number</label>
+			<label for="worker-num">Number of Workers</label>
 			<input type="number" name="worker-num" class="form-control" />
 		</div>
 		<div id="run-num" class="field">
-			<label for="run-num">Run Number</label>
+			<label for="run-num">Workload Size</label>
 			<input type="number" name="run-num" class="form-control" />
 		</div>
 		<div id="interval" class="field">

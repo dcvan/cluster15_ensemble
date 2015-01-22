@@ -4,14 +4,14 @@
 $(document).ready(function(){
 	$('#submit').click(function(){
 		var data = {
-				'type': $('#types input:checked').val(),
-				'topology': $('#topology input:checked').val(),
-				'mode': $('#mode input:checked').val(),
-				'master_site': $('#master-site input:checked').val(),
-				'worker_site': $('#topology input:checked').val() == 'intra-rack'?$('#mater-site input:checked').val():$('#worker-site input:checked').val(),
-				'worker_size': $('#worker-size input:checked').val(),
-				'storage_site': $('#storage-site input:checked').val(),
-				'storage_type': $('#storage-type input:checked').val(),
+				'type': $('#types option:selected').val(),
+				'topology': $('#topology option:selected').val(),
+				'mode': $('#mode option:selected').val(),
+				'master_site': $('#master-site option:selected').val(),
+				'worker_site': $('#topology option:selected').val() == 'intra-rack'?$('#master-site option:selected').val():$('#worker-site option:selected').val(),
+				'worker_size': $('#worker-size option:selected').val(),
+				'storage_site': $('#storage-site option:selected').val(),
+				'storage_type': $('#storage-type option:selected').val(),
 				'run_num': $('#run-num input').val(),
 				'worker_num': $('#worker-num input').val(),
 				'reservation': $('#reservation input').val(),
@@ -19,6 +19,7 @@ $(document).ready(function(){
 				'storage_size': $('#storage-size input').val(),
 				'interval': $('#interval input').val()
 			};
+		
 		console.log(JSON.stringify(data));
 		$.ajax({
 			url: window.location.pathname,
