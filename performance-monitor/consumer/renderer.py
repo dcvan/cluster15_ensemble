@@ -206,6 +206,9 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             self.set_status(422, 'Unknown query')
             return
         stat = [s for s in self._db[DB_NAME]['experiment'][data['aspect']].find({'exp_id': exp_id, 'host': worker}, {'_id': 0}).sort('timestamp')]
+        if not stat or len(stat) < 2:
+            self.set_status(204, 'Data not available yet')
+            return
         res = {}
         if data['aspect'] == 'system':
             res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(s['timestamp'])) for s in stat ]
