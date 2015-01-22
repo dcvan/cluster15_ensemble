@@ -9,7 +9,6 @@ $(document).ready(function(){
 		contentType: 'application/json',
 		data: JSON.stringify({'aspect': 'system'}),
 		success: function(data){
-			if(!data.length) return;
 			plotLine($('#sys-cpu canvas').get(0), 
 					data['label'],
 					[{'label': 'Avg.', 'data': data['sys_cpu_percent'], 'color': color1},
@@ -45,8 +44,6 @@ $(document).ready(function(){
 		contentType: 'application/json',
 		data: JSON.stringify({'aspect': 'job'}),
 		success: function(data){
-			if(!data.length) return;
-			console.log(JSON.stringify(data));
 			plotLine($('#cpu-line canvas').get(0), 
 					data['label'],
 					[{'label': 'Avg.', 'data': data['avg_cpu_percent'], 'color': color1},
