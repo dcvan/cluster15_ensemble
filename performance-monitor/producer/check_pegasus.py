@@ -59,48 +59,83 @@ class SystemMonitor(Process):
     System resource usage monitor
     
     '''
-    def __init__(self, exp_id, msg_q):
+    def __init__(self, exp_id, hostname, msg_q):
         '''
         
         :param str exp_id: experiment ID
+        :param str hostname: hostname
         :param subprocess.Queue msg_q: message queue for sending data to message sender
         
         '''
         Process.__init__(self)
-        self._exp_id = exp_id
         self._msg_q = msg_q
-        self._hostname = socket.gethostname()
+        self._counter = 0
+        self._start_time = None
+        self._lock = RLock()
+        self._init_read_bytes = psutil.disk_io_counters.read_bytes
+        self._init_write_bytes  = psutil.disk_io_counters.write_bytes
+        self._init_bytes_sent = int(psutil.net_io_counters().bytes_sent)
+        self._init_bytes_recv = int(psutil.net_io_counters().bytes_recv)
+        self._stat = {
+                'exp_id': exp_id,
+                'host': hostname, 
+                'type': 'system',
+                'sys_max_cpu_percent': 0,
+                'sys_min_cpu_percent': 2000,
+                'sys_max_mem_percent':0,
+                'sys_min_cpu_percent': 2000,
+            }
         
     def run(self):
         '''
         Override
         
         '''
+        self._start_time = time.time()
         while True:
             while not os.listdir(CONDOR_EXE_DIR):
                 print('Waiting ...')
                 time.sleep(5)
-            self._msg_q.put({
-                'exp_id': self._exp_id,
-                'type': 'system',
-                'host': self._hostname,
-                'timestamp': time.time(),
-                'sys_cpu_percent': psutil.cpu_percent(),
-                'sys_mem_percent': psutil.virtual_memory().percent,
-                'sys_read_bytes': psutil.disk_io_counters().read_bytes,
-                'sys_write_bytes': psutil.disk_io_counters().write_bytes,
-                'sys_net_bytes_sent': int(psutil.net_io_counters().bytes_sent),
-                'sys_net_bytes_recv': int(psutil.net_io_counters().bytes_recv),
-            })
+            with self._lock:
+                self._counter += 1
+                cpu_pct = psutil.cpu_percent()
+                mem_pct = psutil.virtual_memory.percent
+                self._stat['sys_cpu_percent'] = self._stat['sys_cpu_percent'] + cpu_pct if 'sys_cpu_percent' in self._stat else cpu_pct
+                self._stat['sys_max_cpu_percent'] = max(self._stat['sys_max_cpu_percent'], cpu_pct)
+                self._stat['sys_min_cpu_percent'] = min(self._stat['sys_min_cpu_percent'], cpu_pct)
+                self._stat['sys_max_mem_percent'] = max(self._stat['sys_max_mem_percent'], mem_pct)
+                self._stat['sys_min_mem_percent'] = max(self._stat['sys_min_mem_percent'], mem_pct)
+                self._stat['sys_mem_percent'] = self._stat['sys_mem_percent'] + mem_pct if 'sys_mem_percent' in self._stat else mem_pct
+                self._stat['sys_read_bytes'] = psutil.disk_io_counters().read_bytes - self._init_read_bytes
+                self._stat['sys_write_bytes'] = psutil.disk_io_counters().write_bytes - self._init_write_bytes
+                self._stat['sys_net_bytes_sent'] = int(psutil.net_io_counters().bytes_sent) - self._init_bytes_sent
+                self._stat['sys_net_bytes_recv'] = int(psutil.net_io_counters().bytes_recv) - self._init_bytes_recv
             time.sleep(5)
         
+    def send_statistics(self):
+        '''
+        Send system statistics at this point of time
+        
+        '''
+        msg = None
+        runtime = time.time() - self._start_time
+        with self._lock:
+            msg = dict(self._stat)
+            msg['sys_cpu_percent'] /= self._counter
+            msg['sys_mem_percent'] /= self._counter
+            msg['sys_read_rate'] = self._stat['sys_read_bytes'] / runtime
+            msg['sys_write_rate'] = self._stat['sys_write_bytes'] / runtime
+            msg['sys_send_rate'] = self._stat['sys_bytes_sent'] / runtime
+            msg['sys_recv_rate'] = self._stat['sys_bytes_recv'] / runtime
+            self._msg_q.put(msg)
+            print msg
     
 class ProcessMonitor(object):
     '''
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, exp_id, executables, interval=1, workdir_base=None, run_num=0):
+    def __init__(self, exp_id, is_master=False, is_worker=False , run_num=0, workdir_base=None, executables=None):
         '''
         Init
 
@@ -111,48 +146,39 @@ class ProcessMonitor(object):
         '''
         manager = Manager()
         
+        # required fields
         self._exp_id = exp_id
-        self._msg_q = Queue()
-        self._procs = set(executables)
-        self._interval = interval
-        self._workdir_base = workdir_base
-        self._run_num = run_num
         self._hostname = socket.gethostname()
+        self._is_master = is_master
+        self._is_worker = is_worker
+        self._msg_q = Queue()
+        self._cur = None
+        self._lock = RLock()
+        self._count = Value('i', 0)
+        self._stat = manager.dict({
+                    'exp_id': self._exp_id,
+                    'host': self._hostname,
+                    'type': 'job',
+                    })
+       
         self._sender = MessageSender(
                 self._exp_id,
                 pika.URLParameters(MESSAGE_BROKER_URI), 
                 self._msg_q,
                 self._hostname,
                 )
-        if self._workdir_base:
+
+        if self._is_master:
+            self._workdir_base = workdir_base
+            self._run_num = run_num
             self._done = Value('i', 0)
             self._status_monitor = WorkflowMonitor(self._done, self._workdir_base, self._run_num)
-        self._is_worker = True if not self._workdir_base else self._find_startd()
+            
         if self._is_worker:
-            self._system_monitor = SystemMonitor(self._exp_id, self._msg_q)
-        self._cur = None
-        self._lock = RLock()
-        self._stat = manager.dict({
-                    'exp_id': self._exp_id,
-                    'host': self._hostname,
-                    'start_time': 0,
-                    'type': 'process',
-                    'terminate_time': 0,
-                    'timestamp': 0,
-                    'count':0,
-                    'cmdline': None,
-                    'runtime': 0.0,
-                    'min_cpu_percent': 0.0,
-                    'max_cpu_percent': 2000.0,
-                    'avg_cpu_percent': 0.0,
-                    'min_mem_percent': 0.0,
-                    'max_mem_percent': 2000.0,
-                    'avg_mem_percent': 0.0,
-                    'total_read_bytes': 0,
-                    'total_write_bytes': 0,
-                    'status': None,
-                    })
-    
+            self._system_monitor = SystemMonitor(self._exp_id, self._hostname,  self._msg_q)
+            self._procs = set(executables)
+
+
     def on_terminate(self, proc):
         '''
         Send a summary message when a process is terminated
@@ -163,18 +189,20 @@ class ProcessMonitor(object):
         with self._lock:
             if not self._stat['cmdline']: 
                 return
-            self._stat['status'] = 'terminated'
-            self._stat['terminate_time'] = time.time()
-            self._stat['runtime'] = self._stat['terminate_time'] - proc.create_time()
-            if self._stat['count'] > 1:
-                self._stat['avg_cpu_percent'] /= self._stat['count'] - 1
-                self._stat['avg_mem_percent'] /= self._stat['count']
-            else:
-                self._stat['avg_cpu_percent'] = 0
-                self._stat['avg_mem_percent'] = 0
             self._stat['timestamp'] = time.time()
-            self._msg_q.put(dict(self._stat))
-            print(self._stat)
+            if self._get_job_pid() == self._stat['pid']:
+                self._stat['runtime'] += self._stat['timestamp'] - proc.create_time()
+            else:
+                self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
+                if self._count.value > 1:
+                    self._stat['avg_cpu_percent'] /= self._count.value - 1
+                    self._stat['avg_mem_percent'] /= self._count.value
+                else:
+                    self._stat['avg_cpu_percent'] = 0
+                    self._stat['avg_mem_percent'] = 0
+                self._msg_q.put(dict(self._stat))
+                print(self._stat)
+                self._system_monitor.send_statistics()
 
     def find_process(self):
         '''
@@ -184,9 +212,9 @@ class ProcessMonitor(object):
         :rtype - psutil.Process
         
         '''
-        if not os.listdir(CONDOR_EXE_DIR):
-            return None
-        proc = psutil.Process(int(os.listdir(CONDOR_EXE_DIR)[0][4:]))
+        with self._lock:
+            self._stat['pid'] = self._get_job_pid()
+        proc = psutil.Process()
         try:
             children = proc.children(recursive=True)
             for p in children:
@@ -198,12 +226,13 @@ class ProcessMonitor(object):
                 else:
                     executable = p.name()
                 if executable and executable in self._procs:
-                    if p.name() == 'python':
-                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline() if arg != 'python'])
-                    elif p.name() == 'java':
-                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.parent().cmdline() if arg != 'bash'])
-                    else:
-                        self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()])
+                    with self._lock:
+                        if p.name() == 'python':
+                            self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()[1:3]])
+                        elif p.name() == 'java':
+                            self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.parent().cmdline()[1:3]])
+                        else:
+                            self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()[:2]])
                     wait = Process(target=psutil.wait_procs, args=([p], None, self.on_terminate))
                     wait.start()
                     return p
@@ -216,8 +245,7 @@ class ProcessMonitor(object):
          
         '''
         self._sender.start()
-        if self._workdir_base:
-            # master-specific config
+        if self._is_master:
             self._status_monitor.start()
 
         if self._is_worker:
@@ -231,67 +259,50 @@ class ProcessMonitor(object):
             while True:
                 while not self._cur: 
                     print('Waiting ...')
-                    if (self._workdir_base and self._done.value >= self._run_num):
+                    if self._is_master and self._done.value >= self._run_num:
                         break;
                     self._cur = self.find_process()
-                    if self._cur: break
-                    time.sleep(self._interval)
-                if self._workdir_base and self._done.value >= self._run_num:
+                    if self._cur: 
+                        break
+                    time.sleep(1)
+                if self._is_master and self._done.value >= self._run_num:
                     break;
                 with self._lock:
                     try:
-                        if not self._stat['status']:
-                            self._stat['status'] = 'started'
-                            self._stat['start_time'] = self._cur.create_time()
-                        else:
-                            self._stat['status'] = 'running'
-                        self._stat['count'] += 1
+                        self._count.value += 1
                         cpu_percent = self._cur.cpu_percent()
                         mem_percent = self._cur.memory_percent()
+                        self._stat['max_cpu_percent'] = max(self._stat['max_cpu_percent'], cpu_percent)
                         if cpu_percent:
-                            self._stat['max_cpu_percent'] = max(self._stat['max_cpu_percent'], cpu_percent)
                             self._stat['min_cpu_percent'] = min(self._stat['min_cpu_percent'], cpu_percent)
                         self._stat['avg_cpu_percent'] += cpu_percent
-                        if mem_percent:
-                            self._stat['max_mem_percent'] = max(self._stat['max_mem_percent'], mem_percent)
-                            self._stat['min_mem_percent'] = min(self._stat['min_mem_percent'], mem_percent)
-                        self._stat['avg_mem_percent'] += self._cur.memory_percent()
+                        self._stat['max_mem_percent'] = max(self._stat['max_mem_percent'], mem_percent)
+                        self._stat['min_mem_percent'] = min(self._stat['min_mem_percent'], mem_percent)
+                        self._stat['avg_mem_percent'] += mem_percent
+                        
                         self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                         self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
                             
-                        print(self._cur.pid, self._stat['cmdline'], cpu_percent, self._cur.memory_percent(), self._cur.io_counters())
-                        self._msg_q.put({
-                            'exp_id': self._exp_id,
-                            'host': self._hostname,
-                            'type': 'process',
-                            'timestamp': time.time(),
-                            'cmdline': self._stat['cmdline'],
-                            'cpu_percent': cpu_percent,
-                            'memory_percent': self._cur.memory_percent(),
-                            'start_time': self._stat['start_time'],
-                            'total_read_bytes': self._stat['total_read_bytes'],
-                            'total_write_bytes': self._stat['total_write_bytes'],
-                            'status': self._stat['status'],
-                        })
+                        print(self._stat['pid'], self._stat['cmdline'], cpu_percent, mem_percent)
                     except psutil.NoSuchProcess:
-                        self._cur = None
-                        with self._lock:
-                            self._stat['count'] = 0
-                            self._stat['cmdline'] = None
-                            self._stat['runtime'] = 0.0
-                            self._stat['start_time'] = 0
-                            self._stat['terminate_time'] = 0
-                            self._stat['min_cpu_percent'] = 2000.0
-                            self._stat['max_cpu_percent'] = 0.0
-                            self._stat['avg_cpu_percent']= 0.0
-                            self._stat['min_mem_percent'] = 2000.0
-                            self._stat['max_mem_percent'] = 0.0 
-                            self._stat['avg_mem_percent'] = 0.0
-                            self._stat['total_read_bytes'] = 0
-                            self._stat['total_write_bytes'] = 0
-                            self._stat['timestamp'] = 0
-                            self._stat['status'] = None
-                time.sleep(self._interval)
+                        self._cur = self.find_process()
+                        if self._get_job_pid() != self._stat['pid']:
+                            self._count.value = 0
+                            with self._lock:
+                                self._stat['pid'] = None
+                                self._stat['cmdline'] = None
+                                self._stat['runtime'] = 0
+                                self._stat['start_time'] = 0
+                                self._stat['terminate_time'] = 0
+                                self._stat['min_cpu_percent'] = 2000.0
+                                self._stat['max_cpu_percent'] = 0.0
+                                self._stat['avg_cpu_percent']= 0.0
+                                self._stat['min_mem_percent'] = 2000.0
+                                self._stat['max_mem_percent'] = 0.0 
+                                self._stat['avg_mem_percent'] = 0.0
+                                self._stat['total_read_bytes'] = 0
+                                self._stat['total_write_bytes'] = 0
+                time.sleep(1)
         else:
             while self._done.value < self._run_num:
                 time.sleep(10)
@@ -335,34 +346,30 @@ class ProcessMonitor(object):
             # can be pre-mature workflow run or working directory does not exist
             return None
         
-    def _find_startd(self):
+    def _get_job_pid(self):
         '''
-        Find if the host has condor_startd. If it has, it is a worker
-        
-        :rtype bool
-        
         '''
-        for p in psutil.process_iter():
-            if p.name() == 'condor_startd':
-                return True
-        return False
-    
+        if os.listdir(CONDOR_EXE_DIR):
+            return int(os.listdir(CONDOR_EXE_DIR[0][4:]))
+        
 if __name__ == '__main__':
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument('-i', '--id', dest='exp_id', type=str, help='Experiment ID', required=True)
-        parser.add_argument('-w', '--workdir-base', dest='workdir_base', type=str, help='Workflow working directory base')
-        parser.add_argument('-n', '--int', dest='interval', type=int, help='Check-in interval for ProcessMonitor')
+        parser.add_argument('-m', '--master', dest='is_master', default=False, action='store_true', help='Master')
+        parser.add_argument('-w', '--worker', dest='is_worker', defautl=False, action='store_true', help='Worker')
+        parser.add_argument('-d', '--dir', dest='workdir_base', type=str, help='Workflow working directory base')
         parser.add_argument('-r', '--run-num', dest='run_num', type=int, help='Number of planned runs')
         parser.add_argument('-l', '--exec-list', nargs='+', type=str, dest='executables', help='Executables to be monitored')
         args = parser.parse_args()
         
         ProcessMonitor(
                 args.exp_id,
-                args.executables,
-                args.interval if args.interval else 1,
+                is_master,
+                is_worker,
+                args.run_num,
                 args.workdir_base,
-                args.run_num
+                args.executables,
             ).run()
     except KeyboardInterrupt:
         pass

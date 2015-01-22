@@ -17,7 +17,6 @@ $(document).ready(function(){
 				'reservation': $('#reservation input').val(),
 				'bandwidth': $('#bandwidth input').val() * 1000 * 1000,
 				'storage_size': $('#storage-size input').val(),
-				'interval': $('#interval input').val()
 			};
 		
 		console.log(JSON.stringify(data));

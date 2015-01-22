@@ -134,7 +134,7 @@ pip install pika tornado psutil argparse
 git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 
 # start monitor 
-python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w /home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf -r {{param['run_num']}} -l {{' '.join(param['executables'])}} &amp;
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -m  -w -d /home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf -r {{param['run_num']}} &amp;
 
 # start workflow
 sleep 10
@@ -267,7 +267,7 @@ pip install pika tornado psutil argparse
 git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 
 # start monitor
-python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -l {{' '.join(param['executables'])}} -n {{param['interval']}}
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w -l {{' '.join(param['executables'])}} &amp;
 
 </request-schema:postBootScript>
     <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#{{param['worker_site']}}vmsite/Domain"/>
