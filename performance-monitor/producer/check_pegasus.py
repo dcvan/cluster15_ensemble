@@ -163,6 +163,8 @@ class ProcessMonitor(object):
                     'min_cpu_percent': 2000,
                     'max_mem_percent': 0,
                     'min_mem_percent': 2000,
+                    'avg_cpu_percent': 0,
+                    'avg_mem_percent': 0,
                     })
        
         self._sender = MessageSender(
