@@ -199,7 +199,7 @@ pip install pika tornado psutil argparse
 git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 
 # start monitor
-python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w /home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage -r {{param['run_num']}} -l {{' '.join(param['executables'])}}
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w /home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage -r {{param['run_num']}} -l {{' '.join(param['executables'])}} &
 
 # start workflow
 sleep 10

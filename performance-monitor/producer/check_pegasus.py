@@ -247,7 +247,7 @@ class ProcessMonitor(object):
                             self._stat['status'] = 'running'
                         self._stat['count'] += 1
                         cpu_percent = self._cur.cpu_percent()
-                        mem_percent = self._cur.mem_percent()
+                        mem_percent = self._cur.memory_percent()
                         if cpu_percent:
                             self._stat['max_cpu_percent'] = max(self._stat['max_cpu_percent'], cpu_percent)
                             self._stat['min_cpu_percent'] = min(self._stat['min_cpu_percent'], cpu_percent)
