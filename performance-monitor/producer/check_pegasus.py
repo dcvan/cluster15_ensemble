@@ -110,6 +110,7 @@ class SystemMonitor(Process):
                 self._stat['sys_write_bytes'] = psutil.disk_io_counters().write_bytes - self._init_write_bytes
                 self._stat['sys_net_bytes_sent'] = int(psutil.net_io_counters().bytes_sent) - self._init_bytes_sent
                 self._stat['sys_net_bytes_recv'] = int(psutil.net_io_counters().bytes_recv) - self._init_bytes_recv
+                print '[System] %s' % str(self._stat)
             time.sleep(5)
         
     def send_statistics(self):
@@ -125,8 +126,8 @@ class SystemMonitor(Process):
             msg['sys_mem_percent'] /= self._count.value
             msg['sys_read_rate'] = self._stat['sys_read_bytes'] / runtime
             msg['sys_write_rate'] = self._stat['sys_write_bytes'] / runtime
-            msg['sys_send_rate'] = self._stat['sys_bytes_sent'] / runtime
-            msg['sys_recv_rate'] = self._stat['sys_bytes_recv'] / runtime
+            msg['sys_send_rate'] = self._stat['sys_net_bytes_sent'] / runtime
+            msg['sys_recv_rate'] = self._stat['sys_net_bytes_recv'] / runtime
             self._msg_q.put(msg)
             print msg
     
@@ -228,8 +229,7 @@ class ProcessMonitor(object):
                 if p.name() == 'python':
                     executable = p.cmdline()[1].split('/')[-1]
                 elif p.name() == 'java':
-                    print p.parent().cmdline()
-                    executable = p.parent().cmdline()[1].split('/')[-1] if len(p.parent().cmdline()) > 1 else None
+                    executable = p.parent().cmdline()[1].split('/')[-1]
                 else:
                     executable = p.name()
                 if executable and executable in self._procs:
@@ -290,9 +290,9 @@ class ProcessMonitor(object):
                         self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                         self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
                             
-                        print(self._stat['pid'], self._stat['cmdline'], cpu_percent, mem_percent)
+                        print (self._stat['pid'], self._stat['cmdline'], cpu_percent, mem_percent)
                     except psutil.NoSuchProcess:
-                        self._cur = self.find_process()
+                        self._cur = None
                         if self._get_job_pid() != self._stat['pid']:
                             self._count.value = 0
                             with self._lock:
