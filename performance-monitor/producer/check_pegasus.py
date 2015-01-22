@@ -99,7 +99,7 @@ class SystemMonitor(Process):
             with self._lock:
                 self._count += 1
                 cpu_pct = psutil.cpu_percent()
-                mem_pct = psutil.virtual_memory.percent
+                mem_pct = psutil.virtual_memory().percent
                 self._stat['sys_cpu_percent'] = self._stat['sys_cpu_percent'] + cpu_pct if 'sys_cpu_percent' in self._stat else cpu_pct
                 self._stat['sys_max_cpu_percent'] = max(self._stat['sys_max_cpu_percent'], cpu_pct)
                 self._stat['sys_min_cpu_percent'] = min(self._stat['sys_min_cpu_percent'], cpu_pct)
