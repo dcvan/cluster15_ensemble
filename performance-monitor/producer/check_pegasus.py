@@ -105,7 +105,7 @@ class SystemMonitor(Process):
                 self._stat['sys_min_cpu_percent'] = min(self._stat['sys_min_cpu_percent'], cpu_pct)
                 self._stat['sys_mem_percent'] = self._stat['sys_mem_percent'] + mem_pct if 'sys_mem_percent' in self._stat else mem_pct
                 self._stat['sys_max_mem_percent'] = max(self._stat['sys_max_mem_percent'], mem_pct)
-                self._stat['sys_min_mem_percent'] = max(self._stat['sys_min_mem_percent'], mem_pct)
+                self._stat['sys_min_mem_percent'] = min(self._stat['sys_min_mem_percent'], mem_pct)
                 self._stat['sys_read_bytes'] = psutil.disk_io_counters().read_bytes - self._init_read_bytes
                 self._stat['sys_write_bytes'] = psutil.disk_io_counters().write_bytes - self._init_write_bytes
                 self._stat['sys_net_bytes_sent'] = int(psutil.net_io_counters().bytes_sent) - self._init_bytes_sent
