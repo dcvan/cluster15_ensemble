@@ -2,13 +2,14 @@
  * 
  */
 $(document).ready(function(){
-	var color1 = '151,187,205', color2 = '170,57,57', color3='51.255.102'
+	var color1 = '151,187,205', color2 = '170,57,57', color3='51,255,102'
 	$.ajax({
 		url: window.location.path,
 		type: 'POST',
 		contentType: 'application/json',
 		data: JSON.stringify({'aspect': 'system'}),
 		success: function(data){
+			console.log(JSON.stringify(data));
 			plotLine($('#sys-cpu canvas').get(0), 
 					data['label'],
 					[{'label': 'Avg.', 'data': data['sys_cpu_percent'], 'color': color1},
@@ -44,6 +45,7 @@ $(document).ready(function(){
 		contentType: 'application/json',
 		data: JSON.stringify({'aspect': 'job'}),
 		success: function(data){
+			console.log(JSON.stringify(data));
 			plotLine($('#cpu-line canvas').get(0), 
 					data['label'],
 					[{'label': 'Avg.', 'data': data['avg_cpu_percent'], 'color': color1},

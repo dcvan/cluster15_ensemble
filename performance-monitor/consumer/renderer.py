@@ -211,7 +211,7 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             return
         res = {}
         if data['aspect'] == 'system':
-            res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(s['timestamp'])) for s in stat]
+            res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(s['timestamp'])) for s in stat ]
             res['sys_cpu_percent'] = [s['sys_cpu_percent'] for s in stat]
             res['sys_max_cpu_percent'] = [s['sys_max_cpu_percent'] for s in stat]
             res['sys_min_cpu_percent'] = [s['sys_min_cpu_percent'] for s in stat]
