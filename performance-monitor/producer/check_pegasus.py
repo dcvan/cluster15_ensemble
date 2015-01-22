@@ -142,7 +142,11 @@ class ProcessMonitor(object):
                     'count':0,
                     'cmdline': None,
                     'runtime': 0.0,
+                    'min_cpu_percent': 0.0,
+                    'max_cpu_percent': 2000.0,
                     'avg_cpu_percent': 0.0,
+                    'min_mem_percent': 0.0,
+                    'max_mem_percent': 2000.0,
                     'avg_mem_percent': 0.0,
                     'total_read_bytes': 0,
                     'total_write_bytes': 0,
@@ -243,7 +247,13 @@ class ProcessMonitor(object):
                             self._stat['status'] = 'running'
                         self._stat['count'] += 1
                         cpu_percent = self._cur.cpu_percent(interval=self._interval)
+                        if cpu_percent:
+                            self._stat['max_cpu_percent'] = max(self._stat['max_cpu_percent'], cpu_percent)
+                            self._stat['min_cpu_percent'] = min(self._stat['min_cpu_percent'], cpu_percent)
                         self._stat['avg_cpu_percent'] += cpu_percent
+                        if mem_percent:
+                            self._stat['max_mem_percent'] = max(self._stat['max_mem_percent'], self._cur.memory_percent())
+                            self._stat['min_mem_percent'] = min(self._stat['min_mem_percent'], self._cur.memory_percent())
                         self._stat['avg_mem_percent'] += self._cur.memory_percent()
                         self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                         self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
@@ -270,7 +280,11 @@ class ProcessMonitor(object):
                             self._stat['runtime'] = 0.0
                             self._stat['start_time'] = 0
                             self._stat['terminate_time'] = 0
+                            self._stat['min_cpu_percent'] = 2000.0
+                            self._stat['max_cpu_percent'] = 0.0
                             self._stat['avg_cpu_percent']= 0.0
+                            self._stat['min_mem_percent'] = 2000.0
+                            self._stat['max_mem_percent'] = 0.0 
                             self._stat['avg_mem_percent'] = 0.0
                             self._stat['total_read_bytes'] = 0
                             self._stat['total_write_bytes'] = 0
