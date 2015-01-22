@@ -4,7 +4,14 @@ import pymongo, uuid
 
 db = pymongo.MongoClient('localhost', 27017)
 
-pymongo.Connection().drop_database('cluster15')
+db['cluster']['workflow']['manifest'].remove({})
+db['cluster']['workflow']['vm_size'].remove({})
+db['cluster']['workflow']['type'].remove({})
+db['cluster']['workflow']['topology'].remove({})
+db['cluster']['workflow']['mode'].remove({})
+db['cluster']['workflow']['storage_site'].remove({})
+db['cluster']['workflow']['storage_type'].remove({})
+db['cluster']['workflow']['site'].remove({})
 
 db['cluster15']['workflow']['manifest'].insert({
     'id': str(uuid.uuid4()),
