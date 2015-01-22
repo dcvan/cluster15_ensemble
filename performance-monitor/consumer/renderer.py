@@ -218,8 +218,8 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             res['sys_max_mem_percent'] = [s['sys_max_mem_percent'] for s in stat]
             res['sys_min_mem_percent'] = [s['sys_min_mem_percent'] for s in stat]
             res['sys_mem_percent'] = [s['sys_mem_percent'] for s in stat]
-            res['sys_read_rates'] = [s['sys_read_rates'] for s in stat]
-            res['sys_write_rates'] = [s['sys_write_rates'] for s in stat]
+            res['sys_read_rate'] = [s['sys_read_rate'] for s in stat]
+            res['sys_write_rate'] = [s['sys_write_rate'] for s in stat]
             res['sys_send_rate'] = [s['sys_send_rate'] for s in stat]
             res['sys_recv_rate'] = [s['sys_recv_rate'] for s in stat]
         else:
