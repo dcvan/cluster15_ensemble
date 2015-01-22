@@ -80,12 +80,16 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         if not exp:
             self.set_status(404, 'Experiment not found')
             return 
-        template = self._db[DB_NAME]['workflow']['manifest'].find_one({
+        t = self._db[DB_NAME]['workflow']['manifest'].find_one({
                     'type': exp['type'],
                     'mode': exp['mode'],
                     'storage_site': exp['storage_site'],
                     'storage_type': exp['storage_type'],
-                    }, {'_id': 0})['manifest']
+                    }, {'_id': 0})
+        if not t:
+            self.set_status(404, 'Manifest not available yet')
+            return
+        template = t['manifest'] 
         if exp['mode'] == 'multinode' and not exp['bandwidth']:
             exp['bandwidth'] = 500000000
         if exp['storage_site'] == 'remote' and not exp['storage_size']:
