@@ -83,7 +83,7 @@ class SystemMonitor(Process):
                 'sys_max_cpu_percent': 0,
                 'sys_min_cpu_percent': 2000,
                 'sys_max_mem_percent':0,
-                'sys_min_cpu_percent': 2000,
+                'sys_min_mem_percent': 2000,
             }
         
     def run(self):
