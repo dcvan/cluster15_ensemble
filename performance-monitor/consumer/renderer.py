@@ -230,11 +230,11 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             res['max_mem_percent'] = [s['max_mem_percent'] for s in stat]
             res['min_mem_percent'] = [s['min_mem_percent'] for s in stat]
             res['avg_mem_percent'] = [s['avg_mem_percent'] for s in stat]
-            res['runtime'] = [s['runtime'] for s in stat if s['status'] == 'terminated']
-            res['read_rate'] = [s['total_read_bytes'] / s['runtime'] for s in stat if s['status'] == 'terminated']
-            res['write_rate'] = [s['total_write_bytes'] / s['runtime'] for s in stat if s['status'] == 'terminated']
-            res['total_read_bytes'] = [s['total_read_bytes'] for s in stat if s['status'] != 'terminated']
-            res['total_write_bytes'] = [s['total_write_bytes'] for s in stat if s['status'] != 'terminated']
+            res['runtime'] = [s['runtime'] for s in stat]
+            res['read_rate'] = [s['total_read_bytes'] / s['runtime'] for s in stat]
+            res['write_rate'] = [s['total_write_bytes'] / s['runtime'] for s in stat]
+            res['total_read_bytes'] = [s['total_read_bytes'] for s in stat]
+            res['total_write_bytes'] = [s['total_write_bytes'] for s in stat]
         
         self.set_header('Content-Type', 'application/json;charset="utf-8"')
         self.write(json.dumps(res))
