@@ -69,11 +69,11 @@ class SystemMonitor(Process):
         '''
         Process.__init__(self)
         self._msg_q = msg_q
-        self._counter = 0
+        self._count = 0
         self._start_time = None
         self._lock = RLock()
-        self._init_read_bytes = psutil.disk_io_counters.read_bytes
-        self._init_write_bytes  = psutil.disk_io_counters.write_bytes
+        self._init_read_bytes = psutil.disk_io_counters().read_bytes
+        self._init_write_bytes  = psutil.disk_io_counters().write_bytes
         self._init_bytes_sent = int(psutil.net_io_counters().bytes_sent)
         self._init_bytes_recv = int(psutil.net_io_counters().bytes_recv)
         self._stat = {
@@ -97,7 +97,7 @@ class SystemMonitor(Process):
                 print('Waiting ...')
                 time.sleep(5)
             with self._lock:
-                self._counter += 1
+                self._count += 1
                 cpu_pct = psutil.cpu_percent()
                 mem_pct = psutil.virtual_memory.percent
                 self._stat['sys_cpu_percent'] = self._stat['sys_cpu_percent'] + cpu_pct if 'sys_cpu_percent' in self._stat else cpu_pct
@@ -159,6 +159,10 @@ class ProcessMonitor(object):
                     'exp_id': self._exp_id,
                     'host': self._hostname,
                     'type': 'job',
+                    'max_cpu_percent': 0,
+                    'min_cpu_percent': 2000,
+                    'max_mem_percent': 0,
+                    'min_mem_percent': 2000,
                     })
        
         self._sender = MessageSender(
@@ -214,7 +218,7 @@ class ProcessMonitor(object):
         '''
         with self._lock:
             self._stat['pid'] = self._get_job_pid()
-        proc = psutil.Process()
+        proc = psutil.Process(self._stat['pid'])
         try:
             children = proc.children(recursive=True)
             for p in children:
@@ -350,14 +354,14 @@ class ProcessMonitor(object):
         '''
         '''
         if os.listdir(CONDOR_EXE_DIR):
-            return int(os.listdir(CONDOR_EXE_DIR[0][4:]))
+            return int(os.listdir(CONDOR_EXE_DIR)[0][4:])
         
 if __name__ == '__main__':
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument('-i', '--id', dest='exp_id', type=str, help='Experiment ID', required=True)
         parser.add_argument('-m', '--master', dest='is_master', default=False, action='store_true', help='Master')
-        parser.add_argument('-w', '--worker', dest='is_worker', defautl=False, action='store_true', help='Worker')
+        parser.add_argument('-w', '--worker', dest='is_worker', default=False, action='store_true', help='Worker')
         parser.add_argument('-d', '--dir', dest='workdir_base', type=str, help='Workflow working directory base')
         parser.add_argument('-r', '--run-num', dest='run_num', type=int, help='Number of planned runs')
         parser.add_argument('-l', '--exec-list', nargs='+', type=str, dest='executables', help='Executables to be monitored')
@@ -365,8 +369,8 @@ if __name__ == '__main__':
         
         ProcessMonitor(
                 args.exp_id,
-                is_master,
-                is_worker,
+                args.is_master,
+                args.is_worker,
                 args.run_num,
                 args.workdir_base,
                 args.executables,
