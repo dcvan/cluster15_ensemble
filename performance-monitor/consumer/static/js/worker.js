@@ -2,29 +2,37 @@
  * 
  */
 $(document).ready(function(){
-	var color1 = '151,187,205', color2 = '170,57,57';
+	var color1 = '151,187,205', color2 = '170,57,57', color3='51.255.102'
 	$.ajax({
 		url: window.location.path,
 		type: 'POST',
 		contentType: 'application/json',
 		data: JSON.stringify({'aspect': 'system'}),
 		success: function(data){
-			plotLine($('#sys-cpu-mem canvas').get(0), 
+			plotLine($('#sys-cpu canvas').get(0), 
 					data['label'],
-					[{'label': 'CPU Usage', 'data': data['sys_cpu_percent'], 'color': color1},
-					 {'label': 'Memory Usage', 'data': data['sys_mem_percent'], 'color': color2}
+					[{'label': 'Avg.', 'data': data['sys_cpu_percent'], 'color': color1},
+					 {'label': 'Max.', 'data': data['sys_max_cpu_percent'], 'color': color2},
+					 {'label': 'Min.', 'data': data['sys_min_cpu_percent'], 'color': color3},
 					],
-					$('#sys-cpu-mem div').get(0));
+					$('#sys-cpu div').get(0));
+			plotLine($('#sys-mem canvas').get(0), 
+					data['label'],
+					[{'label': 'Avg.', 'data': data['sys_mem_percent'], 'color': color1},
+					 {'label': 'Max.', 'data': data['sys_max_mem_percent'], 'color': color2},
+					 {'label': 'Min.', 'data': data['sys_min_mem_percent'], 'color': color3},
+					],
+					$('#sys-mem div').get(0));
 			plotLine($('#sys-rw canvas').get(0), 
 					data['label'],
-					[{'label': 'Bytes Read', 'data': data['sys_read_bytes'], 'color': color1},
-					 {'label': 'Bytes Written', 'data': data['sys_write_bytes'], 'color': color2}
+					[{'label': 'Read Rate', 'data': data['sys_read_rate'], 'color': color1},
+					 {'label': 'Write Rate', 'data': data['sys_write_rate'], 'color': color2}
 					],
 					$('#sys-rw div').get(0));
 			plotLine($('#sys-sr canvas').get(0), 
 					data['label'],
-					[{'label': 'Bytes Sent', 'data': data['sys_net_bytes_sent'], 'color': color1},
-					 {'label': 'Bytes Received', 'data': data['sys_net_bytes_recv'], 'color': color2}
+					[{'label': 'Send Rate', 'data': data['sys_send_rate'], 'color': color1},
+					 {'label': 'Recv Rate', 'data': data['sys_recv_rate'], 'color': color2}
 					],
 					$('#sys-sr div').get(0));
 		}
@@ -34,34 +42,30 @@ $(document).ready(function(){
 		url: window.location.path,
 		type: 'POST',
 		contentType: 'application/json',
-		data: JSON.stringify({'aspect': 'process'}),
+		data: JSON.stringify({'aspect': 'job'}),
 		success: function(data){
-			plotLine($('#cpu-mem-line canvas').get(0), 
-					data['label_running'],
-					[{'label': 'CPU Usage', 'data': data['cpu_percent'], 'color': color1},
-					 {'label': 'Memory Usage', 'data': data['mem_percent'], 'color': color2}
+			plotLine($('#cpu-line canvas').get(0), 
+					data['label'],
+					[{'label': 'Avg.', 'data': data['avg_cpu_percent'], 'color': color1},
+					 {'label': 'Max.', 'data': data['max_cpu_percent'], 'color': color2},
+					 {'label': 'Min.', 'data': data['min_cpu_percent'], 'color': color3}
 					],
-					$('#cpu-mem-line div').get(0));
-			plotLine($('#rw-line canvas').get(0), 
-					data['label_running'],
-					[{'label': 'Bytes Read', 'data': data['total_read_bytes'], 'color': color1},
-					 {'label': 'Bytes Written', 'data': data['total_write_bytes'], 'color': color2}
+					$('#cpu-line div').get(0));
+			plotLine($('#mem-line canvas').get(0), 
+					data['label'],
+					[{'label': 'Avg.', 'data': data['avg_mem_percent'], 'color': color1},
+					 {'label': 'Max.', 'data': data['max_mem_percent'], 'color': color2},
+					 {'label': 'Min.', 'data': data['min_mem_percent'], 'color': color3}
 					],
-					$('#rw-line div').get(0));
-			plotBar($('#cpu-mem-bar canvas').get(0), 
-					data['label_terminated'],
-					[{'label': 'Avg. CPU Usage', 'data': data['avg_cpu_percent'], 'color': color1},
-					 {'label': 'Avg. Memory Usage', 'data': data['avg_mem_percent'], 'color': color2}
-					],
-					$('#cpu-mem-bar div').get(0));
-			plotBar($('#rw-bar canvas').get(0), 
-					data['label_terminated'],
+					$('#mem-line div').get(0));
+			plotBar($('#rw-line canvas').get(0), 
+					data['label],
 					[{'label': 'Read Rate', 'data': data['read_rate'], 'color': color1},
 					 {'label': 'Write Rate', 'data': data['write_rate'], 'color': color2}
 					],
-					$('#rw-bar div').get(0));
+					$('#rw-line div').get(0));
 			plotBar($('#runtime-bar canvas').get(0), 
-					data['label_terminated'],
+					data['label'],
 					[{'label': 'Runtime', 'data': data['runtime'], 'color': color1},
 					],
 					$('#runtime-bar div').get(0));

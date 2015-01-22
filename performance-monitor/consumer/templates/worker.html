@@ -19,38 +19,38 @@ var Chartjs = Chart.noConflict();
 <section class="container">
 <h1>Worker {{worker}}</h1>
 <h2>System Usage</h2>
-<div id="sys-cpu-mem" class="system">
-	<h3>CPU & Memory Usage</h3>
+<div id="sys-cpu" class="system">
+	<h3>CPU Usage</h3>
+	<canvas></canvas>
+	<div></div>
+</div>
+<div id="sys-mem" class="system">
+	<h3>Memory Usage</h3>
 	<canvas></canvas>
 	<div></div>
 </div>
 <div id="sys-rw" class="system">
-	<h3>System Bytes Read/Written</h3>
+	<h3>System Read/Write Rate</h3>
 	<canvas></canvas>
 	<div></div>	
 </div>
 <div id="sys-sr" class="system">
-	<h3>Bytes Sent/Received</h3>
+	<h3>Bytes Send/Recv Rate</h3>
 	<canvas></canvas>
 	<div></div>	
 </div>
 <h2>Job</h2>
-<div id="cpu-mem-line" class="job">
+<div id="cpu-line" class="job">
 	<h3>CPU & Memory Usage</h3>
 	<canvas></canvas>
 	<div></div>	
 </div>
-<div id="rw-line" class="job">
+<div id="mem-line" class="job">
 	<h3>Bytes Read/Written</h3>
 	<canvas></canvas>
 	<div></div>	
 </div>
-<div id="cpu-mem-bar" class="job">
-	<h3>Average CPU & Memory Usage</h3>
-	<canvas></canvas>
-	<div></div>	
-</div>
-<div id="rw-bar" class="job">
+<div id="rw-line" class="job">
 	<h3>Read/Write Rates</h3>
 	<canvas></canvas>
 	<div></div>	

@@ -189,8 +189,6 @@ class MessageSender(Process):
         msg = self._msg_q.get(True)
         if  msg:
             topics = '%s.%s.%s' % (self._expid, self._hostname, msg['type'])
-            if msg['type'] == 'process':
-                topics += '.%s' % msg['status']
             del msg['type']
             self._ch.basic_publish(
                      exchange=EXCHANGE_NAME, 

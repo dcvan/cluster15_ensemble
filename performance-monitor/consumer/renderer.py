@@ -97,8 +97,8 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         manifest = jinja2.Template(template).render(param=exp)
         exp['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
         exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
-        exp['workers'] = [w for w in self._db[DB_NAME][exp_id]['worker'].find(fields={'_id': 0})]
-        exp['runs'] = [r for r in self._db[DB_NAME][exp_id]['run'].find(fields={'_id': 0})]
+        exp['workers'] = [w for w in self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp_id}, {'_id': 0})]
+        exp['runs'] = [r for r in self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp_id}, {'_id': 0})]
         if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
         self.render('experiment.html', manifest=manifest, data=exp, current_uri=self.request.uri)
 
@@ -194,7 +194,7 @@ class WorkerRenderer(tornado.web.RedirectHandler):
         if not data or 'aspect' not in data:
             self.set_status(422, 'No query identified')
             return
-        if data['aspect'] != 'system' and data['aspect'] != 'process':
+        if data['aspect'] != 'system' and data['aspect'] != 'job':
             self.set_status(422, 'Unknown query')
             return
         stat = [s for s in self._db[DB_NAME]['experiment'][data['aspect']].find({'exp_id': exp_id, 'host': worker}, {'_id': 0}).sort('timestamp')]
@@ -203,24 +203,28 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             return
         res = {}
         if data['aspect'] == 'system':
-            res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(stat[i]['timestamp'])) if i == 0 or i == len(stat) - 1 else '' for i in range(0, len(stat))]
+            res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(s['timestamp'])) for s in stat]
             res['sys_cpu_percent'] = [s['sys_cpu_percent'] for s in stat]
+            res['sys_max_cpu_percent'] = [s['sys_max_cpu_percent'] for s in stat]
+            res['sys_min_cpu_percent'] = [s['sys_min_cpu_percent'] for s in stat]
+            res['sys_max_mem_percent'] = [s['sys_max_mem_percent'] for s in stat]
+            res['sys_min_mem_percent'] = [s['sys_min_mem_percent'] for s in stat]
             res['sys_mem_percent'] = [s['sys_mem_percent'] for s in stat]
-            res['sys_read_bytes'] = [s['sys_read_bytes'] for s in stat]
-            res['sys_write_bytes'] = [s['sys_write_bytes'] for s in stat]
-            res['sys_net_bytes_sent'] = [s['sys_net_bytes_sent'] for s in stat]
-            res['sys_net_bytes_recv'] = [s['sys_net_bytes_recv'] for s in stat]
-
+            res['sys_read_rates'] = [s['sys_read_rates'] for s in stat]
+            res['sys_write_rates'] = [s['sys_write_rates'] for s in stat]
+            res['sys_send_rate'] = [s['sys_send_rate'] for s in stat]
+            res['sys_recv_rate'] = [s['sys_recv_rate'] for s in stat]
         else:
-            res['label_running'] = [s['cmdline'].split( )[0] if s['status'] == 'started' else '' for s in stat]
-            res['label_terminated'] = [s['cmdline'].split(' ')[0] for s in stat if s['status'] == 'terminated']
-            res['avg_cpu_percent'] = [s['avg_cpu_percent'] for s in stat if s['status'] == 'terminated']
-            res['avg_mem_percent'] = [s['avg_mem_percent'] for s in stat if s['status'] == 'terminated']
+            res['label'] = [s['cmdline'] for s in stat]
+            res['avg_cpu_percent'] = [s['avg_cpu_percent'] for s in stat]
+            res['max_cpu_percent'] = [s['max_cpu_percent'] for s in stat]
+            res['min_cpu_percent'] = [s['min_cpu_percent'] for s in stat]
+            res['max_mem_percent'] = [s['max_mem_percent'] for s in stat]
+            res['min_mem_percent'] = [s['min_mem_percent'] for s in stat]
+            res['avg_mem_percent'] = [s['avg_mem_percent'] for s in stat]
             res['runtime'] = [s['runtime'] for s in stat if s['status'] == 'terminated']
             res['read_rate'] = [s['total_read_bytes'] / s['runtime'] for s in stat if s['status'] == 'terminated']
             res['write_rate'] = [s['total_write_bytes'] / s['runtime'] for s in stat if s['status'] == 'terminated']
-            res['cpu_percent'] = [s['cpu_percent'] for s in stat if s['status'] != 'terminated']
-            res['mem_percent'] = [s['memory_percent'] for s in stat if s['status'] != 'terminated']
             res['total_read_bytes'] = [s['total_read_bytes'] for s in stat if s['status'] != 'terminated']
             res['total_write_bytes'] = [s['total_write_bytes'] for s in stat if s['status'] != 'terminated']
         

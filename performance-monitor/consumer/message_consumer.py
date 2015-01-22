@@ -218,4 +218,4 @@ class ArchiveConsumer(MessageConsumer):
         msg_type = deliver.routing_key.split('.')[2]
         data = json.loads(body)
         # buf
-        self._db[DB_NAME]['update'][msg_type].insert(data)
+        self._db[DB_NAME]['experiment'][msg_type].insert(data)

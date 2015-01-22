@@ -128,6 +128,7 @@ class SystemMonitor(Process):
             msg['sys_write_rate'] = self._stat['sys_write_bytes'] / runtime
             msg['sys_send_rate'] = self._stat['sys_net_bytes_sent'] / runtime
             msg['sys_recv_rate'] = self._stat['sys_net_bytes_recv'] / runtime
+            msg['timestamp'] = time.time()
             self._msg_q.put(msg)
             print msg
     
@@ -323,7 +324,6 @@ class ProcessMonitor(object):
                         'run_id': int(d[-1]),
                         'type': 'run',
                         'timestamp': time.time(),
-                        'status': 'finished',
                         'walltime': self._get_walltime(d)
                     })
             
