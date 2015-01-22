@@ -2,7 +2,7 @@
  * 
  */
 $(document).ready(function(){
-	var color1 = '151,187,205', color2 = '170,57,57', color3='51,255,102'
+	var color1 = '151,187,205', color2 = '170,57,57', color3='102,255,51'
 	$.ajax({
 		url: window.location.path,
 		type: 'POST',
