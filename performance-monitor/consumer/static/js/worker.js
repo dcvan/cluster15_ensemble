@@ -59,7 +59,7 @@ $(document).ready(function(){
 					],
 					$('#mem-line div').get(0));
 			plotBar($('#rw-line canvas').get(0), 
-					data['label],
+					data['label'],
 					[{'label': 'Read Rate', 'data': data['read_rate'], 'color': color1},
 					 {'label': 'Write Rate', 'data': data['write_rate'], 'color': color2}
 					],

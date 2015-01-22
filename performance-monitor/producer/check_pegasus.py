@@ -157,6 +157,7 @@ class ProcessMonitor(object):
         self._cur = None
         self._lock = RLock()
         self._count = Value('i', 0)
+        self._last_job = None
         self._stat = manager.dict({
                     'exp_id': self._exp_id,
                     'host': self._hostname,
@@ -198,9 +199,10 @@ class ProcessMonitor(object):
             if not self._stat['cmdline']: 
                 return
             self._stat['timestamp'] = time.time()
-            if self._get_job_pid() == self._stat['pid']:
+            if self._last_job and self._last_job == self._stat['pid']:
                 self._stat['runtime'] += self._stat['timestamp'] - proc.create_time()
             else:
+                self._last_job = self._stat['pid']
                 self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
                 if self._count.value > 1:
                     self._stat['avg_cpu_percent'] /= self._count.value - 1
