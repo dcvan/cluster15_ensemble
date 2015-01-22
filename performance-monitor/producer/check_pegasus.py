@@ -69,14 +69,14 @@ class SystemMonitor(Process):
         '''
         Process.__init__(self)
         self._msg_q = msg_q
-        self._count = 0
-        self._start_time = None
+        self._count = Value('i', 0)
+        self._start_time = Value('d', 0.0)
         self._lock = RLock()
         self._init_read_bytes = psutil.disk_io_counters().read_bytes
         self._init_write_bytes  = psutil.disk_io_counters().write_bytes
         self._init_bytes_sent = int(psutil.net_io_counters().bytes_sent)
         self._init_bytes_recv = int(psutil.net_io_counters().bytes_recv)
-        self._stat = {
+        self._stat = Manager().dict({
                 'exp_id': exp_id,
                 'host': hostname, 
                 'type': 'system',
@@ -84,28 +84,28 @@ class SystemMonitor(Process):
                 'sys_min_cpu_percent': 2000,
                 'sys_max_mem_percent':0,
                 'sys_min_mem_percent': 2000,
-            }
+            })
         
     def run(self):
         '''
         Override
         
         '''
-        self._start_time = time.time()
+        self._start_time.value = time.time()
         while True:
             while not os.listdir(CONDOR_EXE_DIR):
-                print('Waiting ...')
+                print('[System]Waiting ...')
                 time.sleep(5)
             with self._lock:
-                self._count += 1
+                self._count.value += 1
                 cpu_pct = psutil.cpu_percent()
                 mem_pct = psutil.virtual_memory().percent
                 self._stat['sys_cpu_percent'] = self._stat['sys_cpu_percent'] + cpu_pct if 'sys_cpu_percent' in self._stat else cpu_pct
                 self._stat['sys_max_cpu_percent'] = max(self._stat['sys_max_cpu_percent'], cpu_pct)
                 self._stat['sys_min_cpu_percent'] = min(self._stat['sys_min_cpu_percent'], cpu_pct)
+                self._stat['sys_mem_percent'] = self._stat['sys_mem_percent'] + mem_pct if 'sys_mem_percent' in self._stat else mem_pct
                 self._stat['sys_max_mem_percent'] = max(self._stat['sys_max_mem_percent'], mem_pct)
                 self._stat['sys_min_mem_percent'] = max(self._stat['sys_min_mem_percent'], mem_pct)
-                self._stat['sys_mem_percent'] = self._stat['sys_mem_percent'] + mem_pct if 'sys_mem_percent' in self._stat else mem_pct
                 self._stat['sys_read_bytes'] = psutil.disk_io_counters().read_bytes - self._init_read_bytes
                 self._stat['sys_write_bytes'] = psutil.disk_io_counters().write_bytes - self._init_write_bytes
                 self._stat['sys_net_bytes_sent'] = int(psutil.net_io_counters().bytes_sent) - self._init_bytes_sent
@@ -118,11 +118,11 @@ class SystemMonitor(Process):
         
         '''
         msg = None
-        runtime = time.time() - self._start_time
+        runtime = time.time() - self._start_time.value
         with self._lock:
             msg = dict(self._stat)
-            msg['sys_cpu_percent'] /= self._counter
-            msg['sys_mem_percent'] /= self._counter
+            msg['sys_cpu_percent'] /= self._count.value
+            msg['sys_mem_percent'] /= self._count.value
             msg['sys_read_rate'] = self._stat['sys_read_bytes'] / runtime
             msg['sys_write_rate'] = self._stat['sys_write_bytes'] / runtime
             msg['sys_send_rate'] = self._stat['sys_bytes_sent'] / runtime
@@ -228,7 +228,8 @@ class ProcessMonitor(object):
                 if p.name() == 'python':
                     executable = p.cmdline()[1].split('/')[-1]
                 elif p.name() == 'java':
-                    executable = p.parent().cmdline()[1].split('/')[-1]
+                    print p.parent().cmdline()
+                    executable = p.parent().cmdline()[1].split('/')[-1] if len(p.parent().cmdline()) > 1 else None
                 else:
                     executable = p.name()
                 if executable and executable in self._procs:
@@ -264,7 +265,7 @@ class ProcessMonitor(object):
                 })
             while True:
                 while not self._cur: 
-                    print('Waiting ...')
+                    print('[Job]Waiting ...')
                     if self._is_master and self._done.value >= self._run_num:
                         break;
                     self._cur = self.find_process()

@@ -217,14 +217,5 @@ class ArchiveConsumer(MessageConsumer):
         '''
         msg_type = deliver.routing_key.split('.')[2]
         data = json.loads(body)
-        if msg_type == 'system' or msg_type == 'process':
-            if msg_type in self._bufs:
-                if len(self._bufs[msg_type]) < BUF_SIZE:
-                    self._bufs[msg_type].append(data)
-                else:
-                    self._db[DB_NAME][data['exp_id']][msg_type].insert(self._bufs[msg_type])
-                    self._bufs[msg_type] = []
-            else:
-                self._bufs[msg_type] = [data]
-        else:
-            self._db[DB_NAME][data['exp_id']][msg_type].insert(data)
+        print data
+        self._db[DB_NAME]['update'][msg_type].insert(data)

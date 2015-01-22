@@ -30,13 +30,12 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         
         '''
         data = {
-                'topology': [t for t in self._db[DB_NAME]['workflow']['topology'].find({}, {'_id': 0})],
-                'mode': [m for m in self._db[DB_NAME]['workflow']['mode'].find({}, {'_id': 0})],
-                'site': [s for s in self._db[DB_NAME]['workflow']['site'].find({}, {'_id': 0})],
-                'worker_size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find({}, {'_id': 0})],
-                'storage_site': [ss for ss in self._db[DB_NAME]['workflow']['storage_site'].find({}, {'_id': 0})],
-                'storage_type': [st for st in self._db[DB_NAME]['workflow']['storage_type'].find({}, {'_id': 0})],
-                
+                'topology': [t for t in self._db[DB_NAME]['workflow']['topology'].find(fields={'_id': 0})],
+                'mode': [m for m in self._db[DB_NAME]['workflow']['mode'].find(fields={'_id': 0})],
+                'site': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
+                'worker_size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
+                'storage_site': [ss for ss in self._db[DB_NAME]['workflow']['storage_site'].find(fields={'_id': 0})],
+                'storage_type': [st for st in self._db[DB_NAME]['workflow']['storage_type'].find(fields={'_id': 0})],
             }
         self.render('workflows.html', workflows=[w for w in self._db[DB_NAME]['workflow']['type'].find({}, {'_id': 0}).sort('name')], data=data)
     
@@ -49,8 +48,7 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         data['exp_id'] = str(uuid.uuid4())
         data['status'] = 'submitted'
         data['create_time'] = int(time.time())
-        self._db[DB_NAME]['workflow']['experiments'].insert(data)
-        self._db[DB_NAME][data['exp_id']]['info'].insert(data)
+        self._db[DB_NAME]['workflow']['experiment'].insert(data)
         self.set_header('Content-Type', 'application/json;charset="utf-8"')
         self.write(json.dumps({
                 'exp_id': data['exp_id'],
@@ -76,7 +74,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         GET method: renders experiment page
         
         '''
-        exp = self._db[DB_NAME][exp_id]['info'].find_one(fields={'_id': 0})
+        exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
         if not exp:
             self.set_status(404, 'Experiment not found')
             return 
@@ -148,9 +146,9 @@ class RunsRenderer(tornado.web.RedirectHandler):
         POST method: get run related info
         
         '''
-        if not self._db[DB_NAME][exp_id]['info'].find().count():
+        if not self._db[DB_NAME]['workflow']['experiment'].find({'exp_id': exp_id}).count():
             self.set_status(404, 'Experiment not found')
-        runs = [r for r in self._db[DB_NAME][exp_id]['run'].find(fields={'_id': 0})]
+        runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp_id}, {'_id': 0})]
         if not runs:
             self.set_status(204, 'No finished runs')
             return
@@ -179,7 +177,7 @@ class WorkerRenderer(tornado.web.RedirectHandler):
         GET method: renders worker page
         
         '''
-        if not self._db[DB_NAME][exp_id]['worker'].find().count():
+        if not self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp_id}).count():
             self.set_status(404, 'Experiment or worker not found')
             return
         self.render('worker.html', worker=worker)
@@ -190,7 +188,7 @@ class WorkerRenderer(tornado.web.RedirectHandler):
         
         '''
         data = json.loads(self.request.body)
-        if not self._db[DB_NAME][exp_id]['info'].find().count():
+        if not self._db[DB_NAME]['workflow']['experiment'].find().count():
             self.set_status(404, 'Experiment not found')
             return
         if not data or 'aspect' not in data:
@@ -199,7 +197,7 @@ class WorkerRenderer(tornado.web.RedirectHandler):
         if data['aspect'] != 'system' and data['aspect'] != 'process':
             self.set_status(422, 'Unknown query')
             return
-        stat = [s for s in self._db[DB_NAME][exp_id][data['aspect']].find({'host': worker}, {'_id': 0}).sort('timestamp')]
+        stat = [s for s in self._db[DB_NAME]['experiment'][data['aspect']].find({'exp_id': exp_id, 'host': worker}, {'_id': 0}).sort('timestamp')]
         if not stat or len(stat) < 2:
             self.set_status(204, 'Data not available yet')
             return
@@ -248,6 +246,6 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         GET method: renders experiments listing page
         
         '''
-        exp = [e for e in self._db[DB_NAME]['workflow']['experiments'].find({'type': workflow}, {'_id': 0})]
+        exp = [e for e in self._db[DB_NAME]['workflow']['experiment'].find({'type': workflow}, {'_id': 0})]
         self.render('experiments.html', experiments=exp, current_uri=self.request.uri)
 
