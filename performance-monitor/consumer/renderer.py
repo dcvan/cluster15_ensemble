@@ -132,7 +132,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
         manifest = jinja2.Template(template).render(param=exp)
         self.set_header('Content-Type', 'application/rdf+xml')
-        self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode'], exp['worker_size']]))
+        self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode'], exp['worker_size'], exp['master_site']]))
         self.write(manifest)
         
 class RunsRenderer(tornado.web.RedirectHandler):
