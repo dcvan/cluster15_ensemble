@@ -158,8 +158,7 @@ class ProcessMonitor(object):
         self._msg_q = Queue()
         self._cur = None
         self._lock = RLock()
-        self._count = Value('i', -1)
-        self._last_job = Value('i', 0)
+        self._counter = Value('i', 0)
         self._stat = manager.dict({
                     'exp_id': self._exp_id,
                     'host': self._hostname,
@@ -199,15 +198,12 @@ class ProcessMonitor(object):
         
         '''
         with self._lock:
-            if not self._stat['cmdline']: 
-                return
             self._stat['timestamp'] = time.time()
-            if self._last_job.value == -1:
-                self._last_job.value = 0
-            elif self._last_job.value == self._stat['pid']:
+            pid = self._get_job_pid()
+            if pid == self._stat['pid']:
                 self._stat['runtime'] += self._stat['timestamp'] - proc.create_time()
             else:
-                print 'Last job:', self._last_job.value # test
+                if pid: self._stat['pid'] = pid
                 self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
                 if self._count.value > 1:
                     self._stat['avg_cpu_percent'] /= self._count.value - 1
@@ -301,10 +297,10 @@ class ProcessMonitor(object):
                             
                     except psutil.NoSuchProcess:
                         self._cur = None
-                        if self._last_job.value != self._stat['pid']:
+                        pid = self._get_job_pid()
+                        if not pid or pid != self._stat['pid']:
                             self._count.value = 0
                             with self._lock:
-                                self._stat['pid'] = None
                                 self._stat['cmdline'] = None
                                 self._stat['runtime'] = 0
                                 self._stat['start_time'] = 0
