@@ -100,7 +100,6 @@ class SystemMonitor(Process):
         self._start_time.value = time.time()
         while True:
             while not os.listdir(CONDOR_EXE_DIR):
-                print('[System]Waiting ...')
                 time.sleep(5)
             with self._lock:
                 self._count.value += 1
@@ -116,7 +115,6 @@ class SystemMonitor(Process):
                 self._stat['sys_write_bytes'] = psutil.disk_io_counters().write_bytes - self._init_write_bytes
                 self._stat['sys_net_bytes_sent'] = int(psutil.net_io_counters().bytes_sent) - self._init_bytes_sent
                 self._stat['sys_net_bytes_recv'] = int(psutil.net_io_counters().bytes_recv) - self._init_bytes_recv
-                print '[System] %s' % str(self._stat)
             time.sleep(5)
         
     def send_statistics(self):
@@ -135,7 +133,6 @@ class SystemMonitor(Process):
             msg['sys_recv_rate'] = self._stat['sys_net_bytes_recv'] / runtime
             msg['timestamp'] = time.time()
             self._msg_q.put(msg)
-            print msg
     
 class ProcessMonitor(object):
     '''
@@ -210,7 +207,7 @@ class ProcessMonitor(object):
                 self._stat['runtime'] += self._stat['timestamp'] - proc.create_time()
             else:
                 self._last_job.value = self._stat['pid']
-                print self._last_job.value # test
+                print 'Last job:', self._last_job.value # test
                 self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
                 if self._count.value > 1:
                     self._stat['avg_cpu_percent'] /= self._count.value - 1
@@ -219,7 +216,6 @@ class ProcessMonitor(object):
                     self._stat['avg_cpu_percent'] = 0
                     self._stat['avg_mem_percent'] = 0
                 self._msg_q.put(dict(self._stat))
-                print(self._stat)
                 self._system_monitor.send_statistics()
 
     def find_process(self):
@@ -278,7 +274,6 @@ class ProcessMonitor(object):
                 })
             while True:
                 while not self._cur: 
-                    print('[Job]Waiting ...')
                     if self._is_master and self._done.value >= self._run_num:
                         break;
                     self._cur = self.find_process()
@@ -303,7 +298,6 @@ class ProcessMonitor(object):
                         self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                         self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
                             
-                        print (self._stat['pid'], self._stat['cmdline'], cpu_percent, mem_percent)
                     except psutil.NoSuchProcess:
                         self._cur = None
                         if self._last_job.value != self._stat['pid']:
