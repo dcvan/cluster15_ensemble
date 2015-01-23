@@ -159,6 +159,7 @@ class ProcessMonitor(object):
         self._cur = None
         self._lock = RLock()
         self._count = Value('i', 0)
+        self._wait_processes = set()
         self._stat = manager.dict({
                     'exp_id': self._exp_id,
                     'host': self._hostname,
@@ -198,6 +199,8 @@ class ProcessMonitor(object):
         
         '''
         with self._lock:
+            if not self._stat['cmdline']:
+                return
             self._stat['timestamp'] = time.time()
             self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
             if self._count.value > 1:
@@ -238,6 +241,10 @@ class ProcessMonitor(object):
         with self._lock: 
             self._stat['pid'] = pid
         proc = psutil.Process(self._stat['pid'])
+        if pid not in self._wait_processes:
+            wait = Process(target=psutil.wait_procs, args=([proc], None, self.on_terminate))
+            wait.start()
+            self._wait_processes.add(pid)
         try:
             children = proc.children(recursive=True)
             for p in children:
@@ -256,7 +263,7 @@ class ProcessMonitor(object):
                             self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.parent().cmdline()[1:3]])
                         else:
                             self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()[:2]])
-                    return (p, proc)
+                    return p
         except psutil.NoSuchProcess:
             return None
 
@@ -281,10 +288,8 @@ class ProcessMonitor(object):
                 while not self._cur: 
                     if self._is_master and self._done.value >= self._run_num:
                         break;
-                    parent, self._cur = self.find_process()
+                    self._cur = self.find_process()
                     if self._cur: 
-                        wait = Process(target=psutil.wait_procs, args=([proc], None, self.on_terminate))
-                        wait.start()
                         break
                     time.sleep(1)
                 if self._is_master and self._done.value >= self._run_num:
