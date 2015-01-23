@@ -158,7 +158,7 @@ class ProcessMonitor(object):
         self._msg_q = Queue()
         self._cur = None
         self._lock = RLock()
-        self._count = Value('i', 0)
+        self._count = Value('i', -1)
         self._last_job = Value('i', 0)
         self._stat = manager.dict({
                     'exp_id': self._exp_id,
@@ -202,22 +202,22 @@ class ProcessMonitor(object):
             if not self._stat['cmdline']: 
                 return
             self._stat['timestamp'] = time.time()
-            if self._last_job.value == self._stat['pid']:
+            if self._last_job.value == -1:
+                self._last_job.value = 0
+            elif self._last_job.value == self._stat['pid']:
                 self._stat['runtime'] += self._stat['timestamp'] - proc.create_time()
             else:
-                if self._last_job.value == 0:
-                    self._last_job.value = self._stat['pid']
-                else:
-                    self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
-                    if self._count.value > 1:
-                        self._stat['avg_cpu_percent'] /= self._count.value - 1
-                        self._stat['avg_mem_percent'] /= self._count.value
-                    else:
-                        self._stat['avg_cpu_percent'] = 0
-                        self._stat['avg_mem_percent'] = 0
-                    self._msg_q.put(dict(self._stat))
-                    self._system_monitor.send_statistics()
                 print 'Last job:', self._last_job.value # test
+                self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
+                if self._count.value > 1:
+                    self._stat['avg_cpu_percent'] /= self._count.value - 1
+                    self._stat['avg_mem_percent'] /= self._count.value
+                else:
+                    self._stat['avg_cpu_percent'] = 0
+                    self._stat['avg_mem_percent'] = 0
+                self._msg_q.put(dict(self._stat))
+                self._system_monitor.send_statistics()
+
 
     def find_process(self):
         '''
