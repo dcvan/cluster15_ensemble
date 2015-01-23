@@ -25,5 +25,7 @@ def check_content_type(handler):
     content_type = handler.request.headers.get('Content-Type')
     if content_type and content_type not in ['application/json']:
         handler.set_status(415, 'Unsupported content-type')
-        return False
-    return True
+        return None
+    if not content_type:
+        content_type = 'text/html'
+    return content_type

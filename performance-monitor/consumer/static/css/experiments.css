@@ -1,1 +1,21 @@
 @CHARSET "UTF-8";
+
+div#analysis{
+	max-height: 50px;
+}
+
+div.dropdown, input{
+	float: left;
+}
+
+input{
+	max-width: 200px;
+	margin-left: 2px;
+	margin-right: 2px;
+}
+
+button{
+	margin-left: 2px;
+	margin-right: 2px;
+}
+
