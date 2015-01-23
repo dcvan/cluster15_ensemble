@@ -45,6 +45,14 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         
         '''
         data = json.loads(self.request.body)
+        if not self._db[DB_NAME]['workflow']['manifest'].find_one({
+                'type': data['type'],
+                'mode': data['mode'],
+                'storage_site': data['storage_site'],
+                'storage_type': data['storage_type'],
+            }):
+            self.set_status(404, 'Manifest not available yet')
+            return
         data['exp_id'] = str(uuid.uuid4())
         data['status'] = 'submitted'
         data['create_time'] = int(time.time())
@@ -124,8 +132,15 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
         manifest = jinja2.Template(template).render(param=exp)
         self.set_header('Content-Type', 'application/rdf+xml')
-        self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode'], exp['worker_size']]))
+        self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode'], exp['worker_size'], exp['master_site']]))
         self.write(manifest)
+        
+    def delete(self, workflow, exp_id):
+        '''
+        DELETE method: delete an experiment
+        
+        '''
+        pass
         
 class RunsRenderer(tornado.web.RedirectHandler):
     '''
@@ -203,15 +218,15 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             return
         res = {}
         if data['aspect'] == 'system':
-            res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(s['timestamp'])) for s in stat]
+            res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(s['timestamp'])) for s in stat ]
             res['sys_cpu_percent'] = [s['sys_cpu_percent'] for s in stat]
             res['sys_max_cpu_percent'] = [s['sys_max_cpu_percent'] for s in stat]
             res['sys_min_cpu_percent'] = [s['sys_min_cpu_percent'] for s in stat]
             res['sys_max_mem_percent'] = [s['sys_max_mem_percent'] for s in stat]
             res['sys_min_mem_percent'] = [s['sys_min_mem_percent'] for s in stat]
             res['sys_mem_percent'] = [s['sys_mem_percent'] for s in stat]
-            res['sys_read_rates'] = [s['sys_read_rates'] for s in stat]
-            res['sys_write_rates'] = [s['sys_write_rates'] for s in stat]
+            res['sys_read_rate'] = [s['sys_read_rate'] for s in stat]
+            res['sys_write_rate'] = [s['sys_write_rate'] for s in stat]
             res['sys_send_rate'] = [s['sys_send_rate'] for s in stat]
             res['sys_recv_rate'] = [s['sys_recv_rate'] for s in stat]
         else:
@@ -222,11 +237,11 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             res['max_mem_percent'] = [s['max_mem_percent'] for s in stat]
             res['min_mem_percent'] = [s['min_mem_percent'] for s in stat]
             res['avg_mem_percent'] = [s['avg_mem_percent'] for s in stat]
-            res['runtime'] = [s['runtime'] for s in stat if s['status'] == 'terminated']
-            res['read_rate'] = [s['total_read_bytes'] / s['runtime'] for s in stat if s['status'] == 'terminated']
-            res['write_rate'] = [s['total_write_bytes'] / s['runtime'] for s in stat if s['status'] == 'terminated']
-            res['total_read_bytes'] = [s['total_read_bytes'] for s in stat if s['status'] != 'terminated']
-            res['total_write_bytes'] = [s['total_write_bytes'] for s in stat if s['status'] != 'terminated']
+            res['runtime'] = [s['runtime'] for s in stat]
+            res['read_rate'] = [s['total_read_bytes'] / s['runtime'] for s in stat]
+            res['write_rate'] = [s['total_write_bytes'] / s['runtime'] for s in stat]
+            res['total_read_bytes'] = [s['total_read_bytes'] for s in stat]
+            res['total_write_bytes'] = [s['total_write_bytes'] for s in stat]
         
         self.set_header('Content-Type', 'application/json;charset="utf-8"')
         self.write(json.dumps(res))
@@ -251,5 +266,10 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         
         '''
         exp = [e for e in self._db[DB_NAME]['workflow']['experiment'].find({'type': workflow}, {'_id': 0})]
+        for e in exp:
+            if e['status'] == 'submitted':
+                if self._db[DB_NAME]['experiment']['worker'].find_one({'exp_id': e['exp_id']}):
+                    e['status'] = 'running'
+                    self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': e['exp_id']}, {'$set': {'status': e['status']}})
         self.render('experiments.html', experiments=exp, current_uri=self.request.uri)
 

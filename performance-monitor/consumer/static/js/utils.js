@@ -21,7 +21,7 @@ function plotLine(canvas, labels, ds, legend_area){
 		});
 	}
 	
-	new Chart(canvas.getContext('2d')).Line(lineData, {bezierCurve: false});
+	new Chart(canvas.getContext('2d')).Line(lineData, {bezierCurve: true});
 	legend(legend_area, lineData);
 }
 

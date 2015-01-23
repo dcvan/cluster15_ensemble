@@ -201,6 +201,11 @@ git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 # start monitor
 python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -m -d /home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage -r {{param['run_num']}} &amp;
 
+
+while [ "$(condor_status -total | grep -E 'Total[ \t]+[0-9]'|awk '{print $2}')" != "{{param['worker_num']}}" ];do
+	sleep 5
+done 
+
 # start workflow
 sleep 10
 for (( i = 0; i &lt; {{param['run_num']}}; i ++ ))
@@ -213,7 +218,7 @@ done
 </request-schema:postBootScript>
     <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#{{param['worker_site']}}vmsite/Domain"/>
     <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#montage.v2.0.7a"/>
-    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOXlarge"/>
+    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOMedium"/>
     <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ComputeElement"/>
   </rdf:Description>
@@ -221,12 +226,12 @@ done
     <topology:hasURL>http://geni-images.renci.org/images/pruth/ADAMANT/montage.v2.0.7a.xml</topology:hasURL>
     <topology:hasGUID>f140b31d8257282f08714b6bc94b03abc8a74859</topology:hasGUID>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#DiskImage"/>
+  </rdf:Description>
   {% if param['topology'] == 'inter-rack' %}
-  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#param['worker_site']vmsite/Domain">
+  <rdf:Description rdf:about="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#{{param['worker_site']}}vmsite/Domain">
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkDomain"/>
   </rdf:Description>
   {% endif %}
-  </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/2c38e58e-eba2-43a6-b294-9f072472f967#VLAN0-workers-ip-172-16-1-100">
     <ip4:netmask>255.255.0.0</ip4:netmask>
     <layer:label_ID>172.16.1.100</layer:label_ID>
@@ -324,6 +329,18 @@ do
 done
 
 service condor restart
+sleep 20
+
+ATTEMPT=0
+while [ ! "$(condor_status | grep $MY_HOSTNAME)" ];do
+    if [ "$ATTEMPT" -gt 3 ];then
+        ATTEMPT=0
+        service condor restart
+    else
+        ATTEMPT=$(($ATTEMPT + 1))
+    fi
+    sleep 10
+done
 
 # NFS setup
 mkdir -p /mnt/scratch
@@ -332,7 +349,12 @@ yum -y install nfs-utils nfs-utils-lib
 cat &gt;&gt; /etc/fstab &lt;&lt; EOF
 $MASTER:/mnt/scratch       /mnt/scratch    nfs     vers=3,proto=tcp,hard,nolock,intr,timeo=600,retrans=2,wsize=32768,rsize=32768   0       0
 EOF
-mount -a
+mount -a -t nfs
+
+while [ "$?" -gt 0 ];do
+    sleep 10s
+    mount -a -t nfs
+done
 
 # monitor setup
 yum -y install python-pip python-devel git
