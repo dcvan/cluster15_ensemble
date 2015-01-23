@@ -224,6 +224,7 @@ class ProcessMonitor(object):
         '''
         with self._lock:
             self._stat['pid'] = self._get_job_pid()
+        if not self._stat['pid']: return None
         proc = psutil.Process(self._stat['pid'])
         try:
             children = proc.children(recursive=True)
