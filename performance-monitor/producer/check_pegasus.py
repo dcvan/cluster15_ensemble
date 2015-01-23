@@ -202,6 +202,7 @@ class ProcessMonitor(object):
                 self._stat['runtime'] += self._stat['timestamp'] - proc.create_time()
             else:
                 self._last_job.value = self._stat['pid']
+                print self._last_job.value # test
                 self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
                 if self._count.value > 1:
                     self._stat['avg_cpu_percent'] /= self._count.value - 1
@@ -296,7 +297,7 @@ class ProcessMonitor(object):
                         print (self._stat['pid'], self._stat['cmdline'], cpu_percent, mem_percent)
                     except psutil.NoSuchProcess:
                         self._cur = None
-                        if self._get_job_pid() != self._stat['pid']:
+                        if self._last_job.value != self._stat['pid']:
                             self._count.value = 0
                             with self._lock:
                                 self._stat['pid'] = None
@@ -358,8 +359,7 @@ class ProcessMonitor(object):
     def _get_job_pid(self):
         '''
         '''
-        if os.listdir(CONDOR_EXE_DIR):
-            return int(os.listdir(CONDOR_EXE_DIR)[0][4:])
+        return int(os.listdir(CONDOR_EXE_DIR)[0][4:]) if os.listdir(CONDOR_EXE_DIR) else None
         
 if __name__ == '__main__':
     try:
