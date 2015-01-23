@@ -199,7 +199,6 @@ class ProcessMonitor(object):
         '''
         with self._lock:
             self._stat['timestamp'] = time.time()
-            print 'Process:' , ' '.join(proc.cmdline())
             self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
             if self._count.value > 1:
                 self._stat['avg_cpu_percent'] /= self._count.value - 1
