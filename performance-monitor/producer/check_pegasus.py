@@ -307,7 +307,7 @@ class ProcessMonitor(object):
                         self._count.value += 1
                     except psutil.NoSuchProcess:
                         self._cur = None
-                        self._count = 0
+                        self._count.value = 0
                 time.sleep(1)
         else:
             while self._done.value < self._run_num:
