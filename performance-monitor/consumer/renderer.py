@@ -140,7 +140,11 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         DELETE method: delete an experiment
         
         '''
-        pass
+        self._db[DB_NAME]['workflow']['experiment'].remove({'exp_id': exp_id})
+        self._db[DB_NAME]['experiment']['worker'].remove({'exp_id': exp_id})
+        self._db[DB_NAME]['experiment']['job'].remove({'exp_id': exp_id})
+        self._db[DB_NAME]['experiment']['system'].remove({'exp_id': exp_id})
+        self._db[DB_NAME]['experiment']['run'].remove({'exp_id': exp_id})
         
 class RunsRenderer(tornado.web.RedirectHandler):
     '''
