@@ -21,7 +21,6 @@ class MessageConsumer(object):
         self._queue = ''
         self._ch = None
         self._consumer_tag = None
-        self._last_timestamp = 0
         
     def on_channel_open(self, ch):
         '''
@@ -104,15 +103,7 @@ class MessageConsumer(object):
         :param str body: message text body    
         
         '''
-        timestamp = int(prop.timestamp)
-        if timestamp > self._last_timestamp:
-            if body == 'stopping':
-                self._ch.basic_ack(deliver.delivery_tag)
-                self.stop()
-            else:
-                self.process(deliver, prop, body)
-                self._last_timestamp = timestamp
-                self._ch.basic_ack(deliver.delivery_tag)
+        raise NotImplementedError
             
     def process(self, deliver, prop, body):
         '''
@@ -138,6 +129,7 @@ class WebConsumer(MessageConsumer):
         '''
         super(WebConsumer, self).__init__(topic)
         self._listeners = set([])
+        self._last_timestamp = 0
         
     def add_listener(self, l):
         '''
@@ -164,6 +156,26 @@ class WebConsumer(MessageConsumer):
         self._queue = method.method.queue
         super(WebConsumer, self)._on_queue_declareok(method)
         
+    def _on_message(self, ch, deliver, prop, body):
+        '''
+        Consume and ack messages
+        
+        :param pika.channel.Channel ch: the channel
+        :param pika.Spec.Basic.Deliver: frame contains delivery tag
+        :param pika.Spec.BasicProperties: frame contains user-define properties
+        :param str body: message text body    
+        
+        '''
+        timestamp = int(prop.timestamp)
+        if timestamp > self._last_timestamp:
+            if body == 'stopping':
+                self._ch.basic_ack(deliver.delivery_tag)
+                self.stop()
+            else:
+                self.process(deliver, prop, body)
+                self._last_timestamp = timestamp
+                self._ch.basic_ack(deliver.delivery_tag)
+                
     def process(self, deliver, prop, body):
         '''
         Write messages to listeners
@@ -206,6 +218,19 @@ class ArchiveConsumer(MessageConsumer):
         self._db.close()
         super(ArchiveConsumer, self).stop()
         
+    def _on_message(self, ch, deliver, prop, body):
+        '''
+        Consume and ack messages
+        
+        :param pika.channel.Channel ch: the channel
+        :param pika.Spec.Basic.Deliver: frame contains delivery tag
+        :param pika.Spec.BasicProperties: frame contains user-define properties
+        :param str body: message text body    
+        
+        '''
+        self.process(deliver, prop, body)
+        self._ch.basic_ack(deliver.delivery_tag)
+            
     def process(self, deliver, prop, body):
         '''
         Store message into DB
