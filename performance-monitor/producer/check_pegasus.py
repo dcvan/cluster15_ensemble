@@ -158,7 +158,7 @@ class ProcessMonitor(object):
         self._msg_q = Queue()
         self._cur = None
         self._lock = RLock()
-        self._counter = Value('i', 0)
+        self._count = Value('i', 0)
         self._stat = manager.dict({
                     'exp_id': self._exp_id,
                     'host': self._hostname,
