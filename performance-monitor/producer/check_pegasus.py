@@ -125,14 +125,22 @@ class SystemMonitor(Process):
         runtime = time.time() - self._start_time.value
         with self._lock:
             msg = dict(self._stat)
-            msg['sys_cpu_percent'] /= self._count.value
-            msg['sys_mem_percent'] /= self._count.value
+            msg['count'] = self._count.value
+            if self._count.value > 0:
+                msg['sys_cpu_percent'] /= self._count.value
+                msg['sys_mem_percent'] /= self._count.value
+            else:
+                msg['sys_cpu_percent'] = psutil.cpu_percent()
+                msg['sys_mem_percent'] = psutil.virtual_memory().percent
             msg['sys_read_rate'] = self._stat['sys_read_bytes'] / runtime
             msg['sys_write_rate'] = self._stat['sys_write_bytes'] / runtime
             msg['sys_send_rate'] = self._stat['sys_net_bytes_sent'] / runtime
             msg['sys_recv_rate'] = self._stat['sys_net_bytes_recv'] / runtime
             msg['timestamp'] = time.time()
             self._msg_q.put(msg)
+            self._stat['sys_cpu_percent'] = 0
+            self._stat['sys_mem_percent'] = 0
+            self._count.value = 0
     
 class ProcessMonitor(object):
     '''
@@ -209,6 +217,7 @@ class ProcessMonitor(object):
             else:
                 self._stat['avg_cpu_percent'] = 0
                 self._stat['avg_mem_percent'] = 0
+                self._stat['count']  = self._count.value
             self._msg_q.put(dict(self._stat))
             self._count.value = 0
             self._stat['cmdline'] = None
