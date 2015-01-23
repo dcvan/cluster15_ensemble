@@ -228,9 +228,10 @@ class ProcessMonitor(object):
         :rtype - psutil.Process
         
         '''
-        with self._lock:
-            self._stat['pid'] = self._get_job_pid()
-        if not self._stat['pid']: return None
+        pid = self._get_job_pid()
+        if not pid: return None
+        with self._lock: 
+            self._stat['pid'] = pid
         proc = psutil.Process(self._stat['pid'])
         try:
             children = proc.children(recursive=True)
