@@ -199,20 +199,30 @@ class ProcessMonitor(object):
         '''
         with self._lock:
             self._stat['timestamp'] = time.time()
-            pid = self._get_job_pid()
-            if pid == self._stat['pid']:
-                self._stat['runtime'] += self._stat['timestamp'] - proc.create_time()
+            print 'Process:' , ' '.join(proc.cmdline())
+            self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
+            if self._count.value > 1:
+                self._stat['avg_cpu_percent'] /= self._count.value - 1
+                self._stat['avg_mem_percent'] /= self._count.value
             else:
-                if pid: self._stat['pid'] = pid
-                self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
-                if self._count.value > 1:
-                    self._stat['avg_cpu_percent'] /= self._count.value - 1
-                    self._stat['avg_mem_percent'] /= self._count.value
-                else:
-                    self._stat['avg_cpu_percent'] = 0
-                    self._stat['avg_mem_percent'] = 0
-                self._msg_q.put(dict(self._stat))
-                self._system_monitor.send_statistics()
+                self._stat['avg_cpu_percent'] = 0
+                self._stat['avg_mem_percent'] = 0
+            self._msg_q.put(dict(self._stat))
+            self._count.value = 0
+            self._stat['cmdline'] = None
+            self._stat['runtime'] = 0
+            self._stat['start_time'] = 0
+            self._stat['terminate_time'] = 0
+            self._stat['min_cpu_percent'] = 2000.0
+            self._stat['max_cpu_percent'] = 0.0
+            self._stat['avg_cpu_percent']= 0.0
+            self._stat['min_mem_percent'] = 2000.0
+            self._stat['max_mem_percent'] = 0.0 
+            self._stat['avg_mem_percent'] = 0.0
+            self._stat['total_read_bytes'] = 0
+            self._stat['total_write_bytes'] = 0
+            self._system_monitor.send_statistics()
+            
 
 
     def find_process(self):
@@ -224,7 +234,8 @@ class ProcessMonitor(object):
         
         '''
         pid = self._get_job_pid()
-        if not pid: return None
+        if not pid: 
+            return None
         with self._lock: 
             self._stat['pid'] = pid
         proc = psutil.Process(self._stat['pid'])
@@ -246,7 +257,7 @@ class ProcessMonitor(object):
                             self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.parent().cmdline()[1:3]])
                         else:
                             self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()[:2]])
-                    wait = Process(target=psutil.wait_procs, args=([p], None, self.on_terminate))
+                    wait = Process(target=psutil.wait_procs, args=([proc], None, self.on_terminate))
                     wait.start()
                     return p
         except psutil.NoSuchProcess:
@@ -281,7 +292,6 @@ class ProcessMonitor(object):
                     break;
                 with self._lock:
                     try:
-                        self._count.value += 1
                         cpu_percent = self._cur.cpu_percent()
                         mem_percent = self._cur.memory_percent()
                         self._stat['max_cpu_percent'] = max(self._stat['max_cpu_percent'], cpu_percent)
@@ -294,25 +304,10 @@ class ProcessMonitor(object):
                         
                         self._stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                         self._stat['total_write_bytes'] = self._cur.io_counters().write_bytes
-                            
+                        self._count.value += 1
                     except psutil.NoSuchProcess:
                         self._cur = None
-                        pid = self._get_job_pid()
-                        if not pid or pid != self._stat['pid']:
-                            self._count.value = 0
-                            with self._lock:
-                                self._stat['cmdline'] = None
-                                self._stat['runtime'] = 0
-                                self._stat['start_time'] = 0
-                                self._stat['terminate_time'] = 0
-                                self._stat['min_cpu_percent'] = 2000.0
-                                self._stat['max_cpu_percent'] = 0.0
-                                self._stat['avg_cpu_percent']= 0.0
-                                self._stat['min_mem_percent'] = 2000.0
-                                self._stat['max_mem_percent'] = 0.0 
-                                self._stat['avg_mem_percent'] = 0.0
-                                self._stat['total_read_bytes'] = 0
-                                self._stat['total_write_bytes'] = 0
+                        self._count = 0
                 time.sleep(1)
         else:
             while self._done.value < self._run_num:
