@@ -256,9 +256,7 @@ class ProcessMonitor(object):
                             self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.parent().cmdline()[1:3]])
                         else:
                             self._stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in p.cmdline()[:2]])
-                    wait = Process(target=psutil.wait_procs, args=([proc], None, self.on_terminate))
-                    wait.start()
-                    return p
+                    return (p, proc)
         except psutil.NoSuchProcess:
             return None
 
@@ -283,8 +281,10 @@ class ProcessMonitor(object):
                 while not self._cur: 
                     if self._is_master and self._done.value >= self._run_num:
                         break;
-                    self._cur = self.find_process()
+                    parent, self._cur = self.find_process()
                     if self._cur: 
+                        wait = Process(target=psutil.wait_procs, args=([proc], None, self.on_terminate))
+                        wait.start()
                         break
                     time.sleep(1)
                 if self._is_master and self._done.value >= self._run_num:
