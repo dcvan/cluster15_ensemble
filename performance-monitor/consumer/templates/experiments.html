@@ -30,7 +30,7 @@
 		<tbody>
 			{% for e in experiments %}
 			<tr>
-				<td><a href="{{'%s/experiments/%s' % (current_uri, e['exp_id'])}}">{{e['exp_id']}}</a></td>
+				<td class="exp-id"><a href="{{'%s/experiments/%s' % (current_uri, e['exp_id'])}}">{{e['exp_id']}}</a></td>
 				<td>{{e['topology']}}</td>
 				<td>{{e['mode']}}</td>
 				<td>{{e['master_site']}}</td>
