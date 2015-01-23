@@ -199,7 +199,7 @@ class ProcessMonitor(object):
         
         '''
         with self._lock:
-            if not self._stat['cmdline']:
+            if 'cmdline' not in self._stat or not self._stat['cmdline']:
                 return
             self._stat['timestamp'] = time.time()
             self._stat['runtime'] = self._stat['timestamp'] - proc.create_time() 
