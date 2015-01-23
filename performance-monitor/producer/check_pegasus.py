@@ -204,7 +204,9 @@ class ProcessMonitor(object):
             if not self._stat['cmdline']: 
                 return
             self._stat['timestamp'] = time.time()
-            if self._last_job.value == self._stat['pid']:
+            if self._last_value == 0:
+                self._last_value = self._stat['pid']
+            elif self._last_job.value == self._stat['pid']:
                 self._stat['runtime'] += self._stat['timestamp'] - proc.create_time()
             else:
                 self._last_job.value = self._stat['pid']
