@@ -2,17 +2,47 @@
  * 
  */
 $(document).ready(function(){
-	if($('#walltime').length){
+	$("#redo").click(function(){
 		$.ajax({
-			url: window.location.pathname + '/runs',
-			type: 'POST',
+			url: window.location.pathname,
+			type: 'DELETE',
 			contentType: 'application/json',
-			success: function(data){
-				plotLine($('#walltime canvas').get(0), 
-						data.label,
-						 [{'label': 'Walltime', 'data': data.walltime, 'color': '151,187,205'}],
-						 $('#walltime div').get(0));
+			data: JSON.stringify({'action': 'redo'}),
+			success:function(data){
+				location.reload();
 			}
 		});
-	}
+	});
+	
+	$("#copy").click(function(){
+		$.ajax({
+			url: window.location.pathname,
+			type: 'GET',
+			contentType: 'application/json',
+			success: function(data){
+				console.log(JSON.stringify(data));
+				$.ajax({
+					url: '/',
+					type: 'POST',
+					contentType: 'application/json',
+					data: JSON.stringify(data),
+					success: function(data){
+						window.location.replace(get_url('/workflows/' + data.type));
+					}
+				});
+			}
+		});
+	});
+	
+	$('#del').click(function(){
+		$.ajax({
+			url: window.location.pathname,
+			type: 'DELETE',
+			contentType: 'application/json',
+			data: JSON.stringify({'action': 'remove'}),
+			success: function(data){
+				window.location.replace(get_url('/'))
+			}
+		});
+	});
 });

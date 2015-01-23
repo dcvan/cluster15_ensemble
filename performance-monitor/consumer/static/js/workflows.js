@@ -26,7 +26,7 @@ $(document).ready(function(){
 			data: JSON.stringify(data),
 			contentType: 'application/json',
 			success: function(data){
-				window.location.replace(get_url('workflows/' + data.type + '/experiments/' + data.exp_id));
+				window.location.replace(get_url('/workflows/' + data.type + '/experiments/' + data.exp_id));
 			}
 		});
 	});

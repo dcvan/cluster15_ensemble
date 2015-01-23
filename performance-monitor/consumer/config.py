@@ -17,3 +17,13 @@ DB_NAME = 'cluster15'
 BUF_SIZE = 20
 
 DATA_LEN_LIMIT = 300
+
+def check_content_type(handler):
+    '''
+    
+    '''
+    content_type = handler.request.headers.get('Content-Type')
+    if content_type and content_type not in ['application/json']:
+        handler.set_status(415, 'Unsupported content-type')
+        return False
+    return True

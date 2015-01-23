@@ -21,6 +21,10 @@ var Chartjs = Chart.noConflict();
 <section class="container">
 	<h1>Experiment <small>created at {{data['create_time']}}</small></h1>
 	<a href="/">Back</a>
+	<button id="del" class="btn btn-danger pull-right">Delete</button>
+	<button id="redo" class="btn btn-warning pull-right">Redo</button>
+	<button id="copy" class="btn btn-info pull-right">Replicate</button>
+
 	<dl class="dl-horizontal">
 		<dt>Type</dt>
 		<dd>{{data['type']}}</dd>
@@ -50,7 +54,6 @@ var Chartjs = Chart.noConflict();
 		<dd>{{data['bandwidth'] if data['bandwidth'] else '-'}} Mbps</dd>
 		<dt>Storage Size</dt>
 		<dd>{{data['storage_size'] if data['storage_size'] else '-'}} GB</dd>
-
 	</dl>
 	<h2>Active Workers</h2>
 	<table id="workers" class="table table-hover">
@@ -82,19 +85,13 @@ var Chartjs = Chart.noConflict();
 		<tbody>
 			{% for r in data['runs']%}
 				<tr>
-					<td>run-{{r['run_id']}}</td>
+					<td>r['run_id']</td>
 					<td>{{r['walltime']}}</td>
 					<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(r['timestamp']))}}</td>
 				</tr>
 			{% end %}
 		</tbody>
 	</table>
-	{% if data['runs'] %}
-	<div id="walltime" class="chart">
-		<canvas></canvas>
-		<div></div>
-	</div>
-	{% end %}
 	<form id="download" action="/workflows/{{data['type']}}/experiments/{{data['exp_id']}}" method="POST">
 	<h2>Manifest <small><a href="#" onclick="$('#download').submit();">Download</a></small></h2>
 	</form>

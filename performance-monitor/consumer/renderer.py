@@ -8,7 +8,7 @@ import uuid
 import jinja2
 import time
 import tornado.web
-from config import DB_NAME
+from config import DB_NAME, check_content_type
 
 class WorkflowsRenderer(tornado.web.RedirectHandler):
     '''
@@ -41,9 +41,11 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
     
     def post(self):
         '''
-        POST method
+        POST method: create new experiment
         
         '''
+        if not check_content_type(self):
+            return
         data = json.loads(self.request.body)
         if not self._db[DB_NAME]['workflow']['manifest'].find_one({
                 'type': data['type'],
@@ -57,11 +59,10 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         data['status'] = 'submitted'
         data['create_time'] = int(time.time())
         self._db[DB_NAME]['workflow']['experiment'].insert(data)
-        self.set_header('Content-Type', 'application/json;charset="utf-8"')
-        self.write(json.dumps({
+        self.write({
                 'exp_id': data['exp_id'],
                 'type': data['type'],
-            }))
+            })
         
 class ExperimentRenderer(tornado.web.RedirectHandler):
     '''
@@ -86,6 +87,9 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         if not exp:
             self.set_status(404, 'Experiment not found')
             return 
+        if not check_content_type(self):
+            return
+        content_type = self.request.headers.get('Content-Type') 
         t = self._db[DB_NAME]['workflow']['manifest'].find_one({
                     'type': exp['type'],
                     'mode': exp['mode'],
@@ -101,14 +105,20 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         if exp['storage_site'] == 'remote' and not exp['storage_size']:
             exp['storage_size'] = 50
         exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
-        exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
-        manifest = jinja2.Template(template).render(param=exp)
-        exp['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
-        exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
-        exp['workers'] = [w for w in self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp_id}, {'_id': 0})]
-        exp['runs'] = [r for r in self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp_id}, {'_id': 0})]
-        if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
-        self.render('experiment.html', manifest=manifest, data=exp, current_uri=self.request.uri)
+        if not content_type:
+            exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
+            manifest = jinja2.Template(template).render(param=exp)
+            exp['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
+            exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
+            exp['workers'] = [w for w in self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp_id}, {'_id': 0}).sort('host')]
+            exp['runs'] = [r for r in self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp_id}, {'_id': 0}).sort('run_id')]
+            if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
+            self.render('experiment.html', manifest=manifest, data=exp, current_uri=self.request.uri)
+        elif content_type == 'application/json':
+            del exp['create_time']
+            del exp['status']
+            del exp['exp_id']
+            self.write(exp)
 
     def post(self, workflow, exp_id):
         '''
@@ -140,7 +150,17 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         DELETE method: delete an experiment
         
         '''
-        self._db[DB_NAME]['workflow']['experiment'].remove({'exp_id': exp_id})
+        if not check_content_type(self):
+            return
+        if not self.request.body:
+            self.set_status(400, 'No action specified')
+            return 
+        param = json.loads(self.request.body)
+        if param['action'] not in set(['remove', 'redo']):
+            self.set_status(400, 'Unknown action')
+            return 
+        if param['action'] == 'remove':
+            self._db[DB_NAME]['workflow']['experiment'].remove({'exp_id': exp_id})
         self._db[DB_NAME]['experiment']['worker'].remove({'exp_id': exp_id})
         self._db[DB_NAME]['experiment']['job'].remove({'exp_id': exp_id})
         self._db[DB_NAME]['experiment']['system'].remove({'exp_id': exp_id})
@@ -171,11 +191,10 @@ class RunsRenderer(tornado.web.RedirectHandler):
         if not runs:
             self.set_status(204, 'No finished runs')
             return
-        self.set_header('Content-Type', 'application/json;charset="utf-8"')
-        self.write(json.dumps({
+        self.write({
                 'label': [r['run_id'] for r in runs],
                 'walltime': [r['walltime'] for r in runs]
-            }))
+            })
         
 class WorkerRenderer(tornado.web.RedirectHandler):
     '''
@@ -206,6 +225,8 @@ class WorkerRenderer(tornado.web.RedirectHandler):
         POST method: returns performance data
         
         '''
+        if not check_content_type(self):
+            return
         data = json.loads(self.request.body)
         if not self._db[DB_NAME]['workflow']['experiment'].find().count():
             self.set_status(404, 'Experiment not found')
@@ -247,8 +268,7 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             res['total_read_bytes'] = [s['total_read_bytes'] for s in stat]
             res['total_write_bytes'] = [s['total_write_bytes'] for s in stat]
         
-        self.set_header('Content-Type', 'application/json;charset="utf-8"')
-        self.write(json.dumps(res))
+        self.write(res)
         
 class WorkflowRenderer(tornado.web.RequestHandler):
     '''
@@ -272,8 +292,12 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         exp = [e for e in self._db[DB_NAME]['workflow']['experiment'].find({'type': workflow}, {'_id': 0})]
         for e in exp:
             if e['status'] == 'submitted':
-                if self._db[DB_NAME]['experiment']['worker'].find_one({'exp_id': e['exp_id']}):
+                runs = self._db[DB_NAME]['experiment']['run'].find_one({'exp_id': e['exp_id']})
+                if runs.count() > 0 and runs.count() == exp['run_num']:
+                    e['status'] = 'finished'
+                elif self._db[DB_NAME]['experiment']['worker'].find_one({'exp_id': e['exp_id']}):
                     e['status'] = 'running'
+                if e['status'] != 'submitted':    
                     self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': e['exp_id']}, {'$set': {'status': e['status']}})
         self.render('experiments.html', experiments=exp, current_uri=self.request.uri)
 

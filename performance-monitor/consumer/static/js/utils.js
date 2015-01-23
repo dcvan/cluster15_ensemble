@@ -52,5 +52,5 @@ function resize(canvas){
 }
 
 function get_url(path){
-	return "http://" + document.location.host + window.location.pathname + path; 
+	return "http://" + document.location.host + path; 
 }
