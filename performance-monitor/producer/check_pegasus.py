@@ -351,6 +351,9 @@ class JobMonitor(Process):
                             else:
                                 with self._lock:
                                     self._stat[pid] = {
+                                            'exp_id': self._exp_id,
+                                            'host': self._hostname,
+                                            'type': 'job',
                                             'avg_cpu_percent': 0,
                                             'avg_mem_percent': 0,
                                             'max_cpu_percent': 0,
