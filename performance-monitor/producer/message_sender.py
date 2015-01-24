@@ -197,7 +197,7 @@ class MessageSender(Process):
                     logging.info('Sending heartbeat signal')
                     self._ch.basic_publish(
                              exchange=EXCHANGE_NAME, 
-                             routing_key=topics,
+                             routing_key='#',
                              body=msg,
                              properties=pika.BasicProperties(
                                             delivery_mode=2,
