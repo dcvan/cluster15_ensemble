@@ -136,8 +136,17 @@ class SystemMonitor(Process):
             msg['sys_write_rate'] = self._stat['sys_write_bytes'] / runtime
             msg['sys_send_rate'] = self._stat['sys_net_bytes_sent'] / runtime
             msg['sys_recv_rate'] = self._stat['sys_net_bytes_recv'] / runtime
+            if msg['sys_min_cpu_percent'] == 2000:
+                msg['sys_min_cpu_percent'] = 0
+            if msg['sys_min_mem_percent'] == 2000:
+                msg['sys_min_mem_percent'] = 0 
             msg['timestamp'] = time.time()
-            self._msg_q.put(msg)
+            if msg:
+                self._msg_q.put(dict(msg))
+            self._stat['sys_max_cpu_percent'] = 0
+            self._stat['sys_min_cpu_percent'] = 2000
+            self._stat['sys_max_mem_percent'] = 0
+            self._stat['sys_min_mem_percent'] = 2000
             self._stat['sys_cpu_percent'] = 0
             self._stat['sys_mem_percent'] = 0
             self._count.value = 0
@@ -218,7 +227,8 @@ class ProcessMonitor(object):
                 self._stat['avg_cpu_percent'] = 0
                 self._stat['avg_mem_percent'] = 0
                 self._stat['count']  = self._count.value
-            self._msg_q.put(dict(self._stat))
+            if self._stat:
+                self._msg_q.put(dict(self._stat))
             self._count.value = 0
             self._stat['cmdline'] = None
             self._stat['runtime'] = 0
