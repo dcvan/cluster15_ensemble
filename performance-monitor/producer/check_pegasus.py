@@ -15,7 +15,7 @@ from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR
 
 logging.basicConfig(
                     filename='monitor.log', 
-                    format='[%(asctime)s] %(levelname)% %(processName)s [%(funcName)s:%(lineno)d] %(message)s"', 
+                    format='[%(asctime)s] %(levelname)s % %(processName)s [%(funcName)s:%(lineno)d] %(message)s"', 
                     level=logging.DEBUG)
 
 class WorkflowMonitor(Process):
