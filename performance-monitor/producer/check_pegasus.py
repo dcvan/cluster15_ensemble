@@ -237,11 +237,15 @@ class WaitProcess(Process):
         logging.debug('Job terminated: %d' % proc.pid)
         if proc.pid not in self._stat:
             logging.warning('Job %d is not of interest. Quit' % proc.pid)
-            with self._lock: self._waiting.remove(proc.pid)
+            with self._lock: 
+                if proc.pid in self._waiting:
+                    self._waiting.remove(proc.pid)
             return
         if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
             logging.warning('Cmdline not available for %d. Quit' % proc.pid)
-            with self._lock: self._waiting.remove(proc.pid)
+            with self._lock: 
+                if proc.pid in self._waiting:
+                    self._waiting.remove(proc.pid)
             return
         with self._lock:
             self._stat[proc.pid]['timestamp'] = time.time()
@@ -257,7 +261,8 @@ class WaitProcess(Process):
             if self._stat[proc.pid]['min_mem_percent'] == 2000:
                 self._stat[proc.pid]['min_mem_percent'] = 0
             self._msg_q.put(dict(self._stat[proc.pid]))
-            self._waiting.remove(proc.pid)
+            if proc.pid in self._waiting:
+                    self._waiting.remove(proc.pid)
         logging.info('Message sent to MessageSender')
         logging.debug('Runtime: %f\tCount: %d' % (self._stat[proc.pid]['runtime'], self._stat[proc.pid]['count']))
 
