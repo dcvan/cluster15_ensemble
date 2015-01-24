@@ -227,6 +227,10 @@ class ProcessMonitor(object):
                 self._stat['avg_cpu_percent'] = 0
                 self._stat['avg_mem_percent'] = 0
                 self._stat['count']  = self._count.value
+            if self._stat['min_cpu_percent'] == 2000:
+                self._stat['min_cpu_percent'] = 0
+            if self._stat['min_mem_percent'] == 2000:
+                self._stat['min_mem_percent'] = 0
             if self._stat:
                 self._msg_q.put(dict(self._stat))
             self._count.value = 0
