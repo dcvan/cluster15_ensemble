@@ -52,7 +52,7 @@ class WorkflowMonitor(Process):
         logging.info('Started')
         while self._done < self._run_num:
             logging.info('Expecting number of runs: %s' % self._run_num)
-            logging.info('Number of done jobs: %d' % self._done)
+            logging.info('Number of finished runs: %d' % self._done)
             if os.path.isdir(self._workdir_base):
                 workdirs = os.listdir(self._workdir_base)
                 for w in workdirs:
