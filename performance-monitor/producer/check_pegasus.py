@@ -82,7 +82,7 @@ class WorkflowMonitor(Process):
             self._heartbeat += 1
             if self._heartbeat >= self.HEARTBEAT_LIMIT:
                 logging.info('Send heartbeat signal to keep the AMQP connection alive')
-                self._msg.q.put('alive')
+                self._msg_q.put('alive')
                 self._heartbeat = 0
             time.sleep(10)
             
