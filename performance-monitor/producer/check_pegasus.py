@@ -245,7 +245,7 @@ class WaitProcess(Process):
         '''
         logging.debug('Job terminated: %d' % proc.pid)
         logging.debug('Waiting Jobs: %s' % str(self._stat.keys()))
-        if not self._stat[proc.pid]:
+        if proc not in self._stat or not self._stat[proc.pid]:
             logging.warning('Job %d is not of interest. Quit' % proc.pid)
             return
         if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
@@ -291,7 +291,8 @@ class JobMonitor(Process):
         self._lock = Lock()
         self._jobs = set(execs)
         self._stat = stat
-        self._last_job = 0
+        self._cur_stat = None
+        self._cur_job = 0
         
     def _find_process(self):
         '''
@@ -332,7 +333,7 @@ class JobMonitor(Process):
                     logging.debug('Executable: %s' % executable)
                     if executable and executable in self._jobs:
                         logging.debug('Interesting job found: %s' % p.pid)
-                        if self._last_job != proc.pid:
+                        if self._cur_job != proc.pid:
                             logging.info('New job is found. Change job name')
                             cmd = None
                             parent_cmd = None
@@ -342,27 +343,27 @@ class JobMonitor(Process):
                             except psutil.NoSuchProcess:
                                 logging.debug('Process %d is gone when just being found. Skip' % p.pid)
                             else:
-                                with self._lock:
-                                    self._stat[pid] = {
-                                            'exp_id': self._exp_id,
-                                            'host': self._hostname,
-                                            'type': 'job',
-                                            'avg_cpu_percent': 0,
-                                            'avg_mem_percent': 0,
-                                            'max_cpu_percent': 0,
-                                            'min_cpu_percent': 2000,
-                                            'max_mem_percent': 0,
-                                            'min_mem_percent': 2000,
-                                            'count': 0
-                                    }
-                                    logging.info('Message dict created')
-                                    if p.name() == 'python':
-                                        self._stat[pid]['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[1:3]])
-                                    elif p.name() == 'java':
-                                        self._stat[pid]['cmdline'] = ' '.join([arg.split('/')[-1] for arg in parent_cmd[1:3]])
-                                    else:
-                                         self._stat[pid]['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[:2]])
-                                self._last_job = proc.pid
+                                self._cur_stat = {
+                                    'exp_id': self._exp_id,
+                                    'host': self._hostname,
+                                    'type': 'job',
+                                    'avg_cpu_percent': 0,
+                                    'avg_mem_percent': 0,
+                                    'max_cpu_percent': 0,
+                                    'min_cpu_percent': 2000,
+                                    'max_mem_percent': 0,
+                                    'min_mem_percent': 2000,
+                                    'count': 0
+                                }
+                                if p.name() == 'python':
+                                    self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[1:3]])
+                                elif p.name() == 'java':
+                                    self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in parent_cmd[1:3]])
+                                else:
+                                     self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[:2]])
+                                logging.info('Message dict created')
+                                logging.debug('Cmdline: %s' % self._cur_stat['cmdline'])
+                                self._cur_job = proc.pid
                         else:
                             logging.info('Old job. Not change job name')
                         return p
@@ -388,27 +389,24 @@ class JobMonitor(Process):
             r_bytes = 0
             w_bytes = 0
             try:
-                name = self._cur.name()
-                cmdline = list(self._cur.cmdline())
                 cpu_pct = self._cur.cpu_percent()
                 mem_pct = self._cur.memory_percent()
-                r_bytes = self._cur.io_counters().read_bytes
-                w_bytes = self._cur.io_counters().write_bytes
+                self._cur_stat['max_cpu_percent'] = max(self._cur_stat['max_cpu_percent'], cpu_pct)
+                if cpu_pct:
+                    self._cur_stat['min_cpu_percent'] = min(self._cur_stat['min_cpu_percent'], cpu_pct)
+                self._cur_stat['avg_cpu_percent'] += cpu_pct
+                self._cur_stat['max_mem_percent'] = max(self._cur_stat['max_mem_percent'], mem_pct)
+                self._cur_stat['min_mem_percent'] = min(self._cur_self._cur_stat['min_mem_percent'], mem_pct)
+                self._cur_stat['avg_mem_percent'] += mem_pct
+                self._cur_stat['total_read_bytes'] = self._cur.io_counters().read_bytes
+                self._cur_stat['total_write_bytes'] = self._cur.io_counters().write_bytes
+                self._cur_stat['count'] += 1
             except psutil.NoSuchProcess:
                 logging.debug('Job %d is gone in the middle of examination' % self._cur.pid)
                 self._cur = None
             else:
                 with self._lock:
-                    self._stat[self._last_job]['max_cpu_percent'] = max(self._stat[self._last_job]['max_cpu_percent'], cpu_pct)
-                    if cpu_pct:
-                        self._stat[self._last_job]['min_cpu_percent'] = min(self._stat[self._last_job]['min_cpu_percent'], cpu_pct)
-                    self._stat[self._last_job]['avg_cpu_percent'] += cpu_pct
-                    self._stat[self._last_job]['max_mem_percent'] = max(self._stat[self._last_job]['max_mem_percent'], mem_pct)
-                    self._stat[self._last_job]['min_mem_percent'] = min(self._stat[self._last_job]['min_mem_percent'], mem_pct)
-                    self._stat[self._last_job]['avg_mem_percent'] += mem_pct
-                    self._stat[self._last_job]['total_read_bytes'] = r_bytes
-                    self._stat[self._last_job]['total_write_bytes'] = w_bytes
-                    self._stat[self._last_job]['count'] += 1
+                    self._stat[self._cur_job] = dict(self._cur_stat)
             time.sleep(1)
             
     def _get_startd_pid(self):
