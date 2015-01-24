@@ -243,6 +243,7 @@ class WaitProcess(Process):
         
         '''
         logging.debug('Job terminated: %d' % proc.pid)
+        logging.debug('Jobs in list: %s' % str(self._stat.keys()))
         if proc.pid not in self._stat:
             logging.warning('Job %d is not of interest. Quit' % proc.pid)
             with self._lock: 
@@ -270,6 +271,7 @@ class WaitProcess(Process):
                 self._stat[proc.pid]['min_mem_percent'] = 0
             self._msg_q.put(dict(self._stat[proc.pid]))
             if proc.pid in self._waiting:
+                    del self._stat[proc.pid]
                     self._waiting.remove(proc.pid)
         logging.info('Message sent to MessageSender')
         logging.debug('Runtime: %f\tCount: %d' % (self._stat[proc.pid]['runtime'], self._stat[proc.pid]['count']))
@@ -297,7 +299,7 @@ class JobMonitor(Process):
         self._lock = Lock()
         self._waiting = []
         self._jobs = set(execs)
-        self._stat = {}
+        self._stat = Manager().dict()
         self._last_job = 0
 
     def _find_process(self):
@@ -323,7 +325,7 @@ class JobMonitor(Process):
             with self._lock:
                 self._waiting.append(pid)
         try:
-            logging.info('Looking for interested job')
+            logging.info('Looking for interesting job')
             children = proc.children(recursive=True)
             logging.debug('Children: %s' % str(children))
             for p in children:
@@ -338,7 +340,7 @@ class JobMonitor(Process):
                         executable = p.name()
                     logging.debug('Executable: %s' % executable)
                     if executable and executable in self._jobs:
-                        logging.debug('Interested job found: %s' % p.pid)
+                        logging.debug('Interesting job found: %s' % p.pid)
                         if self._last_job != proc.pid:
                             logging.info('New job is found. Change job name')
                             cmd = None
@@ -362,6 +364,7 @@ class JobMonitor(Process):
                                             'min_mem_percent': 2000,
                                             'count': 0
                                     }
+                                    logging.info('Message dict created')
                                     if p.name() == 'python':
                                         self._stat[pid]['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[1:3]])
                                     elif p.name() == 'java':
