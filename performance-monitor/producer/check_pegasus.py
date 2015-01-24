@@ -237,7 +237,7 @@ class WaitProcess(Process):
         with self._lock:
             self._stat[proc.pid]['timestamp'] = time.time()
             self._stat[proc.pid]['runtime'] = self._stat[proc.pid]['timestamp'] - proc.create_time() 
-            if self._count.value > 1:
+            if self._stat[proc.pid]['count'] > 1:
                 self._stat[proc.pid]['avg_cpu_percent'] /= self._stat[proc.pid]['count'] - 1 
                 self._stat[proc.pid]['avg_mem_percent'] /= self._stat[proc.pid]['count']
             else:
@@ -247,7 +247,7 @@ class WaitProcess(Process):
                 self._stat[proc.pid]['min_cpu_percent'] = 0
             if self._stat[proc.pid]['min_mem_percent'] == 2000:
                 self._stat[proc.pid]['min_mem_percent'] = 0
-            self._msg_q.put(dict(self._stat))
+            self._msg_q.put(dict(self._stat[proc.pid]))
 
 class JobMonitor(Process):
     '''
