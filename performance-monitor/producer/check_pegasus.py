@@ -234,9 +234,12 @@ class WaitProcess(Process):
         :param psutil.Process: a monitored condor_startd process
         
         '''
-        logging.debug('Process terminated: %d' % proc.pid)
+        logging.debug('Job terminated: %d' % proc.pid)
+        if proc.pid not in self._stat:
+            logging.warning('Job %d is not of interest. Quit' % proc.pid)
+            return
         if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
-            logging.warning('Command line not available for %d. Quit' % proc.pid)
+            logging.warning('Cmdline not available for %d. Quit' % proc.pid)
             return
         with self._lock:
             self._stat[proc.pid]['timestamp'] = time.time()
