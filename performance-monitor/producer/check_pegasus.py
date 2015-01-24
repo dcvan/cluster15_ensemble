@@ -220,7 +220,7 @@ class WaitProcess(Process):
         logging.info('WaitProcess spawned: %d' % proc.pid)
         Process.__init__(self)
         self.name = 'WaitProcess'
-        self.daemon = True
+#        self.daemon = True
         self._proc = proc
         self._lock = lock
         self._stat = data
@@ -290,6 +290,37 @@ class JobMonitor(Process):
         self._stat = Manager().dict()
         self._last_job = 0
 
+    def _on_terminate(self, proc):
+        '''
+        Sends data to the message sender when a monitored job is done
+        
+        :param psutil.Process: a monitored condor_startd process
+        
+        '''
+        logging.debug('Job terminated: %d' % proc.pid)
+        if not self._stat[proc.pid]:
+            logging.warning('Job %d is not of interest. Quit' % proc.pid)
+            return
+        if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
+            logging.warning('Cmdline not available for %d. Quit' % proc.pid)
+            return
+        with self._lock:
+            self._stat[proc.pid]['timestamp'] = time.time()
+            self._stat[proc.pid]['runtime'] = self._stat[proc.pid]['timestamp'] - proc.create_time() 
+            if self._stat[proc.pid]['count'] > 1:
+                self._stat[proc.pid]['avg_cpu_percent'] /= self._stat[proc.pid]['count'] - 1 
+                self._stat[proc.pid]['avg_mem_percent'] /= self._stat[proc.pid]['count']
+            else:
+                self._stat[proc.pid]['avg_cpu_percent'] = 0
+                self._stat[proc.pid]['avg_mem_percent'] = 0
+            if self._stat[proc.pid]['min_cpu_percent'] == 2000:
+                self._stat[proc.pid]['min_cpu_percent'] = 0
+            if self._stat[proc.pid]['min_mem_percent'] == 2000:
+                self._stat[proc.pid]['min_mem_percent'] = 0
+            self._msg_q.put(dict(self._stat[proc.pid]))
+        logging.info('Message sent to MessageSender')
+        logging.debug('Runtime: %f\tCount: %d' % (self._stat[proc.pid]['runtime'], self._stat[proc.pid]['count']))
+        
     def _find_process(self):
         '''
         Find any running process of interest. Because only an interesting job will be running at 
@@ -310,8 +341,10 @@ class JobMonitor(Process):
             logging.info('%d is not in the waiting list' % pid)
             with self._lock:
                 self._stat[pid] = None
-            wp = WaitProcess(proc, self._lock, self._stat, self._msg_q)
-            wp.start()
+            #wp = WaitProcess(proc, self._lock, self._stat, self._msg_q)
+            #wp.start()
+                wp = Process(target=psutil.wait_procs, args=([proc], None, self._on_terminate))
+                wp.start()
         try:
             logging.info('Looking for interesting job')
             children = proc.children(recursive=True)
