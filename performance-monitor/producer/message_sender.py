@@ -7,10 +7,15 @@ Created on Jan 12, 2015
 import pika
 import json
 import time
+import logging
 from pika import adapters
 from multiprocessing import Process
 from config import EXCHANGE_NAME, RECONNECT_INT
 
+logging.basicConfig(
+                    filename='sender.log', 
+                    format='[%(asctime)s] %(levelname)s  %(processName)s [%(funcName)s:%(lineno)d] %(message)s"', 
+                    level=logging.DEBUG)
 class MessageSender(Process):
     '''
     Send performance messages to the message queue
@@ -189,6 +194,7 @@ class MessageSender(Process):
         msg = self._msg_q.get(True)
         if  msg:
                 if msg == 'alive':
+                    logging.info('Sending heartbeat signal')
                     self._ch.basic_publish(
                              exchange=EXCHANGE_NAME, 
                              routing_key=topics,
@@ -197,7 +203,8 @@ class MessageSender(Process):
                                             delivery_mode=2,
                                             timestamp=int(time.time() * 1000)),
                             )
-                if 'type' in msg:
+                elif 'type' in msg:
+                    logging.debug('Sending message: %s' % str(msg))
                     topics = '%s.%s.%s' % (self._expid, self._hostname, msg['type'])
                     del msg['type']
                     self._ch.basic_publish(
