@@ -242,7 +242,7 @@ class WaitProcess(Process):
         
         '''
         logging.debug('Job terminated: %d' % proc.pid)
-        if proc.pid not in self._stat:
+        if not self._stat[proc.pid]:
             logging.warning('Job %d is not of interest. Quit' % proc.pid)
             return
         if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
@@ -286,7 +286,6 @@ class JobMonitor(Process):
         self._msg_q = msg_q
         self._cur = None
         self._lock = Lock()
-        self._waiting = []
         self._jobs = set(execs)
         self._stat = Manager().dict()
         self._last_job = 0
@@ -305,14 +304,14 @@ class JobMonitor(Process):
             logging.info('No condor_startd found')
             return None
         logging.debug('PID: %d' % pid)
-        logging.debug('Waiting processes: %s' % str(self._waiting))
+        logging.debug('Waiting processes: %s' % str(self._stat.keys()))
         proc = psutil.Process(pid)
-        if pid not in self._waiting:
+        if pid not in self._stat:
             logging.info('%d is not in the waiting list' % pid)
+            with self._lock:
+                self._stat[pid] = None
             wp = WaitProcess(proc, self._lock, self._stat, self._msg_q)
             wp.start()
-            with self._lock:
-                self._waiting.append(pid)
         try:
             logging.info('Looking for interesting job')
             children = proc.children(recursive=True)
