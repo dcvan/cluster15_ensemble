@@ -382,12 +382,6 @@ class JobMonitor(Process):
             while not self._cur: 
                 self._cur = self._find_process()
                 time.sleep(1)
-            name = None
-            cmdline = None
-            cpu_pct = 0
-            mem_pct = 0
-            r_bytes = 0
-            w_bytes = 0
             try:
                 cpu_pct = self._cur.cpu_percent()
                 mem_pct = self._cur.memory_percent()
