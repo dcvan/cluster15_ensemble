@@ -396,7 +396,7 @@ class JobMonitor(Process):
                     self._cur_stat['min_cpu_percent'] = min(self._cur_stat['min_cpu_percent'], cpu_pct)
                 self._cur_stat['avg_cpu_percent'] += cpu_pct
                 self._cur_stat['max_mem_percent'] = max(self._cur_stat['max_mem_percent'], mem_pct)
-                self._cur_stat['min_mem_percent'] = min(self._cur_self._cur_stat['min_mem_percent'], mem_pct)
+                self._cur_stat['min_mem_percent'] = min(self._cur_stat['min_mem_percent'], mem_pct)
                 self._cur_stat['avg_mem_percent'] += mem_pct
                 self._cur_stat['total_read_bytes'] = self._cur.io_counters().read_bytes
                 self._cur_stat['total_write_bytes'] = self._cur.io_counters().write_bytes
