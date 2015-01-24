@@ -240,6 +240,7 @@ class ArchiveConsumer(MessageConsumer):
         :param str body: message text body   
        
         '''
+        if body == 'alive':  return
         msg_type = deliver.routing_key.split('.')[2]
         data = json.loads(body)
         # buf

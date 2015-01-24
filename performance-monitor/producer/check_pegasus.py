@@ -24,6 +24,8 @@ class WorkflowMonitor(Process):
     Monitor workflow status
     
     '''
+    HEARTBEAT_LIMIT = 30
+    
     def __init__(self,  exp_id, workdir_base, run_num, msg_q):
         '''
         
@@ -37,6 +39,7 @@ class WorkflowMonitor(Process):
         self._workdir_base = workdir_base
         self._run_num = run_num
         self._done = 0
+        self._heartbeat = 0
         self._msg_q = msg_q
         self._finished = set()
         
@@ -76,6 +79,11 @@ class WorkflowMonitor(Process):
                                         logging.debug('Run number: %d\tWalltime: %d\tStatus: %s' % (msg['run_id'], msg['walltime'], msg['status']))
                                         self._done += 1
                                     break
+            self._heartbeat += 1
+            if self._heartbeat >= self.HEARTBEAT_LIMIT:
+                logging.info('Send heartbeat signal to keep the AMQP connection alive')
+                self._msg.q.put('alive')
+                self._heartbeat = 0
             time.sleep(10)
             
     def _get_walltime(self, workdir):
