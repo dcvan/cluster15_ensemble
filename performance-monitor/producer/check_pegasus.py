@@ -4,6 +4,7 @@ import pika
 import socket
 import subprocess
 import os
+import sys
 import re
 import shutil
 import argparse
@@ -233,7 +234,10 @@ class WaitProcess(Process):
         :param psutil.Process: a monitored condor_startd process
         
         '''
-        if 'cmdline' not in self._stat or not self._stat['cmdline']: return
+        logging.debug('Process terminated: %d' % proc.pid)
+        if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
+            logging.warning('Command line not available for %d. Quit' % proc.pid)
+            return
         with self._lock:
             self._stat[proc.pid]['timestamp'] = time.time()
             self._stat[proc.pid]['runtime'] = self._stat[proc.pid]['timestamp'] - proc.create_time() 
@@ -248,6 +252,8 @@ class WaitProcess(Process):
             if self._stat[proc.pid]['min_mem_percent'] == 2000:
                 self._stat[proc.pid]['min_mem_percent'] = 0
             self._msg_q.put(dict(self._stat[proc.pid]))
+        logging.info('Message sent to MessageSender')
+        logging.debug('Runtime: %f\tCount: %d' % (self._stat[proc.pid]['runtime'], self._stat[proc.pid]['count']))
 
 class JobMonitor(Process):
     '''
@@ -472,4 +478,6 @@ if __name__ == '__main__':
                 args.executables,
             ).run()
     except KeyboardInterrupt:
-        pass
+        logging.warning('Ctrl-c found. Exit')
+    except:
+        logging.error('Unexpected error: %s\n Exit' % str(sys.exc_info[0]))
