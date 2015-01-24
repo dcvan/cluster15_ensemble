@@ -188,16 +188,26 @@ class MessageSender(Process):
             return
         msg = self._msg_q.get(True)
         if  msg:
-            topics = '%s.%s.%s' % (self._expid, self._hostname, msg['type'])
-            del msg['type']
-            self._ch.basic_publish(
-                     exchange=EXCHANGE_NAME, 
-                     routing_key=topics,
-                     body=json.dumps(msg),
-                     properties=pika.BasicProperties(
-                        delivery_mode=2,
-                        timestamp=int(time.time() * 1000)),
-                     )
+                if msg == 'alive':
+                    self._ch.basic_publish(
+                             exchange=EXCHANGE_NAME, 
+                             routing_key=topics,
+                             body=msg,
+                             properties=pika.BasicProperties(
+                                            delivery_mode=2,
+                                            timestamp=int(time.time() * 1000)),
+                            )
+                if 'type' in msg:
+                    topics = '%s.%s.%s' % (self._expid, self._hostname, msg['type'])
+                    del msg['type']
+                    self._ch.basic_publish(
+                             exchange=EXCHANGE_NAME, 
+                             routing_key=topics,
+                             body=json.dumps(msg),
+                             properties=pika.BasicProperties(
+                                delivery_mode=2,
+                                timestamp=int(time.time() * 1000)),
+                             )
         
         self._conn.add_timeout(1, self._publish)
         
