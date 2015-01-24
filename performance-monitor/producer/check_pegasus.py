@@ -270,7 +270,7 @@ class JobMonitor(Process):
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, exp_id, hostname, msg_q, execs):
+    def __init__(self, exp_id, hostname, msg_q, execs, stat):
         '''
         Init
 
@@ -287,9 +287,9 @@ class JobMonitor(Process):
         self._cur = None
         self._lock = Lock()
         self._jobs = set(execs)
-        self._stat = Manager().dict()
+        self._stat = stat
         self._last_job = 0
-
+        
     def _on_terminate(self, proc):
         '''
         Sends data to the message sender when a monitored job is done
@@ -468,6 +468,7 @@ class MonitorManager(object):
                 )
         self._is_master = is_master
         self._is_worker = is_worker
+        self._stat = Manager().dict()
         if self._is_master:
             if not work_dir:
                 logging.error('Workflow directory not provided')
@@ -481,7 +482,7 @@ class MonitorManager(object):
                 logging.error('Executable list not provided')
                 raise RuntimeError('Executables to be tracked must be provided for worker nodes')
             self._sys_monitor = SystemMonitor(self._exp_id, self._hostname, self._msg_q)
-            self._job_monitor = JobMonitor(self._exp_id, self._hostname, self._msg_q, execs)
+            self._job_monitor = JobMonitor(self._exp_id, self._hostname, self._msg_q, execs, self._stat)
     
     def run(self):
         '''
@@ -503,6 +504,8 @@ class MonitorManager(object):
             self._sys_monitor.start()
             logging.info('JobMonitor started')
             self._job_monitor.start()
+        while True: 
+            pass
     
 if __name__ == '__main__':
     try:
