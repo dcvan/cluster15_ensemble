@@ -199,7 +199,7 @@ pip install pika tornado psutil argparse
 git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 
 # start monitor
-python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -m -d /home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage -r {{param['run_num']}} &amp;
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -m -d /home/pegasus-user/20131031/montage/pegasus-user/pegasus/montage -r {{param['run_num']}} &amp; &gt; log.txt 2&gt; err.txt
 
 
 while [ "$(condor_status -total | grep -E 'Total[ \t]+[0-9]'|awk '{print $2}')" != "{{param['worker_num']}}" ];do
@@ -362,7 +362,7 @@ pip install pika tornado psutil argparse
 git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 
 # start monitor
-python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w -l {{' '.join(param['executables'])}}
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w -l {{' '.join(param['executables'])}} &gt; log.txt 2&gt; err.txt
 
 </request-schema:postBootScript>
     <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{param['worker_site']}}vmsite.rdf#{{param['worker_site']}}vmsite/Domain"/>
