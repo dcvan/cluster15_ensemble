@@ -301,7 +301,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         for e in exp:
             if e['status'] == 'submitted':
                 runs = self._db[DB_NAME]['experiment']['run'].find({'exp_id': e['exp_id']})
-                if runs.count() > 0 and runs.count() == exp['run_num']:
+                if runs.count() > 0 and runs.count() == e['run_num']:
                     e['status'] = 'finished'
                 elif self._db[DB_NAME]['experiment']['worker'].find_one({'exp_id': e['exp_id']}):
                     e['status'] = 'running'
