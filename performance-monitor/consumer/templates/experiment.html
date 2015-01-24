@@ -85,7 +85,7 @@ var Chartjs = Chart.noConflict();
 		<tbody>
 			{% for r in data['runs']%}
 				<tr>
-					<td>r['run_id']</td>
+					<td>{{r['run_id']}}</td>
 					<td>{{r['walltime']}}</td>
 					<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(r['timestamp']))}}</td>
 				</tr>
