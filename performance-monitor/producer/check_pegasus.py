@@ -245,7 +245,7 @@ class WaitProcess(Process):
         '''
         logging.debug('Job terminated: %d' % proc.pid)
         logging.debug('Waiting Jobs: %s' % str(self._stat.keys()))
-        if proc not in self._stat or not self._stat[proc.pid]:
+        if proc.pid not in self._stat or not self._stat[proc.pid]:
             logging.warning('Job %d is not of interest. Quit' % proc.pid)
             return
         if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
