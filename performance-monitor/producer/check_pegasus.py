@@ -77,7 +77,10 @@ class WorkflowMonitor(Process):
                                             }
                                         self._msg_q.put(msg)
                                         logging.info('Message sent to Message Sender')
-                                        logging.debug('Run number: %d\tWalltime: %d\tStatus: %s' % (msg['run_id'], msg['walltime'], msg['status']))
+                                        if msg['walltime']:
+                                            logging.debug('Run number: %d\tWalltime: %d\tStatus: %s' % (msg['run_id'], msg['walltime'], msg['status']))
+                                        else:
+                                            logging.debug('Run number: %d\tStatus: %s' % (msg['run_id'], msg['status']))
                                         self._done += 1
                                     break
             self._heartbeat += 1
@@ -251,22 +254,25 @@ class WaitProcess(Process):
         if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
             logging.warning('Cmdline not available for %d. Quit' % proc.pid)
             return
-        with self._lock:
-            self._stat[proc.pid]['timestamp'] = time.time()
-            self._stat[proc.pid]['runtime'] = self._stat[proc.pid]['timestamp'] - proc.create_time() 
-            if self._stat[proc.pid]['count'] > 1:
-                self._stat[proc.pid]['avg_cpu_percent'] /= self._stat[proc.pid]['count'] - 1 
-                self._stat[proc.pid]['avg_mem_percent'] /= self._stat[proc.pid]['count']
-            else:
-                self._stat[proc.pid]['avg_cpu_percent'] = 0
-                self._stat[proc.pid]['avg_mem_percent'] = 0
-            if self._stat[proc.pid]['min_cpu_percent'] == 2000:
-                self._stat[proc.pid]['min_cpu_percent'] = 0
-            if self._stat[proc.pid]['min_mem_percent'] == 2000:
-                self._stat[proc.pid]['min_mem_percent'] = 0
-            self._msg_q.put(dict(self._stat[proc.pid]))
+        
+        with self._lock: 
+            msg = dict(self._stat[proc.pid])
+            logging.debug('Copied job message: %s' % str(msg))
+        msg['timestamp'] = time.time()
+        msg['runtime'] = self._stat[proc.pid]['timestamp'] - proc.create_time() 
+        if msg['count'] > 1:
+            msg['avg_cpu_percent'] /= msg['count'] - 1 
+            msg['avg_mem_percent'] /= msg['count']
+        else:
+            msg['avg_cpu_percent'] = 0
+            msg['avg_mem_percent'] = 0
+        if msg['min_cpu_percent'] == 2000:
+            msg['min_cpu_percent'] = 0
+        if msg['min_mem_percent'] == 2000:
+            msg['min_mem_percent'] = 0
+        self._msg_q.put(dict(msg))
         logging.info('Message sent to MessageSender')
-        logging.debug('Runtime: %f\tCount: %d' % (self._stat[proc.pid]['runtime'], self._stat[proc.pid]['count']))
+        logging.debug('Runtime: %f\tCount: %d' % (msg['runtime'], msg['count']))
 
 class JobMonitor(Process):
     '''
