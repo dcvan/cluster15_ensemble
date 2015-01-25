@@ -211,6 +211,10 @@ class SystemMonitor(Process):
         self._stat['sys_min_mem_percent'] = 2000
         self._stat['sys_cpu_percent'] = 0
         self._stat['sys_mem_percent'] = 0
+        self._init_read_bytes = self._stat['sys_read_bytes']
+        self._init_write_bytes = self._stat['sys_write_bytes']
+        self._init_bytes_sent = self._stat['sys_net_bytes_sent']
+        self._init_bytes_recv = self._stat['sys_net_bytes_recv']
 
 class WaitProcess(Process):
     '''
