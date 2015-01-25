@@ -259,7 +259,7 @@ class WaitProcess(Process):
             msg = dict(self._stat[proc.pid])
             logging.debug('Copied job message: %s' % str(msg))
         msg['timestamp'] = time.time()
-        msg['runtime'] = self._stat[proc.pid]['timestamp'] - proc.create_time() 
+        msg['runtime'] = msg['timestamp'] - proc.create_time() 
         if msg['count'] > 1:
             msg['avg_cpu_percent'] /= msg['count'] - 1 
             msg['avg_mem_percent'] /= msg['count']
