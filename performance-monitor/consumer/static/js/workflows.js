@@ -2,24 +2,39 @@
  * New node file
  */
 $(document).ready(function(){
+	display_topology();
+	display_worker_sites();
+	$('#mode').change(function(){
+		display_topology();
+	});
+	$('#topology').change(function(){
+		display_worker_sites();
+	});
+	
 	$('#submit').click(function(){
 		var data = {
 				'type': $('#types option:selected').val(),
 				'topology': $('#topology option:selected').val(),
 				'mode': $('#mode option:selected').val(),
 				'master_site': $('#master-site option:selected').val(),
-				'worker_site': $('#topology option:selected').val() == 'intra-rack'?$('#master-site option:selected').val():$('#worker-site option:selected').val(),
 				'worker_size': $('#worker-size option:selected').val(),
 				'storage_site': $('#storage-site option:selected').val(),
 				'storage_type': $('#storage-type option:selected').val(),
 				'run_num': $('#run-num input').val(),
-				'worker_num': $('#worker-num input').val(),
 				'reservation': $('#reservation input').val(),
 				'bandwidth': $('#bandwidth input').val() * 1000 * 1000,
 				'storage_size': $('#storage-size input').val(),
 			};
+		if($('#worker-sites').is(':visible')){
+			data['worker_sites'] = [];
+			$('.worker').each(function(){
+				data['worker_sites'].push({
+					'site': $(this).find('option:selected').val(),
+					'worker_num': $(this).find('input').val()
+				});	
+			});
+		}
 		
-		console.log(JSON.stringify(data));
 		$.ajax({
 			url: window.location.pathname,
 			type: 'POST',
@@ -30,4 +45,35 @@ $(document).ready(function(){
 			}
 		});
 	});
+	
+	$('#add').click(function(){
+		$('#workers').append($('#workers div:first').clone());
+	});
+	
+	$(document).on('click', '.remove', function(){
+		if($('#workers').children().length > 1)
+			$(this).parent().remove();
+	});
 });
+
+function display_topology(){
+	if($('#mode option:selected').val() == 'standalone'){
+		$('#topology option[value="intra-rack"]').prop('selected', true);
+		$('#topology').prop('disabled', true);
+	}else{
+		$('#topology').prop('disabled', false);
+	}
+}
+
+function display_worker_sites(){
+	if ($('#topology option:selected').val() == 'inter-rack'){
+		$('#worker-sites').show();
+	}else{
+		$('#worker-sites').hide();
+	}
+}
+
+
+
+
+

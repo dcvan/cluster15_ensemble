@@ -14,8 +14,6 @@ ARCHIVE_PORT = 27017
 
 DB_NAME = 'cluster15'
 
-BUF_SIZE = 20
-
 DATA_LEN_LIMIT = 300
 
 def check_content_type(handler):

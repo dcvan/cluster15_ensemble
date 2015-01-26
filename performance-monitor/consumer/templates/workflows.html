@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>Workflows</title>
 <link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<link rel="stylesheet" href="{{static_url('css/workflows.css')}}"/>
 <script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
 <script src="{{static_url('js/bootstrap.min.js')}}"></script>
 <script src="{{static_url('js/utils.js')}}"></script>
@@ -37,71 +38,101 @@
 				<option value="{{w['name']}}">{{w['name']}}</option>
 		{% end %}	
 		</select>
-		<label for="topology">Topology</label>
-		<select id="topology" class="form-control">
-			{% for t in data['topology'] %}
-			<option value="{{t['name']}}">{{t['name']}}</option>
-			{% end %}
-		</select>
+	</div>
+	<div class="form-group">
 		<label for="mode">Mode</label>
 		<select id="mode" class="form-control">
 			{% for m in data['mode'] %}
 			<option value="{{m['name']}}">{{m['name']}}</option>
 			{% end %}
 		</select>
+	</div>
+	<div class="form-group">
+		<label for="topology">Topology</label>
+		<select id="topology" class="form-control">
+			{% for t in data['topology'] %}
+			<option value="{{t['name']}}">{{t['name']}}</option>
+			{% end %}
+		</select>
+	</div>
+	<div class="form-group">
 		<label for="master-site">Master Site</label>
 		<select id="master-site" class="form-control">
 			{% for s in data['site'] %}
 			<option value="{{s['name']}}">{{s['name'].upper()}}({{s['location']}})</option>
 			{% end %}
 		</select>
-		<label for="worker-site">Worker Site</label>
-		<select id="worker-site" class="form-control">
-			{% for s in data['site'] %}
-			<option value="{{s['name']}}">{{s['name'].upper()}}({{s['location']}})</option>
-			{% end %}
-		</select>
+	</div>
+	<div id="worker-sites" class="form-group">
+		<label>Worker Sites</label>
+		<button id="add" class="btn btn-success glyphicon glyphicon-plus"></button>
+		<div id="workers">
+			<div class="form-inline worker">
+				<div class="form-group">
+					<label>Site</label>
+					<select class="form-control site">
+						{% for s in data['site'] %}
+						<option value="{{s['name']}}">{{s['name'].upper()}}({{s['location']}})</option>
+						{% end %}
+					</select>
+				</div>
+				<div class="form-group">
+					<label># of Workers</label>
+					<input type="number" class="form-control" />
+				</div>
+				<button class="btn btn-danger glyphicon glyphicon-remove pull-right remove"></button>
+			</div>
+		</div>
+	</div>
+	<div class="form-group">
 		<label for="worker-size">Worker Size</label>
 		<select id="worker-size" class="form-control">
 			{% for w in data['worker_size'] %}
 			<option value="{{w['value']}}">{{w['name']}}</option>
 			{% end %}
 		</select>
+	</div>
+	<div class="form-group">
 		<label for="storage-site">Storage Site</label>
 		<select id="storage-site" class="form-control">
 			{% for ss in data['storage_site'] %}
 			<option value="{{ss['name']}}">{{ss['name']}}</option>
 			{% end %}
 		</select>
+	</div>
+	<div class="form-group">
 		<label for="storage-type">Storage Type</label>
 		<select id="storage-type" class="form-control">
 			{% for st in data['storage_type'] %}
 			<option value="{{st['name']}}">{{st['name']}}</option>
 			{% end %}
 		</select>			
-		<div id="worker-num" class="field">
-			<label for="worker-num">Number of Workers</label>
-			<input type="number" name="worker-num" class="form-control" />
-		</div>
+	</div>
+	<div class="form-group">
 		<div id="run-num" class="field">
 			<label for="run-num">Workload Size</label>
 			<input type="number" name="run-num" class="form-control" />
 		</div>
+	</div>
+	<div class="form-group">
 		<div id="reservation" class="field">
 			<label for="reservation">Reservation(days)</label>
 			<input type="number" name="reservation" class="form-control" />
 		</div>
+	</div>
+	<div class="form-group">
 		<div id="bandwidth" class="field">
 			<label for="bandwidth">Bandwidth(in Mbps, optional)</label>
 			<input type="number" name="bandwidth" class="form-control" />
 		</div>
+	</div>
+	<div class="form-group">
 		<div id="storage-size" class="field">
 			<label for="storage-size">Storage Size(in GBs, optional)</label>
 			<input type="number" name="storage-size" class="form-control" />
 		</div>
-		
-		<button id="submit" class="btn btn-success pull-right">Submit</button>
 	</div>
+	<button id="submit" class="btn btn-success pull-right">Submit</button>
 </section>
 </body>
 </html>

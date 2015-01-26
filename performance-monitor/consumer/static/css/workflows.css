@@ -1,0 +1,16 @@
+@CHARSET "UTF-8";
+#workers, .worker{
+	border: solid 1px #cccccc;
+	padding: 10px;
+	border-radius: 5px;
+}
+
+.worker{
+	margin-top: 3px;
+	margin-bottom: 3px;
+}
+
+#add{
+	margin-bottom: 5px;
+	margin-left:3px;
+}

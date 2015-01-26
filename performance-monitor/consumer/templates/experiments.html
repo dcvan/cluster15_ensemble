@@ -7,54 +7,64 @@
 <link rel="stylesheet" href="{{static_url('css/experiments.css')}}"/>
 <script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
 <script src="{{static_url('js/bootstrap.min.js')}}"></script>
+<script src="{{static_url('js/jquery.zclip.min.js')}}"></script>
 <script src="{{static_url('js/experiments.js')}}"></script>
-<title>Experiments</title>
+<title>Experiments - {{data['type']}}</title>
 </head>
 <body>
 <section class="container">
-	<h1>Experiments</h1>
-	<table class="table table-hover">
-		<thead><tr>
-			<th>Experiment ID</th>
-			<th>Mode</th>
-			<th>Topology</th>
-			<th>Master Site</th>
-			<th>Worker Site</th>
-			<th>Worker Size</th>
-			<th>Number of Workers</th>
-			<th>Workload Size</th>
-			<th>Bandwidth</th>
-			<th>Create Time</th>
-			<th>Status</th>
-			<th>Delete?</th>
-		</tr></thead>
-		<tbody>
-			{% for e in experiments %}
-			<tr>
-				<td class="exp-id"><a href="{{'%s/experiments/%s' % (current_uri, e['exp_id'])}}">{{e['exp_id']}}</a></td>
-				<td>{{e['topology']}}</td>
-				<td>{{e['mode']}}</td>
-				<td>{{e['master_site']}}</td>
-				<td>{{e['worker_site'] if e['mode'] == 'multinode' else '-'}}</td>
-				<td>{{e['worker_size']}}</td>
-				<td>{{e['worker_num']}}</td>
-				<td>{{e['run_num']}}</td>
-				<td>{{e['bandwidth'] if e['mode'] == 'multinode' else '-'}}</td>
-				<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['create_time']))}}</td>
-				<td>{{e['status']}}</td>
-				<td><button class="btn btn-danger glyphicon glyphicon-remove del-experiment"></button></td>
-			</tr>
-			{% end %}
-		</tbody>
-	</table>
+	<h1>{{data['type'].capitalize()}}</h1>
+	<div id="table-container">
+		<table class="table table-hover">
+			<thead><tr>
+				<th>Experiment ID</th>
+				<th>Mode</th>
+				<th>Topology</th>
+				<th>Master Site</th>
+				<th>Worker Site</th>
+				<th>Worker Size</th>
+				<th>Number of Workers</th>
+				<th>Workload Size</th>
+				<th>Bandwidth</th>
+				<th>Storage</th>
+				<th>Create Time</th>
+				<th>Status</th>
+				<th>Operations</th>
+			</tr></thead>
+			<tbody>
+				{% for e in data['experiments'] %}
+				<tr>
+					<td class="exp-id"><a href="{{'%s/experiments/%s' % (data['current_uri'], e['exp_id'])}}">{{e['exp_id']}}</a></td>
+					<td>{{e['topology']}}</td>
+					<td>{{e['mode']}}</td>
+					<td>{{e['master_site']}}</td>
+					<td>{{e['worker_site'] if e['mode'] == 'multinode' else '-'}}</td>
+					<td>{{e['worker_size']}}</td>
+					<td>{{e['worker_num']}}</td>
+					<td>{{e['run_num']}}</td>
+					<td>{{e['bandwidth'] / (1000 * 1000) if e['mode'] == 'multinode' else '-'}}</td>
+					<td>{{e['storage_size']}}</td>
+					<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['create_time']))}}</td>
+					<td>{{e['status']}}</td>
+					<td class="ops">
+						<button class="btn btn-warning glyphicon glyphicon-repeat redo"></button>
+						<button class="btn btn-danger glyphicon glyphicon-remove del-experiment"></button>
+					</td>
+				</tr>
+				{% end %}
+			</tbody>
+		</table>
+	</div>
 	<h2>Analysis</h2>
 	<div id="analysis" class="control-group">
 		{% for k in opts %}
 		<div id="{{k}}" class="dropdown">
-			<button id="{{k}}-menu" class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">{{' '.join(k.split('-'))}}<span class="caret"></span></button>
-			<ul class="dropdown-menu" role="menu" aria-labelledby="mode-menu">
+			<button id="{{k}}-menu" class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">{{' '.join(k.split('-')).capitalize()}}<span class="caret"></span></button>
+			<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenuDivider">
+				<li role="presentation" class="clear" data-title="{{' '.join(k.split('-')).capitalize()}}"><a role="menuitem" tabindex="-1">clear</a></li>
+				<li role="presentation" class="divider"></li>
 				{% for i in opts[k] %}
-				<li role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name']}}</a></li>
+				<li role="presentation" class="entry"><a role="menuitem" tabindex="-1">{{i['name']}}</a></li>
 				{% end %}
 			</ul>
 		</div>
@@ -63,7 +73,7 @@
 		<input id="workload" class="form-control"  type="number"  placeholder="Number of workloads" />
 		<input id="bandwidth" class="form-control"  type="number" placeholder="Bandwidth(Mbps)" />
 	</div>
-	<div id="paint">
+	<div id="runtime">
 			<canvas></canvas>
 			<div></div>
 		</div>

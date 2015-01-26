@@ -5,7 +5,7 @@ Created on Jan 12, 2015
 '''
 import json
 
-from config import EXCHANGE_NAME, DB_NAME, BUF_SIZE
+from config import EXCHANGE_NAME, DB_NAME
 
 class MessageConsumer(object):
     '''

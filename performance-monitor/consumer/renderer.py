@@ -307,6 +307,11 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                     e['status'] = 'running'
                 if e['status'] != 'submitted':    
                     self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': e['exp_id']}, {'$set': {'status': e['status']}})
+        data = {
+                'type': workflow,
+                'current_uri': self.request.uri,
+                'experiments': exp,
+            }
         if content_type == 'text/html':
             opts = {
                     'topology': [t for t in self._db[DB_NAME]['workflow']['topology'].find(fields={'_id': 0})],
@@ -315,6 +320,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                     'worker-site': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
                     'worker-size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
                 }
-            self.render('experiments.html', experiments=exp, current_uri=self.request.uri, opts=opts)
+            self.render('experiments.html', data=data, opts=opts)
         elif content_type == 'application/json':
             self.write(exp)
+            

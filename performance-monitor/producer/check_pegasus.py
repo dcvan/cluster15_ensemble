@@ -425,13 +425,14 @@ class MonitorManager(object):
     
     '''
     
-    def __init__(self, exp_id, is_master, is_worker, work_dir=None, run=0, execs=None):
+    def __init__(self, exp_id, is_master, is_worker, site=None, work_dir=None, run=0, execs=None):
         '''
         
         '''
         self._exp_id = exp_id
         self._msg_q = Queue()
         self._hostname = socket.gethostname()
+        self._site = site
         self._sender = MessageSender(
                 self._exp_id,
                 pika.URLParameters(MESSAGE_BROKER_URI), 
@@ -469,6 +470,7 @@ class MonitorManager(object):
             self._msg_q.put({
                     'exp_id': self._exp_id,
                     'type': 'worker',
+                    'site': self._site,
                     'host': self._hostname,
                     'timestamp': int(time.time()),
                 })
@@ -487,6 +489,7 @@ if __name__ == '__main__':
         parser.add_argument('-w', '--worker', dest='is_worker', default=False, action='store_true', help='Worker')
         parser.add_argument('-d', '--dir', dest='workdir_base', type=str, help='Workflow working directory base')
         parser.add_argument('-r', '--run-num', dest='run_num', type=int, help='Number of planned runs')
+        parser.add_argument('-s', '--site', type=str, dest='site', help='The site the node is running on')
         parser.add_argument('-l', '--exec-list', nargs='+', type=str, dest='executables', help='Executables to be monitored')
         args = parser.parse_args()
         
@@ -494,6 +497,7 @@ if __name__ == '__main__':
                 args.exp_id,
                 args.is_master,
                 args.is_worker,
+                args.site,
                 args.workdir_base,
                 args.run_num,
                 args.executables,
