@@ -1,6 +1,7 @@
 /**
  * 
  */
+
 function plotLine(canvas, labels, ds, legend_area){
 	resize(canvas);
 	var lineData = {
@@ -20,9 +21,10 @@ function plotLine(canvas, labels, ds, legend_area){
 		           data: ds[i].data
 		});
 	}
-	
-	new Chart(canvas.getContext('2d')).Line(lineData, {bezierCurve: true});
+	var context = canvas.getContext('2d');
+	var chart = new Chart(context).Line(lineData, {bezierCurve: true});
 	legend(legend_area, lineData);
+	return chart;
 }
 
 function plotBar(canvas, labels, ds, legend_area){
@@ -42,8 +44,9 @@ function plotBar(canvas, labels, ds, legend_area){
 			data: ds[i].data
 		});
 	}
-	new Chart(canvas.getContext('2d')).Bar(barData, {barShowStroke: true});
+	var chart = new Chart(canvas.getContext('2d')).Bar(barData, {barShowStroke: true});
 	legend(legend_area, barData);
+	return chart;
 }
 
 function resize(canvas){

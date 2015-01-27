@@ -7,6 +7,7 @@ import json
 import uuid
 import jinja2
 import time
+import math
 import tornado.web
 from config import DB_NAME, check_content_type
 
@@ -102,10 +103,8 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
             self.render('experiment.html', manifest=manifest, data=exp, current_uri=self.request.uri)
         elif content_type == 'application/json':
-            del exp['create_time']
-            del exp['status']
-            del exp['exp_id']
-            self.write(exp)
+            self.set_status(204, 'Not implemented yet')
+            return
             
     def post(self, workflow, exp_id):
         '''
@@ -328,11 +327,67 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             opts = {
                     'topology': [t for t in self._db[DB_NAME]['workflow']['topology'].find(fields={'_id': 0})],
                     'mode': [m for m in self._db[DB_NAME]['workflow']['mode'].find(fields={'_id': 0})],
-                    'master-site': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
-                    'worker-site': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
+                    'sites': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
                     'worker-size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
                 }
             self.render('experiments.html', data=data, opts=opts)
         elif content_type == 'application/json':
-            self.write(exp)
+            self.set_status(204, 'Not Implemented yet')
+            return
+        
+    def post(self, workflow):
+        '''
+        POST method: get statistics
+        
+        '''
+        data = json.loads(self.request.body)
+        if not data or 'aspect' not in data:
+            self.set_status(400, 'User data required')
+            return
+        query = dict(data)
+        query['type'] = workflow
+        del query['aspect']
+        if 'worker_num' in query: 
+            del query['worker_num']
+        if 'bandwidth' in query:
+            query['bandwidth'] = int(query['bandwidth']) *1000 * 1000
+        if 'workload' in query:
+            query['run_num'] = query['workload']
+            del query['workload']
+        if 'worker_size' in query:
+            query['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'name': query['worker_size']})['value']
+        if 'worker_sites' in query:
+            del query['worker_sites']
+       
             
+        rs = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0})
+        if rs.count() == 0:
+            self.set_status(204, 'No data found')
+            return
+        res = []
+        for r in rs:
+            if 'worker_sites' in data and data['worker_sites']:
+                sites = set([s['site'] for s in r['worker_sites']])
+                if set(data['worker_sites']) != sites:
+                    continue
+            if 'worker_num' in data and data['worker_num']:
+                worker_num = sum([int(s['num']) for s in r['worker_sites']])
+                if int(data['worker_num']) != worker_num:
+                    continue
+            res.append(r)
+        if data['aspect'] == 'experiment':
+            self.write(res)
+        elif data['aspect'] == 'run':
+            if len(res) > 0:
+                runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': e['exp_id']} for e in res]}, {'_id': 0}).sort('timestamp')]
+                data = {
+                    'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(r['timestamp'])) for r in runs],
+                    'walltime': [int(r['walltime']) for r in runs]    
+                    } 
+                avg = sum(data['walltime'])/len(data['walltime'])
+                sqr_sum = sum([w * w - avg * avg for w in data['walltime']])
+                data['std_dev'] = math.sqrt(sqr_sum/avg)
+                self.write(data)
+                
+                
+                    

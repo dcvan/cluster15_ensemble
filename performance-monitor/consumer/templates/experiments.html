@@ -4,16 +4,78 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<link rel="stylesheet" href="{{static_url('css/legend.css')}}"/>
 <link rel="stylesheet" href="{{static_url('css/experiments.css')}}"/>
+<link media="screen" rel="stylesheet" href="{{static_url('css/bootstrap-multiselect.css')}}" />
 <script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
 <script src="{{static_url('js/bootstrap.min.js')}}"></script>
 <script src="{{static_url('js/ZeroClipboard.js')}}"></script>
+<script src="{{static_url('js/Chart.min.js')}}">
+	var Chartjs = Chart.noConflict();
+</script>
+<script src="{{static_url('js/legend.js')}}"></script>
+<script src="{{static_url('js/bootstrap-multiselect.js')}}"></script>
+<script src="{{static_url('js/utils.js')}}"></script>
 <script src="{{static_url('js/experiments.js')}}"></script>
 <title>Experiments - {{data['type']}}</title>
 </head>
 <body>
 <section class="container">
 	<h1>{{data['type'].capitalize()}}</h1>
+	<div id="analysis">
+		<div class="form-inline">
+		{% for k in opts %}
+			<div class="form-group">
+			{% if k != 'sites' %}
+				<div id="{{k}}" class="dropdown">
+					<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true">{{' '.join(k.split('-')).capitalize()}}<span class="caret"></span></button>
+				  	<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
+					  	<li class="clear" role="presentation" data-title="{{' '.join(k.split('-')).capitalize()}}"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
+					  	<li role="presentation" class="divider"></li>
+					  	{% for i in opts[k] %}
+					    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].capitalize()}}</a></li>
+					    {% end %}
+				 	 </ul>
+				</div>
+			</div>
+			{% end %}
+		{% end %}
+		<div class="form-group">
+			<div id="master-site" class="dropdown">
+					<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true">Master Site<span class="caret"></span></button>
+				  	<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
+					  	<li class="clear" role="presentation" data-title="Master Site"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
+					  	<li class="entry" role="presentation" class="divider"></li>
+					  	{% for i in opts['sites'] %}
+					    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].upper()}}</a></li>
+					    {% end %}
+				 	 </ul>
+			</div>
+		</div>
+		<div class="form-group">
+			<select id="worker-sites" multiple="multiple">
+				{% for i in opts['sites'] %}
+					<option value="{{i['name']}}">{{i['name'].upper()}}</option>
+				{% end %}
+			</select>
+		</div>
+		
+			<div class="form-group">
+				<input id="worker-num" class="form-control" type="number" placeholder="Number of Worker"/>
+			</div>
+			<div class="form-group">
+				<input id="workload" class="form-control"  type="number" placeholder="Number of Workloads"/>
+			</div>
+			<div class="form-group">
+				<input id="bandwidth" class="form-control"  type="number" placeholder="Bandwidth(Mbps)"/>
+			</div>
+			<button id="search" class="btn btn-success pull-right">Search</button>
+		</div>
+		
+	</div>
+	
+	
+	<h2>Experiments</h2>
 	<div id="table-content">
 	<table class="table table-hover">
 		<thead><tr>
@@ -56,26 +118,10 @@
 	</table>
 	</div>
 	<h2>Analysis</h2>
-	<div id="analysis" class="control-group">
-		{% for k in opts %}
-		<div id="{{k}}" class="dropdown">
-			<button id="{{k}}-menu" class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">{{' '.join(k.split('-')).capitalize()}}<span class="caret"></span></button>
-			<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenuDivider">
-				<li role="presentation" class="clear" data-title="{{' '.join(k.split('-')).capitalize()}}"><a role="menuitem" tabindex="-1">clear</a></li>
-				<li role="presentation" class="divider"></li>
-				{% for i in opts[k] %}
-				<li role="presentation" class="entry"><a role="menuitem" tabindex="-1">{{i['name']}}</a></li>
-				{% end %}
-			</ul>
-		</div>
-		{% end %}
-		<input id="worker-num" class="form-control" type="number" placeholder="Number of workers" />
-		<input id="workload" class="form-control"  type="number"  placeholder="Number of workloads" />
-		<input id="bandwidth" class="form-control"  type="number" placeholder="Bandwidth(Mbps)" />
-	</div>
-	<div id="runtime">
+	<div id="walltime">
 			<canvas></canvas>
 			<div></div>
+			<div id='std-dev'></div>
 		</div>
 </section>
 </body>

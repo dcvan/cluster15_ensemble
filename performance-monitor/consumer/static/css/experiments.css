@@ -1,23 +1,23 @@
 @CHARSET "UTF-8";
 
 div#analysis{
-	max-height: 50px;
-}
-
-div.dropdown, input{
-	float: left;
+	margin-bottom: 50px;
 }
 
 input{
-	max-width: 200px;
-	margin-left: 2px;
-	margin-right: 2px;
+	max-width: 160px;
 }
 
-button{
+.btn{
 	margin-left: 2px;
 	margin-right: 2px;
 	float: left;
+}
+
+.btn#search{
+	float:none;
+	margin-left: 5px;
+	margin-bottom: 0;
 }
 
 .worker_num, .workload-size .bandwidth{
@@ -34,5 +34,7 @@ button{
 	max-height: 500px;
 	overflow:auto;
 }
+
+
 
 
