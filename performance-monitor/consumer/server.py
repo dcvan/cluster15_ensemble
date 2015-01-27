@@ -32,16 +32,6 @@ class Application(tornado.web.Application):
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)', ExperimentRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/runs', RunsRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/workers/([a-z0-9-]+)', WorkerRenderer, dict(db=self._mongo_conn)),
-                # workflows
-#                 (r'/', WorkflowRender, dict(db=self._mongo_conn)),
-                # experiments
-#                 (r'/types/([a-z-]+)', ExperimentStatusRenderer, dict(db=self._mongo_conn)),
-#                 (r'/types/([a-z-]+)/jobs/(.+)', JobRender, dict(db=self._mongo_conn)),
-                # nodes
-#                 (r'/types/([a-z-]+)/experiments/([0-9]+)', NodeRenderer, dict(db=self._mongo_conn)),
-                # node
-#                 (r'/types/([a-z-]+)/experiments/([0-9]+)/nodes/([a-z0-9]+)', NodeStatusRenderer, dict(db=self._mongo_conn)),
-#                 (r'/types/([a-z-]+)/experiments/([0-9]+)/nodes/([0-9]+)/([a-z#]+)', UpdateHandler, dict(conn=self._amqp_conn, consumers={})),
                 ]
         settings = {
                 'template_path': 'templates/',

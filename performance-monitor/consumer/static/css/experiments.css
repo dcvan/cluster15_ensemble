@@ -20,12 +20,14 @@ button{
 	float: left;
 }
 
+
 .ops{
 	min-width: 150px;
 }
 
-#table-container{
+#table-content{
 	max-height: 500px;
 	overflow:auto;
 }
+
 

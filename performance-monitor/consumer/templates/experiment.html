@@ -34,10 +34,6 @@ var Chartjs = Chart.noConflict();
 		<dd>{{data['mode']}}</dd>
 		<dt>Master Site</dt>
 		<dd>{{data['master_site'].upper()}}</dd>
-		{% if data['mode'] == 'multinode' %}
-		<dt>Worker Site</dt>
-		<dd>{{data['worker_site'].upper()}}</dd>
-		{% end %} 
 		<dt>Storage Site</dt>
 		<dd>{{data['storage_site']}}</dd>
 		<dt>Storage Type</dt>
@@ -46,8 +42,6 @@ var Chartjs = Chart.noConflict();
 		<dd>{{data['status']}}</dd>
 		<dt>Worker Size</dt>
 		<dd>{{data['worker_size']}}</dd>
-		<dt>Worker Number</dt>
-		<dd>{{data['worker_num']}}</dd>
 		<dt>Reservation</dt>
 		<dd>{{data['reservation']}} Days</dd>
 		<dt>Bandwidth</dt>

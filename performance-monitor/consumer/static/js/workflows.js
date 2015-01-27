@@ -30,7 +30,7 @@ $(document).ready(function(){
 			$('.worker').each(function(){
 				data['worker_sites'].push({
 					'site': $(this).find('option:selected').val(),
-					'worker_num': $(this).find('input').val()
+					'num': $(this).find('input').val()
 				});	
 			});
 		}

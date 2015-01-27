@@ -1,4 +1,5 @@
 <rdf:RDF
+     xmlns:j.0="http://geni-orca.renci.org/owl/storage.owl#"
     xmlns:kansei="http://geni-orca.renci.org/owl/kansei.owl#"
     xmlns:compute="http://geni-orca.renci.org/owl/compute.owl#"
     xmlns:app-color="http://geni-orca.renci.org/owl/app-color.owl#"
@@ -25,14 +26,20 @@
     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" > 
   <!-- Reservation Term -->
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#TermDuration">
-    <time:days rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">1</time:days>
+    <time:days rdf:datatype="http://www.w3.org/2001/XMLSchema#decimal">{{param['reservation']}}</time:days>
     <rdf:type rdf:resource="http://www.w3.org/2006/time#DurationDescription"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#">
     <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0"/>
-    <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#NodeGroup0"/>
-    <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Node4"/>
-    <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#NodeGroup1"/>
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#master"/>
+    {% if param['storage_type'] == 'storage_type' %}
+     <request-schema:dependOn rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Storage"/>
+     {% endif %}
+     {% if param['worker_sites'] %}
+    {% for w in param['worker_sites'] %}
+    <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#{{w['site']}}"/>
+    {% endfor %}
+    {% endif %}
     <request-schema:hasTerm rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Term"/>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/request.owl#Reservation"/>
   </rdf:Description>
@@ -42,65 +49,72 @@
   </rdf:Description>
   
   <!-- Image Info -->
-   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#montage.v2.0.7a">
-    <topology:hasURL>http://geni-images.renci.org/images/pruth/ADAMANT/montage.v2.0.7a.xml</topology:hasURL>
-    <topology:hasGUID>f140b31d8257282f08714b6bc94b03abc8a74859</topology:hasGUID>
+   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#{{param['image'].split('/')[-1]}}">
+    <topology:hasURL>{{param['image']['uri']}}</topology:hasURL>
+    <topology:hasGUID>{{param['image']['guid']}}</topology:hasGUID>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#DiskImage"/>
   </rdf:Description> 
   <!-- Broadcast Info -->
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0">
-    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-NodeGroup0"/>
-    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-Node4"/>
-    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-NodeGroup1"/>
+  <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master"/>
+  {% for w in param['worker_sites'] %}
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-{{w['site']}}"/>
+  {% endfor %}
     <layer:atLayer rdf:resource="http://geni-orca.renci.org/owl/ethernet.owl#EthernetNetworkElement"/>
-    <layer:bandwidth rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">10000000</layer:bandwidth>
+    <layer:bandwidth rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">{{param['bandwidth']}}</layer:bandwidth>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#BroadcastConnection"/>
   </rdf:Description>
   <!-- Node Group -->
   	<!-- Basic -->
- 		 <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#NodeGroup0">
-	    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-NodeGroup0"/>
-  		<request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/ucdvmsite.rdf#ucdvmsite/Domain"/>
-   		<compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#montage.v2.0.7a"/>
-   		<compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOLarge"/>
-   		<domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
-   		<layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">3</layer:numCE>
-   		<request-schema:groupName>NodeGroup0</request-schema:groupName>
-   		<request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">aaa</request-schema:postBootScript>
+  	{% if param['worker_sites'] %}
+  	{% set cnt = 100 %}
+  	{% for w in param['worker_sites'] %}
+ 		 <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#{{w['site']}}">
+	    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-{{w['site']}}"/>
+  		<request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{w['site']}}vmsite.rdf#{{w['site']}}vmsite/Domain"/>
+   		<compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#{{param['image'].split('/')[-1]}}"/>
+   		<compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#{{param['worker_size']}}"/>
+   		<domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#{{param['resource_type']}}"/>
+   		<layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">{{w['num']}}</layer:numCE>
+   		<request-schema:groupName>{{w['site']}}</request-schema:groupName>
+   		<request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">{{param['worker_postscript']}}</request-schema:postBootScript>
    		<rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ServerCloud"/>
  		</rdf:Description>
     <!-- Domain -->
-    	<rdf:Description rdf:about="http://geni-orca.renci.org/owl/slvmsite.rdf#slvmsite/Domain">
+    	<rdf:Description rdf:about="http://geni-orca.renci.org/owl/{{w['site']}}vmsite.rdf#{{w['site']}}vmsite/Domain">
     	<rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkDomain"/>
   		</rdf:Description>
   	<!-- IP -->
-  		<rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-NodeGroup0">
-    		<ip4:localIPAddress rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-NodeGroup0-ip-172-16-1-100"/>
+  		<rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-{{w['site']}}">
+    		<ip4:localIPAddress rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-{{w['site']}}-ip-172-16-1-{{cnt}}"/>
     		<rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#Interface"/>
   		</rdf:Description>
- 	 	<rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-NodeGroup0-ip-172-16-1-100">
+ 	 	<rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-NodeGroup0-ip-172-16-1-{{cnt}}">
 	    	<ip4:netmask>128.0.0.0</ip4:netmask>
-	    	<layer:label_ID>172.16.1.100</layer:label_ID>
+	    	<layer:label_ID>172.16.1.{{cnt}}</layer:label_ID>
+	    	{% set cnt = cnt + w['num'] %}
 	    	<rdf:type rdf:resource="http://geni-orca.renci.org/owl/ip4.owl#IPAddress"/>
   		</rdf:Description>
+  		{% endfor %}
+  	{% endif %}
   <!-- Master -->
 	<!-- Basic -->
-   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Node4">
-    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-Node4"/>
-    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/osfvmsite.rdf#osfvmsite/Domain"/>
-    <request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">aaa</request-schema:postBootScript>
-    <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#montage.v2.0.7a"/>
-    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#XOLarge"/>
-    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#VM"/>
+   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#master">
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master"/>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{param['master_site']}}vmsite.rdf#{{param['master_site']}}vmsite/Domain"/>
+    <request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">{{param['master_postscript']}}</request-schema:postBootScript>
+    <compute:diskImage rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#{{param['image'].split('/')[-1]}}"/>
+    <compute:specificCE rdf:resource="http://geni-orca.renci.org/owl/exogeni.owl#{{param['worker_size']}}"/>
+    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#{{param['resource_type']}}"/>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ComputeElement"/>
   </rdf:Description>
    	<!-- Domain -->
-   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/osfvmsite.rdf#osfvmsite/Domain">
+   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/{{param['master_site']}}vmsite.rdf#{{param['master_site']}}vmsite/Domain">
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#NetworkDomain"/>
   </rdf:Description>
   	<!-- IP -->
-    <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-Node4">
-    <ip4:localIPAddress rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-Node4-ip-172-16-1-1"/>
+    <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master">
+    <ip4:localIPAddress rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master-ip-172-16-1-1"/>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#Interface"/>
   </rdf:Description>
     <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-Node4-ip-172-16-1-1">
@@ -108,4 +122,18 @@
     <layer:label_ID>172.16.1.1</layer:label_ID>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/ip4.owl#IPAddress"/>
   </rdf:Description>
+  {% if param['storage_type'] == 'remote' %}
+  <!-- Storage -->
+   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Storage">
+    <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/63c9853b-0b27-422d-86e3-a8173c22117f#Link107-Storage"/>
+    <request-schema:inDomain rdf:resource="http://geni-orca.renci.org/owl/{{param['master_site']}}vmsite.rdf#{{param['master_site']}}vmsite/Domain"/>
+    <j.0:doFormat rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</j.0:doFormat>
+    <j.0:hasMntPoint rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/mnt/target</j.0:hasMntPoint>
+    <j.0:hasFSParam rdf:datatype="http://www.w3.org/2001/XMLSchema#string">-F -b 2048</j.0:hasFSParam>
+    <j.0:hasFSType rdf:datatype="http://www.w3.org/2001/XMLSchema#string">ext4</j.0:hasFSType>
+    <j.0:storageCapacity rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">{{param['storage_size']}}</j.0:storageCapacity>
+    <domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/storage.owl#LUN"/>
+    <rdf:type rdf:resource="http://geni-orca.renci.org/owl/storage.owl#ISCSI"/>
+  </rdf:Description>
+  {% endif %}
 </rdf:RDF>
