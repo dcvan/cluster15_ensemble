@@ -22,10 +22,10 @@
 	<button id="del" class="btn btn-danger pull-right">Delete</button>
 	<button id="redo" class="btn btn-warning pull-right">Redo</button>
 	<button id="copy" class="btn btn-info pull-right">Replicate</button>
-	<button id="copy-id" class="btn btn-success pull-right" data-clipboard-target="exp-id">Copy ID</button>
+	
 	<dl class="dl-horizontal">
 		<dt>Experiment ID</dt>
-		<dd id="exp-id">{{data['exp_id']}}</dd>
+		<dd id="exp-id">{{data['exp_id']}}<button id="copy-id" class="btn btn-success glyphicon glyphicon-file" data-clipboard-target="exp-id"></button></dd>
 		<dt>Type</dt>
 		<dd>{{data['type']}}</dd>
 		<dt>Topology</dt>
