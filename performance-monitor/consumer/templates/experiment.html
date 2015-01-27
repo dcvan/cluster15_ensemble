@@ -3,15 +3,13 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Experiment</title>
+<title>{{data['exp_id']}}</title>
 <link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
 <link rel="stylesheet" href="{{static_url('css/experiment.css')}}"/>
 <link rel="stylesheet" href="{{static_url('css/legend.css')}}"/>
 <script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
 <script src="{{static_url('js/bootstrap.min.js')}}"></script>
-<script src="{{static_url('js/Chart.min.js')}}">
-var Chartjs = Chart.noConflict();
-</script>
+<script src="{{static_url('js/ZeroClipboard.js')}}"></script>
 <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>
 <script src="{{static_url('js/legend.js')}}"></script>
 <script src="{{static_url('js/utils.js')}}"></script>
@@ -24,8 +22,10 @@ var Chartjs = Chart.noConflict();
 	<button id="del" class="btn btn-danger pull-right">Delete</button>
 	<button id="redo" class="btn btn-warning pull-right">Redo</button>
 	<button id="copy" class="btn btn-info pull-right">Replicate</button>
-
+	<button id="copy-id" class="btn btn-success pull-right" data-clipboard-target="exp-id">Copy ID</button>
 	<dl class="dl-horizontal">
+		<dt>Experiment ID</dt>
+		<dd id="exp-id">{{data['exp_id']}}</dd>
 		<dt>Type</dt>
 		<dd>{{data['type']}}</dd>
 		<dt>Topology</dt>
@@ -34,6 +34,10 @@ var Chartjs = Chart.noConflict();
 		<dd>{{data['mode']}}</dd>
 		<dt>Master Site</dt>
 		<dd>{{data['master_site'].upper()}}</dd>
+		<dt>Worker Sites</dt>
+		{% for s in data['worker_sites'] %}
+		<dd>{{s['site'].upper()}}: {{s['num']}}</dd>
+		{% end %}
 		<dt>Storage Site</dt>
 		<dd>{{data['storage_site']}}</dd>
 		<dt>Storage Type</dt>
@@ -54,6 +58,7 @@ var Chartjs = Chart.noConflict();
 		<thead>
 		<tr>
 			<th>Name</th>
+			<th>Site</th>
 			<th>Identified at</th>
 		</tr>
 		</thead>	
@@ -61,6 +66,7 @@ var Chartjs = Chart.noConflict();
 			{% for w in data['workers']%}
 				<tr>
 					<td><a href="{{'%s/workers/%s' % (current_uri, w['host'])}}">{{w['host']}}</a></td>
+					<td>{{w['site'].upper()}}</td>
 					<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime( w['timestamp']))}}</td>
 				</tr>
 			{% end %}

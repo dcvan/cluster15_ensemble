@@ -32,6 +32,7 @@ class Application(tornado.web.Application):
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)', ExperimentRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/runs', RunsRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/workers/([a-z0-9-]+)', WorkerRenderer, dict(db=self._mongo_conn)),
+                  (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': 'static/'})
                 ]
         settings = {
                 'template_path': 'templates/',

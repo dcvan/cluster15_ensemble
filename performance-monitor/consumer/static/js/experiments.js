@@ -2,6 +2,10 @@
  * 
  */
 $(document).ready(function(){
+	var clip = new ZeroClipboard($('.copy'), {
+		moviePath: '/static/ZeroClipboard.swf'
+	});
+	
 	$('.del-experiment').click(function(){
 		var expId = $(this).closest('tr').children('td.exp-id').text();
 		$.ajax({

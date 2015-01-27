@@ -9,7 +9,7 @@ import re
 import shutil
 import argparse
 import logging
-from multiprocessing import Process, Manager, Lock, Queue, Value
+from multiprocessing import Process, Manager, Lock, Queue
 
 from message_sender import MessageSender
 from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR

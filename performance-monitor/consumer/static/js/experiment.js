@@ -2,6 +2,10 @@
  * 
  */
 $(document).ready(function(){
+	var clip = new ZeroClipboard($('#copy-id'), {
+		moviePath: '/static/ZeroClipboard.swf'
+	});
+	
 	$("#redo").click(function(){
 		$.ajax({
 			url: window.location.pathname,
