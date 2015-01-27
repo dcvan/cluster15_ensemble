@@ -91,8 +91,8 @@
     		<ip4:localIPAddress rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-{{w['site']}}-ip-172-16-1-{{cnt}}"/>
     		<rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#Interface"/>
   		</rdf:Description>
- 	 	<rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-NodeGroup0-ip-172-16-1-{{cnt}}">
-	    	<ip4:netmask>128.0.0.0</ip4:netmask>
+ 	 	<rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-{{w['site']}}-ip-172-16-1-{{cnt}}">
+	    	<ip4:netmask>255.255.255.0</ip4:netmask>
 	    	<layer:label_ID>172.16.1.{{cnt}}</layer:label_ID>
 	    	{% set cnt = cnt + w['num'] %}
 	    	<rdf:type rdf:resource="http://geni-orca.renci.org/owl/ip4.owl#IPAddress"/>
@@ -119,7 +119,7 @@
     <ip4:localIPAddress rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master-ip-172-16-1-1"/>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#Interface"/>
   </rdf:Description>
-    <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-Node4-ip-172-16-1-1">
+    <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master-ip-172-16-1-1">
     <ip4:netmask>255.255.255.0</ip4:netmask>
     <layer:label_ID>172.16.1.1</layer:label_ID>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/ip4.owl#IPAddress"/>
