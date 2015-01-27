@@ -92,38 +92,8 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         content_type = check_content_type(self)
         if not content_type:
             return
-        exp['image'] = self._db[DB_NAME]['workflow']['image'].find_one({'name': workflow})
-        t = self._db[DB_NAME]['workflow']['manifest'].find_one({
-                    'type': exp['type'],
-                    'mode': exp['mode'],
-                    'storage_site': exp['storage_site'],
-                    'storage_type': exp['storage_type'],
-                    }, {'_id': 0, 'master_postscript': 1, 'worker_postscript': 1})
-        if not t:
-            self.set_status(404, 'Manifest not available yet')
-            return
-        if exp['mode'] == 'multinode' and not exp['bandwidth']:
-            exp['bandwidth'] = 500000000
-        if exp['storage_site'] == 'remote' and not exp['storage_size']:
-            exp['storage_size'] = 50
-        exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
         if content_type == 'text/html':
-            exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
-            exp['master_postscript'] = jinja2.Template(t['master_postscript']).render(param={
-                                                                                            'exp_id': exp['exp_id'],
-                                                                                            'site': exp['master_site'],
-                                                                                            'executables': exp['executables']
-                                                                                                })
-            if 'worker_postscript' in t:
-                for w in exp['worker_sites']:
-                    w['worker_postscript'] = jinja2.Template(t['worker_postscript']).render(param={
-                                                                                                'exp_id': exp['exp_id'],
-                                                                                                'site': w['site'],
-                                                                                                'executables': exp['executables']  
-                                                                                                   })
-                    w['num'] = int(w['num'])
-            mantemp = self._db[DB_NAME]['workflow']['template'].find_one({'name': 'manifest'})['value']
-            manifest = jinja2.Template(mantemp).render(param=exp)
+            manifest = self._get_manifest(workflow, exp)
             exp['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
             exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
             exp['workers'] = [w for w in self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp_id}, {'_id': 0}).sort('host')]
@@ -145,40 +115,10 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         if not exp:
             self.set_status(404, 'Experiment not found')
             return 
-        exp['image'] = self._db[DB_NAME]['workflow']['image'].find_one({'name': workflow})
-        t = self._db[DB_NAME]['workflow']['manifest'].find_one({
-                    'type': exp['type'],
-                    'mode': exp['mode'],
-                    'storage_site': exp['storage_site'],
-                    'storage_type': exp['storage_type'],
-                    }, {'_id': 0, 'master_postscript': 1, 'worker_postscript': 1})
-        if not t:
-            self.set_status(404, 'Manifest not available yet')
-            return
-        if exp['mode'] == 'multinode' and not exp['bandwidth']:
-            exp['bandwidth'] = 500000000
-        if exp['storage_site'] == 'remote' and not exp['storage_size']:
-            exp['storage_size'] = 50
-        exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
-        exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
-        exp['master_postscript'] = jinja2.Template(t['master_postscript']).render(param={
-                                                                                        'exp_id': exp['exp_id'],
-                                                                                        'site': exp['master_site'],
-                                                                                        'executables': exp['executables']
-                                                                                            })
-        if 'worker_postscript' in t:
-            for w in exp['worker_sites']:
-                w['worker_postscript'] = jinja2.Template(t['worker_postscript']).render(param={
-                                                                                            'exp_id': exp['exp_id'],
-                                                                                            'site': w['site'],
-                                                                                            'executables': exp['executables']   
-                                                                                               })
-                w['num'] = int(w['num'])
-        mantemp = self._db[DB_NAME]['workflow']['template'].find_one({'name': 'manifest'})['value']
-        manifest = jinja2.Template(mantemp).render(param=exp)
+       
         self.set_header('Content-Type', 'application/rdf+xml')
         self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode'], exp['worker_size'], exp['master_site']]))
-        self.write(manifest)
+        self.write(self._get_manifest(workflow, exp))
         
     def delete(self, workflow, exp_id):
         '''
@@ -201,6 +141,43 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         self._db[DB_NAME]['experiment']['job'].remove({'exp_id': exp_id})
         self._db[DB_NAME]['experiment']['system'].remove({'exp_id': exp_id})
         self._db[DB_NAME]['experiment']['run'].remove({'exp_id': exp_id})
+        
+    def _get_manifest(self, workflow, exp):
+        '''
+        '''
+        exp['image'] = self._db[DB_NAME]['workflow']['image'].find_one({'name': workflow})
+        t = self._db[DB_NAME]['workflow']['manifest'].find_one({
+                    'type': exp['type'],
+                    'mode': exp['mode'],
+                    'storage_site': exp['storage_site'],
+                    'storage_type': exp['storage_type'],
+                    }, {'_id': 0, 'master_postscript': 1, 'worker_postscript': 1})
+        if not t:
+            self.set_status(404, 'Manifest not available yet')
+            return
+        if exp['mode'] == 'multinode' and not exp['bandwidth']:
+            exp['bandwidth'] = 500000000
+        if exp['storage_site'] == 'remote' and not exp['storage_size']:
+            exp['storage_size'] = 50
+        exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
+        exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
+        exp['master_postscript'] = jinja2.Template(t['master_postscript']).render(param={
+                                                                                        'exp_id': exp['exp_id'],
+                                                                                        'site': exp['master_site'],
+                                                                                        'executables': exp['executables'],
+                                                                                        'worker_num': 1 if exp['mode'] == 'standalone' else sum([int(s['num']) for s in exp['worker_sites']]),
+                                                                                        'run_num': exp['run_num']
+                                                                                            })
+        if 'worker_postscript' in t:
+            for w in exp['worker_sites']:
+                w['worker_postscript'] = jinja2.Template(t['worker_postscript']).render(param={
+                                                                                            'exp_id': exp['exp_id'],
+                                                                                            'site': w['site'],
+                                                                                            'executables': exp['executables']   
+                                                                                               })
+                w['num'] = int(w['num'])
+        mantemp = self._db[DB_NAME]['workflow']['template'].find_one({'name': 'manifest'})['value']
+        return jinja2.Template(mantemp).render(param=exp)
         
 class RunsRenderer(tornado.web.RedirectHandler):
     '''
