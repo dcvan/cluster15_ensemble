@@ -122,8 +122,6 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
                                                                                                 'executables': exp['executables']  
                                                                                                    })
                     w['num'] = int(w['num'])
-            if 'worker_sites' not in exp:
-                exp['worker_sites'] = None
             mantemp = self._db[DB_NAME]['workflow']['template'].find_one({'name': 'manifest'})['value']
             manifest = jinja2.Template(mantemp).render(param=exp)
             exp['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
