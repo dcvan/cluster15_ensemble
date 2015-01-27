@@ -39,7 +39,7 @@ $(document).ready(function(){
 	$(document).on('click', '#search', function(){
 		data = get_values();
 		console.log(JSON.stringify(data));
-		update_table(data);
+//		update_table(data);
 		get_walltime(data);
 	});
 	
@@ -71,7 +71,6 @@ function update_table(data){
 		success: function(data){
 			console.log(JSON.stringify(data));
 			$('tbody').empty();
-			$('tbody').append(data);
 		}
 	});
 }
