@@ -86,6 +86,7 @@ function display_worker_sites(){
 		$('#add').hide();
 	}else{
 		$('#workers.worker.remove').show();
+		$('#workers .worker .site').prop('disabled', false);
 		$('#add').show();
 	}
 }
