@@ -53,7 +53,7 @@ $(document).ready(function(){
 		query = get_query();
 		console.log(JSON.stringify(query));
 		if(query.length)
-			$(location).attr('href', document.URL + '?' + query);
+			$(location).attr('href', window.location.pathname + '?' + query);
 	});
 	
 });
