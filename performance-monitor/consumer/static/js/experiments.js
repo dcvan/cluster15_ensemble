@@ -2,6 +2,7 @@
  * 
  */
 $(document).ready(function(){
+	get_walltime();
 	var clip = new ZeroClipboard($('.copy'), {
 		moviePath: '/static/ZeroClipboard.swf'
 	});
@@ -36,67 +37,43 @@ $(document).ready(function(){
 		dropdown.val($(this).text().toLowerCase());
 	});
 	
+	$('.copy').click(function(){
+		clip = new ZeroClipboard($('.copy'), {
+			moviePath: '/static/ZeroClipboard.swf'
+		});
+	});
+	
 	$(document).on('click', '#search', function(){
-		data = get_values();
-		console.log(JSON.stringify(data));
-		update_table(data);
-		get_walltime(data);
+		query = get_query();
+		console.log(JSON.stringify(query));
+		$(location).attr('href', window.location.pathname + '?' + query)
 	});
 	
 });
 
-function get_values(){
-	var data = {};
+function get_query(){
+	var data = [];
 	$('#analysis div .dropdown, #analysis .form-group input').each(function(){
 		var k = $(this).get(0).id.replace('-', '_'), v = $(this).val();
 		if(v != null && k.length && v.length){
-			data[k] = v;
+			data.push(k + '=' + v);
 		}
 	});
 	$('select option:selected').each(function(index, brand){
-		if(!('worker_sites' in data))
-			data['worker_sites'] = []
-		data['worker_sites'].push($(this).val());
+		data.push('worker_site=' + $(this).val());
 	});
 	
-	return data;
+	return data.join('&');
 }
 
-function update_table(data){
-	$('tbody tr').each(function(){
-		$(this).show();
-	});
-	data.aspect = 'experiment'
-	$.ajax({
-		uri: window.location.pathname,
-		type: 'POST',
-		data: JSON.stringify(data),
-		contentType: 'application/json',
-		success: function(data){
-			var exp_ids = {};
-			for(i = 0; i < data.exp_ids.length; i ++){
-				exp_ids[data.exp_ids[i]] = null;
-			}
-			$('tbody tr').each(function(){
-				var exp_id = $(this).find('td:first').get(0).id;
-				if(!(exp_id in exp_ids)){
-					$(this).hide();
-				}
-			});
-		}
-	});
-}
 
-function get_walltime(data){
-	var color1 = '151,187,205', color2 = '170,57,57', color3='102,255,51'
-	data.aspect = 'run';
+function get_walltime(){
+	var color1 = '151,187,205', color2 = '170,57,57', color3='102,255,51';
+	$.ajaxSetup({url: (window.location.search.substring(0).length)?document.URL + '&aspect=run':document.URL + '?aspect=run'});
 	$.ajax({
-		uri: window.location.pathname,
-		type: 'POST',
-		data: JSON.stringify(data),
+		type: 'GET',
 		contentType: 'application/json',
 		success: function(data){
-			console.log(JSON.stringify(data));
 			$('#walltime').empty();
 			$('#walltime').append('<canvas></canvas><div></div><div id="std-dev"></div>');
 			if(data['std_dev'])
@@ -107,6 +84,4 @@ function get_walltime(data){
 					$('#walltime div').get(0));
 		}
 	});
-	
-
 }

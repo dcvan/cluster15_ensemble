@@ -307,25 +307,83 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         
         '''
         # check workflow availability
+        workflow_exist = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})
+        if not workflow_exist:
+            self.set_status(404, 'Workflow not available')
+            return 
+        
+        # check MIME type support
         content_type = check_content_type(self)
         if not content_type:
             return
-        exp = [e for e in self._db[DB_NAME]['workflow']['experiment'].find({'type': workflow}, {'_id': 0})]
-        for e in exp:
-            if e['status'] == 'submitted':
-                runs = self._db[DB_NAME]['experiment']['run'].find({'exp_id': e['exp_id']})
-                if runs.count() > 0 and runs.count() == e['run_num']:
-                    e['status'] = 'finished'
-                elif self._db[DB_NAME]['experiment']['worker'].find_one({'exp_id': e['exp_id']}):
-                    e['status'] = 'running'
-                if e['status'] != 'submitted':    
-                    self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': e['exp_id']}, {'$set': {'status': e['status']}})
-        data = {
+        
+        # get arguments
+        query = {'type': workflow}
+        if self.get_arguments('worker_size'):
+            query['worker_size'] = self.get_arguments('worker_size')[0]
+        if self.get_arguments('mode'):
+            query['mode'] = self.get_arguments('mode')[0]
+        if self.get_arguments('topology'):
+            query['topology'] = self.get_arguments('topology')[0]
+        if self.get_arguments('master_site'):
+            query['master_site'] = self.get_argument('master_site')[0]
+        if self.get_arguments('worker_site'):
+            query['worker_sites'] = self.get_arguments('worker_site')
+        if self.get_arguments('worker_num'):
+            query['worker_num'] = int(self.get_arguments('worker_num')[0])
+        if self.get_arguments('workload'):
+            query['run_num'] = self.get_arguments('workload')[0]
+        if self.get_arguments('bandwidth'):
+            query['bandwidth'] = int(self.get_arguments('bandwidth')[0]) * 1000 * 1000
+        if self.get_arguments('top'):
+            query['limit'] = int(self.get_arguments('top')[0])
+        if self.get_arguments('aspect'):
+            query['aspect'] = self.get_arguments('aspect')[0]
+            
+        # create mongo query
+        mongo_query = dict(query)
+        if 'worker_num' in mongo_query:
+            del mongo_query['worker_num']
+        if 'worker_sites' in mongo_query:
+            del mongo_query['worker_sites']
+        if 'limit' in mongo_query:
+            del mongo_query['limit']
+        if 'aspect' in mongo_query:
+            del mongo_query['aspect']
+        if 'worker_size' in mongo_query:
+            mongo_query['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'name': mongo_query['worker_size']})['value']
+        
+        # get experiments of interest
+        rs = self._db[DB_NAME]['workflow']['experiment'].find(mongo_query, {'_id': 0}).sort('timestamp')
+        exp = []
+        count = 0
+        for r in rs:
+            if 'worker_sites' in query:
+                sites = [s['site'] for s in r['worker_sites']]
+                flag = False
+                for s in query['worker_sites']:
+                    if s in sites:
+                        flag = True
+                        break
+                if not flag:
+                    continue
+            if 'worker_num' in query:
+                worker_num = sum([int(s['num']) for s in r['worker_sites']])
+                if int(query['worker_num']) != worker_num:
+                    continue
+            if 'limit' in query:
+                if count >= int(query['limit']):
+                    break
+                count += 1
+            exp.append(r)
+        
+        if content_type == 'text/html':
+            # renders page
+            data = {
                 'type': workflow,
                 'current_uri': self.request.uri,
                 'experiments': exp,
-            }
-        if content_type == 'text/html':
+                }
             opts = {
                     'topology': [t for t in self._db[DB_NAME]['workflow']['topology'].find(fields={'_id': 0})],
                     'mode': [m for m in self._db[DB_NAME]['workflow']['mode'].find(fields={'_id': 0})],
@@ -334,74 +392,25 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 }
             self.render('experiments.html', data=data, opts=opts)
         elif content_type == 'application/json':
-            self.set_status(204, 'Not Implemented yet')
-            return
-        
-    def post(self, workflow):
-        '''
-        POST method: get statistics
-        
-        '''
-        data = json.loads(self.request.body)
-        if not data or 'aspect' not in data:
-            self.set_status(400, 'User data required')
-            return
-        query = dict(data)
-        query['type'] = workflow
-        del query['aspect']
-        if 'worker_num' in query: 
-            del query['worker_num']
-        if 'bandwidth' in query:
-            query['bandwidth'] = int(query['bandwidth']) *1000 * 1000
-        if 'workload' in query:
-            query['run_num'] = query['workload']
-            del query['workload']
-        if 'worker_size' in query:
-            query['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'name': query['worker_size']})['value']
-        if 'worker_sites' in query:
-            del query['worker_sites']
-        if 'limit' in query:
-            del query['limit']
-
-        rs = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0}).sort('timestamp')
-        if rs.count() == 0:
-            self.set_status(204, 'No data found')
-            return
-        res = []
-        count = 0
-        for r in rs:
-            if 'worker_sites' in data and data['worker_sites']:
-                sites = [s['site'] for s in r['worker_sites']]
-                flag = False
-                for s in data['worker_sites']:
-                    if s in sites:
-                        flag = True
-                        break
-                if not flag:
-                    continue
-            if 'worker_num' in data and data['worker_num']:
-                worker_num = sum([int(s['num']) for s in r['worker_sites']])
-                if int(data['worker_num']) != worker_num:
-                    continue
-            if 'limit' in data:
-                if count >= int(data['limit']):
-                    break
-                count += 1
-            res.append(r)
-            
-        if data['aspect'] == 'experiment':
-            self.write({'exp_ids': [e['exp_id'] for e in res]})
-        elif data['aspect'] == 'run':
-            if len(res) > 0:
-                runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': e['exp_id']} for e in res]}, {'_id': 0}).sort('timestamp')]
+            # returns data of interest
+            if not exp:
+                self.set_status(404, 'No data found')
+                return
+            if 'aspect' not in query:
+                self.set_status(400, 'Require specifying aspect')
+                return
+            elif query['aspect'] == 'run':
+                runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
                 data = {
                     'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(r['timestamp'])) for r in runs],
                     'walltime': [int(r['walltime']) for r in runs]    
                     } 
-                avg = sum(data['walltime'])/len(data['walltime'])
-                sqr_sum = sum([w * w - avg * avg for w in data['walltime']])
-                data['std_dev'] = math.sqrt(sqr_sum/avg)
+                if len(data['walltime']) > 1:
+                    avg = sum(data['walltime'])/len(data['walltime'])
+                    sqr_sum = sum([math.pow(w-avg, 2) for w in data['walltime']])
+                    data['std_dev'] = math.sqrt(sqr_sum/len(data['walltime']) - 1)
+                else:
+                    data['std_dev'] = 0
                 self.write(data)
-                
                 
                     
