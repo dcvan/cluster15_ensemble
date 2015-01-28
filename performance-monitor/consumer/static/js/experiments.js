@@ -78,7 +78,6 @@ function update_table(data){
 			}
 			$('tbody tr').each(function(){
 				var exp_id = $(this).find('td:first').get(0).id;
-				console.log(exp_id);
 				if(!(exp_id in exp_ids)){
 					$(this).hide();
 				}
