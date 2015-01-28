@@ -326,7 +326,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         if self.get_arguments('topology'):
             query['topology'] = self.get_arguments('topology')[0]
         if self.get_arguments('master_site'):
-            query['master_site'] = self.get_argument('master_site')[0]
+            query['master_site'] = self.get_arguments('master_site')[0]
         if self.get_arguments('worker_site'):
             query['worker_sites'] = self.get_arguments('worker_site')
         if self.get_arguments('worker_num'):
