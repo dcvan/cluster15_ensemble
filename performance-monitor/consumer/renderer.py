@@ -98,7 +98,6 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             exp['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
             exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
             exp['workers'] = [w for w in self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp_id}, {'_id': 0}).sort('host')]
-            print exp['workers']
             exp['runs'] = [r for r in self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp_id}, {'_id': 0}).sort('run_id')]
             if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
             self.render('experiment.html', manifest=manifest, data=exp, current_uri=self.request.uri)
@@ -175,8 +174,9 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
                                                                                             'site': w['site'],
                                                                                             'executables': exp['executables']   
                                                                                             })
-        for w in exp['worker_sites']:
-            w['num'] = int(w['num'])
+        if 'worker_sites' in exp:
+            for w in exp['worker_sites']:
+                w['num'] = int(w['num'])
         mantemp = self._db[DB_NAME]['workflow']['template'].find_one({'name': 'manifest'})['value']
         return jinja2.Template(mantemp).render(param=exp)
         
