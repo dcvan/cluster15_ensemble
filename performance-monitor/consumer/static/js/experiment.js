@@ -18,7 +18,7 @@ $(document).ready(function(){
 		});
 	});
 	
-	$("#copy").click(function(){
+	$("#replicate").click(function(){
 		$.ajax({
 			url: window.location.pathname,
 			type: 'GET',

@@ -102,8 +102,10 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
             self.render('experiment.html', manifest=manifest, data=exp, current_uri=self.request.uri)
         elif content_type == 'application/json':
-            self.set_status(204, 'Not implemented yet')
-            return
+            del exp['create_time']
+            del exp['exp_id']
+            del exp['status']
+            self.write(exp)
             
     def post(self, workflow, exp_id):
         '''
@@ -358,23 +360,35 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             query['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'name': query['worker_size']})['value']
         if 'worker_sites' in query:
             del query['worker_sites']
-       
-            
-        rs = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0})
+        if 'limit' in query:
+            del query['limit']
+
+        rs = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0}).sort('timestamp')
         if rs.count() == 0:
             self.set_status(204, 'No data found')
             return
         res = []
+        count = 0
         for r in rs:
             if 'worker_sites' in data and data['worker_sites']:
-                sites = set([s['site'] for s in r['worker_sites']])
-                if set(data['worker_sites']) != sites:
+                sites = [s['site'] for s in r['worker_sites']]
+                flag = False
+                for s in data['worker_sites']:
+                    if s in sites:
+                        flag = True
+                        break
+                if not flag:
                     continue
             if 'worker_num' in data and data['worker_num']:
                 worker_num = sum([int(s['num']) for s in r['worker_sites']])
                 if int(data['worker_num']) != worker_num:
                     continue
+            if 'limit' in data:
+                if count >= int(data['limit']):
+                    break
+                count += 1
             res.append(r)
+            
         if data['aspect'] == 'experiment':
             self.write({'exp_ids': [e['exp_id'] for e in res]})
         elif data['aspect'] == 'run':

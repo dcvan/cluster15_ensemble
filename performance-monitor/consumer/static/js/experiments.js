@@ -47,14 +47,15 @@ $(document).ready(function(){
 
 function get_values(){
 	var data = {};
-	$('#analysis div .dropdown, #analysis.form-control').each(function(){
+	$('#analysis div .dropdown, #analysis .form-group input').each(function(){
 		var k = $(this).get(0).id.replace('-', '_'), v = $(this).val();
-		if(v != null && v.length){
+		if(v != null && k.length && v.length){
 			data[k] = v;
 		}
 	});
-	data['worker_sites'] = [];
 	$('select option:selected').each(function(index, brand){
+		if(!('worker_sites' in data))
+			data['worker_sites'] = []
 		data['worker_sites'].push($(this).val());
 	});
 	
