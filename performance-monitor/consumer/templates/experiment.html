@@ -35,8 +35,12 @@
 		<dt>Master Site</dt>
 		<dd>{{data['master_site'].upper()}}</dd>
 		<dt>Worker Sites</dt>
-		{% for s in data['worker_sites'] %}
-		<dd>{{s['site'].upper()}}: {{s['num']}}</dd>
+		{% if 'worker_sites' in data %}
+			{% for s in data['worker_sites'] %}
+			<dd>{{s['site'].upper()}}: {{s['num']}}</dd>
+			{% end %}
+		{% else %}
+			<dd>-</dd>
 		{% end %}
 		<dt>Storage Site</dt>
 		<dd>{{data['storage_site']}}</dd>
