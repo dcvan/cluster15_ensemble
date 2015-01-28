@@ -24,7 +24,7 @@ class WorkflowMonitor(Process):
     Monitor workflow status
     
     '''
-    HEARTBEAT_LIMIT = 30
+    HEARTBEAT_LIMIT = 15
     
     def __init__(self,  exp_id, workdir_base, run_num, msg_q):
         '''
