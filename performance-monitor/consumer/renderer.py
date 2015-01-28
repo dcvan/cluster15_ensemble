@@ -376,7 +376,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                     continue
             res.append(r)
         if data['aspect'] == 'experiment':
-            self.write({'experiment': res})
+            self.write({'exp_ids': [e['exp_id'] for e in res]})
         elif data['aspect'] == 'run':
             if len(res) > 0:
                 runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': e['exp_id']} for e in res]}, {'_id': 0}).sort('timestamp')]

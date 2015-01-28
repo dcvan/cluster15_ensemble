@@ -39,7 +39,7 @@ $(document).ready(function(){
 	$(document).on('click', '#search', function(){
 		data = get_values();
 		console.log(JSON.stringify(data));
-//		update_table(data);
+		update_table(data);
 		get_walltime(data);
 	});
 	
@@ -62,6 +62,9 @@ function get_values(){
 }
 
 function update_table(data){
+	$('tbody tr').each(function(){
+		$(this).show();
+	});
 	data.aspect = 'experiment'
 	$.ajax({
 		uri: window.location.pathname,
@@ -69,8 +72,17 @@ function update_table(data){
 		data: JSON.stringify(data),
 		contentType: 'application/json',
 		success: function(data){
-			console.log(JSON.stringify(data));
-			$('tbody').empty();
+			var exp_ids = {};
+			for(i = 0; i < data.exp_ids.length; i ++){
+				exp_ids[data.exp_ids[i]] = null;
+			}
+			$('tbody tr').each(function(){
+				var exp_id = $(this).find('td:first').get(0).id;
+				console.log(exp_id);
+				if(!(exp_id in exp_ids)){
+					$(this).hide();
+				}
+			});
 		}
 	});
 }
