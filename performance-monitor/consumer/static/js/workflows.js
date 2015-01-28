@@ -6,9 +6,16 @@ $(document).ready(function(){
 	display_worker_sites();
 	$('#mode').change(function(){
 		display_topology();
+		display_worker_sites();
 	});
 	$('#topology').change(function(){
 		display_worker_sites();
+	});
+	
+	$('#master-site').change(function(){
+		if($('#topology option:selected').val() == 'intra-rack'){
+			$('#workers .worker .site').val($('#master-site option:selected').val());
+		}
 	});
 	
 	$('#submit').click(function(){
@@ -66,12 +73,23 @@ function display_topology(){
 }
 
 function display_worker_sites(){
-	if ($('#topology option:selected').val() == 'inter-rack'){
+	if ($('#mode option:selected').val() == 'multinode'){
 		$('#worker-sites').show();
 	}else{
 		$('#worker-sites').hide();
 	}
+	
+	if($('#topology option:selected').val() == 'intra-rack'){
+		$('#workers .worker .site').prop('disabled', true);
+		$('#workers .worker .site').val($('#master-site option:selected').val());
+		$('#workers .worker .remove').hide();
+		$('#add').hide();
+	}else{
+		$('#workers.worker.remove').show();
+		$('#add').show();
+	}
 }
+
 
 
 
