@@ -5,6 +5,10 @@ $(document).ready(function(){
 	get_walltime();
 	get_figure('sys_cpu', $('#sys-cpu'));
 	get_figure('sys_mem', $('#sys-mem'));
+	get_figure('sys_read', $('#sys-read'));
+	get_figure('sys_write', $('#sys-write'));
+	get_figure('sys_send', $('#sys-send'));
+	get_figure('sys_recv', $('#sys-recv'));
 	var clip = new ZeroClipboard($('.copy'), {
 		moviePath: '/static/ZeroClipboard.swf'
 	});

@@ -399,103 +399,12 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             if 'aspect' not in query:
                 self.set_status(400, 'Require specifying aspect')
                 return
-            elif query['aspect'] == 'run':
-                runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
-                data = {
-                    'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(r['timestamp'])) for r in runs],
-                    'walltime': [int(r['walltime']) for r in runs]    
-                    } 
-                data['std_dev'] = self._calc_std_dev(data['walltime'])
-            elif query['aspect'] == 'sys_cpu':
-                raw = [{'exp_id': s['exp_id'],
-                        'max': s['sys_max_cpu_percent'],
-                        'avg': s['sys_cpu_percent'],
-                        'min': s['sys_min_cpu_percent'],
-                        'timestamp': s['timestamp'],
-                        'count': s['count']
-                        } for s in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
-                sys_cpu = {}
-                for s in raw:
-                    if s['exp_id'] not in sys_cpu:
-                        sys_cpu[s['exp_id']] = {
-                                        'exp_id': s['exp_id'],
-                                        'max': s['max'],
-                                        'min': s['min'],
-                                        'avg': s['avg'] * s['count'],
-                                        'maxmin_count': 1,
-                                        'avg_count': s['count'],
-                                        'timestamp': s['timestamp']
-                                    }
-                    else:
-                        sys_cpu[s['exp_id']]['max'] += s['max']
-                        sys_cpu[s['exp_id']]['min'] += s['min']
-                        sys_cpu[s['exp_id']]['avg'] += s['avg'] * s['count']
-                        sys_cpu[s['exp_id']]['maxmin_count'] += 1
-                        sys_cpu[s['exp_id']]['avg_count'] += s['count']
-              
-                for s in sys_cpu:
-                    sys_cpu[s]['max'] /= sys_cpu[s]['maxmin_count']
-                    sys_cpu[s]['min'] /= sys_cpu[s]['maxmin_count']
-                    sys_cpu[s]['avg'] /= sys_cpu[s]['avg_count']
-                    del sys_cpu[s]['maxmin_count']
-                    del sys_cpu[s]['avg_count']
-                
-                data = {
-                    'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(sys_cpu[s]['timestamp'])) for s in sys_cpu],
-                    'max': [sys_cpu[s]['max'] for s in sys_cpu],
-                    'min': [sys_cpu[s]['min'] for s in sys_cpu],
-                    'avg': [sys_cpu[s]['avg'] for s in sys_cpu],
-                }
-                
-                data['max_std_dev'] = self._calc_std_dev(data['max'])
-                data['min_std_dev'] = self._calc_std_dev(data['min'])
-                data['avg_std_dev'] = self._calc_std_dev(data['avg'])
-            elif query['aspect'] == 'sys_mem':
-                raw = [{'exp_id': s['exp_id'],
-                        'max': s['sys_max_mem_percent'],
-                        'avg': s['sys_mem_percent'],
-                        'min': s['sys_min_mem_percent'],
-                        'timestamp': s['timestamp'],
-                        'count': s['count']
-                        } for s in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
-                sys_mem = {}
-                for s in raw:
-                    if s['exp_id'] not in sys_mem:
-                        sys_mem[s['exp_id']] = {
-                                        'exp_id': s['exp_id'],
-                                        'max': s['max'],
-                                        'min': s['min'],
-                                        'avg': s['avg'] * s['count'],
-                                        'maxmin_count': 1,
-                                        'avg_count': s['count'],
-                                        'timestamp': s['timestamp']
-                                    }
-                    else:
-                        sys_mem[s['exp_id']]['max'] += s['max']
-                        sys_mem[s['exp_id']]['min'] += s['min']
-                        sys_mem[s['exp_id']]['avg'] += s['avg'] * s['count']
-                        sys_mem[s['exp_id']]['maxmin_count'] += 1
-                        sys_mem[s['exp_id']]['avg_count'] += s['count']
-              
-                for s in sys_mem:
-                    sys_mem[s]['max'] /= sys_mem[s]['maxmin_count']
-                    sys_mem[s]['min'] /= sys_mem[s]['maxmin_count']
-                    sys_mem[s]['avg'] /= sys_mem[s]['avg_count']
-                    del sys_mem[s]['maxmin_count']
-                    del sys_mem[s]['avg_count']
-                
-                data = {
-                    'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(sys_mem[s]['timestamp'])) for s in sys_mem],
-                    'max': [sys_mem[s]['max'] for s in sys_mem],
-                    'min': [sys_mem[s]['min'] for s in sys_mem],
-                    'avg': [sys_mem[s]['avg'] for s in sys_mem],
-                }
-                
-                data['max_std_dev'] = self._calc_std_dev(data['max'])
-                data['min_std_dev'] = self._calc_std_dev(data['min'])
-                data['avg_std_dev'] = self._calc_std_dev(data['avg'])
-            
-            self.write(data)
+            else:
+                data = self._get_data(query['aspect'], exp)
+            if data:
+                self.write(data)
+            else:
+                self.set_status(400, 'No data return')
     
     def _calc_std_dev(self, data):
         '''
@@ -513,3 +422,105 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 return 0
         except ValueError:
             return 0
+        
+    def _get_data(self, aspect, exp):
+        '''
+        
+        '''
+        data = None
+        if aspect == 'run':
+            runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
+            data = {
+                'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(r['timestamp'])) for r in runs],
+                'walltime': [int(r['walltime']) for r in runs]    
+                } 
+            data['std_dev'] = self._calc_std_dev(data['walltime'])
+        elif aspect == 'sys_cpu' or aspect == 'sys_mem':
+            km = {
+                   'max': 'sys_max_cpu_percent' if aspect == 'sys_cpu' else 'sys_max_mem_percent',
+                   'min': 'sys_min_cpu_percent' if aspect == 'sys_cpu' else 'sys_min_mem_percent',
+                   'avg': 'sys_cpu_percent' if aspect =='sys_cpu' else 'sys_mem_percent',
+                   }
+            raw = [{'exp_id': s['exp_id'],
+                    'max': s[km['max']],
+                    'avg': s[km['avg']],
+                    'min': s[km['min']],
+                    'timestamp': s['timestamp'],
+                    'count': s['count']
+                    } for s in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
+            res = {}
+            for s in raw:
+                    if s['exp_id'] not in res:
+                        res[s['exp_id']] = {
+                                'exp_id': s['exp_id'],
+                                'max': s['max'],
+                                'min': s['min'],
+                                'avg': s['avg'] * s['count'],
+                                'count': s['count'],
+                                'timestamp': s['timestamp']
+                            }
+                    else:
+                        res[s['exp_id']]['max'] = max(s['max'], res[s['exp_id']]['max'])
+                        res[s['exp_id']]['min'] = min(s['min'], res[s['exp_id']]['min'])
+                        res[s['exp_id']]['avg'] += s['avg'] * s['count']
+                        res[s['exp_id']]['count'] += s['count']
+              
+            for s in res:
+                res[s]['avg'] /= res[s]['count']
+                del res[s]['count']
+            
+            data = {
+                'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(res[s]['timestamp'])) for s in res],
+                'max': [res[s]['max'] for s in res],
+                'min': [res[s]['min'] for s in res],
+                'avg': [res[s]['avg'] for s in res],
+            }
+            
+            data['max_std_dev'] = self._calc_std_dev(data['max'])
+            data['min_std_dev'] = self._calc_std_dev(data['min'])
+            data['avg_std_dev'] = self._calc_std_dev(data['avg'])
+        elif aspect == 'sys_read'or aspect == 'sys_write' or aspect == 'sys_send' or aspect == 'sys_recv':
+            km = {}
+            if aspect == 'sys_read':
+                km['val'] = 'sys_read_rate'
+            elif aspect == 'sys_write':
+                km['val'] = 'sys_write_rate'
+            elif aspect == 'sys_send':
+                km['val'] = 'sys_send_rate'
+            elif aspect == 'sys_recv':
+                km['val'] = 'sys_recv_rate'
+            raw = [{'exp_id': s['exp_id'],
+                    'val': s[km['val']] / 1024 / 1024,
+                    'timestamp': s['timestamp'],
+                    'count': s['count']
+                    } for s in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
+            res = {}
+            for s in raw:
+                if s['exp_id'] not in res:
+                    res[s['exp_id']] = {
+                            'max': s['val'],
+                            'avg': s['val'],
+                            'min': s['val'],
+                            'count': s['count'],
+                            'timestamp': s['timestamp']
+                        }
+                else:
+                    res[s['exp_id']]['max'] = max(res[s['exp_id']]['max'], s['val'])
+                    res[s['exp_id']]['min'] = min(res[s['exp_id']]['min'], s['val'])
+                    res[s['exp_id']]['avg'] += s['val']
+            for s in res:
+                res[s]['avg'] /= res[s]['count']
+                del res[s]['count']
+                
+            data = {
+                'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(res[s]['timestamp'])) for s in res],
+                'max': [res[s]['max'] for s in res],
+                'min': [res[s]['min'] for s in res],
+                'avg': [res[s]['avg'] for s in res],
+            }
+            
+            data['max_std_dev'] = self._calc_std_dev(data['max'])
+            data['min_std_dev'] = self._calc_std_dev(data['min'])
+            data['avg_std_dev'] = self._calc_std_dev(data['avg'])
+        return data
+        
