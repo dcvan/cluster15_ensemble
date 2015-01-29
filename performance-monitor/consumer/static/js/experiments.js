@@ -1,14 +1,9 @@
 /**
  * 
  */
+var color1 = '151,187,205', color2 = '170,57,57', color3='102,255,51';
 $(document).ready(function(){
-	get_walltime();
-	get_figure('sys_cpu', $('#sys-cpu'));
-	get_figure('sys_mem', $('#sys-mem'));
-	get_figure('sys_read', $('#sys-read'));
-	get_figure('sys_write', $('#sys-write'));
-	get_figure('sys_send', $('#sys-send'));
-	get_figure('sys_recv', $('#sys-recv'));
+	refresh_figures();
 	var clip = new ZeroClipboard($('.copy'), {
 		moviePath: '/static/ZeroClipboard.swf'
 	});
@@ -17,11 +12,15 @@ $(document).ready(function(){
 		nonSelectedText: 'Worker Sites',
 	});
 	
+	$(document).on('click', '.noshow', function(){
+		$(this).parent().parent().hide();
+		refresh_figures();
+	});
 	
 	$('.del-experiment').click(function(){
-		var expId = $(this).closest('tr').children('td.exp-id').text();
+		var exp_id = $(this).closest('tr').children('td.exp-id').text();
 		$.ajax({
-			url: window.location.pathname + '/experiments/' + expId,
+			url: window.location.pathname + '/experiments/' + exp_id,
 			type: 'DELETE',
 			data: JSON.stringify({'action': 'remove'}),
 			contentType: 'application/json',
@@ -29,6 +28,24 @@ $(document).ready(function(){
 				location.reload();
 			}
 		});
+	});
+	
+	$('.sort').click(function(){
+		var params = window.location.search.substring(1).split('&'),
+			val = $(this).text().toLowerCase(),
+			pairs = {};
+		for(var p in params){
+			if(params[p].length == 0) continue;
+			var fs = params[p].split('=');
+			pairs[fs[0]] = fs[1];
+		}
+		pairs['sort'] = val;
+		var query = [];
+		for(var p in pairs){
+			query.push(p + '=' + pairs[p]);
+		}
+		$(location).attr('href', window.location.pathname + '?' + query.join('&'));
+		
 	});
 	
 	$('.clear').click(function(){
@@ -73,72 +90,94 @@ function get_query(){
 	return data.join('&');
 }
 
+function refresh_figures(){
+	var exp = [];
+	$('tbody tr:visible').each(function(){
+		exp.push($(this).find('td.exp-id').text());
+	});
+	get_walltime(exp);
+	get_sys_usage(exp, 'sys_cpu');
+	get_sys_usage(exp, 'sys_mem');
+	get_sys_usage(exp, 'sys_read');
+	get_sys_usage(exp, 'sys_write');
+	get_sys_usage(exp, 'sys_send');
+	get_sys_usage(exp, 'sys_recv');
+}
 
-function get_walltime(){
-	var color1 = '151,187,205', color2 = '170,57,57', color3='102,255,51';
-	$.ajaxSetup({url: (window.location.search.substring(0).length)?document.URL + '&aspect=run':document.URL + '?aspect=run'});
+function get_walltime(exp){
+	if(!exp.length) return;
 	$.ajax({
-		type: 'GET',
+		uri: window.location.pathname,
+		type: 'POST',
+		data: JSON.stringify({
+			'aspect': 'walltime',
+			'experiments': exp,
+			'type': 'chart'
+		}),
 		contentType: 'application/json',
 		success: function(data){
+			if(data.length == 0) return;
+			//draw figure
 			$('#walltime').empty();
-			$('#walltime').append('<canvas></canvas><div></div><div id="std-dev"></div>');
-			$('#walltime #std-dev').text('Standard Deviation: ' + data['std_dev']);
+			$('#walltime').append('<canvas></canvas><div></div><div class="std-dev">Standard Deviation: <span></span></div>');
+			$('#walltime .std-dev span').text(data.std_dev);
 			plotLine($('#walltime canvas').get(0), 
-					data['label'],
-					[{'label': 'Walltime', 'data': data['walltime'], 'color': color1},],
+					data.timestamp,
+					[{'label': 'Walltime', 'data': data.values, 'color': color1},],
 					$('#walltime div').get(0));
 		}
 	});
 }
 
-function get_sys_cpu(){
-	var color1 = '151,187,205', color2 = '170,57,57', color3='102,255,51';
-	$.ajaxSetup({url: (window.location.search.substring(0).length)?document.URL + '&aspect=sys_cpu':document.URL + '?aspect=sys_cpu'});
+function get_sys_usage(exp, aspect){
+	if(!exp.length) return;
 	$.ajax({
-		type: 'GET',
+		uri: window.location.pathname,
+		type: 'POST',
+		data: JSON.stringify({
+			'aspect': aspect,
+			'experiments': exp,
+			'type': 'chart'
+		}),
 		contentType: 'application/json',
 		success: function(data){
-//			console.log(JSON.stringify(data));
-			$('#sys-cpu').empty();
-			$('#sys-cpu').append('<canvas></canvas><div></div><div id="std-dev"></div>');
-			$('#sys-cpu #std-dev').append('<span>Max Standard Deviation: ' + data['max_std_dev'] + '</span>');
-			$('#sys-cpu #std-dev').append('<span>Min Standard Deviation: ' + data['min_std_dev'] + '</span>');
-			$('#sys-cpu #std-dev').append('<span>Avg Standard Deviation: ' + data['avg_std_dev'] + '</span>');
-			
-			plotLine($('#sys-cpu canvas').get(0),
-					data['label'],
-					[
-					 {'label': 'Avg.', 'data':data['avg'], 'color': color1},
-					 {'label': 'Max.', 'data':data['max'], 'color': color2},
-					 {'label': 'Min.', 'data':data['min'], 'color': color3},
-					 ],
-					 $('#sys-cpu div').get(0));
-		}
+				if(data.length == 0) return
+				if(aspect == 'sys_cpu')
+					get_sys_figure(data, $('#sys-cpu'));
+				if(aspect == 'sys_mem')
+					get_sys_figure(data, $('#sys-mem'));
+				if(aspect == 'sys_read')
+					get_sys_figure(data, $('#sys-read'));
+				if(aspect == 'sys_write')
+					get_sys_figure(data, $('#sys-write'));
+				if(aspect == 'sys_send')
+					get_sys_figure(data, $('#sys-send'));
+				if(aspect == 'sys_recv')
+					get_sys_figure(data, $('#sys-recv'));
+			}
 	});
 }
 
-function get_figure(aspect, area){
-	var color1 = '151,187,205', color2 = '170,57,57', color3='102,255,51';
-	$.ajaxSetup({url: document.URL + ((window.location.search.substring(0).length)?'&aspect=':'?aspect=') + aspect});
-	$.ajax({
-		type: 'GET',
-		contentType: 'application/json',
-		success: function(data){
-			area.empty();
-			area.append('<canvas></canvas><div></div><div id="std-dev"></div>');
-			area.find('#std-dev').append('<span>Max Standard Deviation: ' + data['max_std_dev'] + '</span>');
-			area.find('#std-dev').append('<span>Min Standard Deviation: ' + data['min_std_dev'] + '</span>');
-			area.find('#std-dev').append('<span>Avg Standard Deviation: ' + data['avg_std_dev'] + '</span>');
-			
-			plotLine(area.find('canvas').get(0),
-					data['label'],
-					[
-					 {'label': 'Avg.', 'data':data['avg'], 'color': color1},
-					 {'label': 'Max.', 'data':data['max'], 'color': color2},
-					 {'label': 'Min.', 'data':data['min'], 'color': color3},
-					 ],
-					 area.find('div').get(0));
-		}
-	});
+
+
+function get_sys_figure(data, area){
+	area.empty();
+	area.append('<canvas></canvas>'
+			+ '<div></div>'
+			+ '<div class="std-dev">'
+			+ '<div>Max Standard Deviation: <span class="max"></span></div>'
+			+ '<div>Min Standard Deviation: <span class="min"></span></div>'
+			+ '<div>Avg Standard Deviation: <span class="avg"></span></div>'
+			+ '</div>');
+	area.find('.std-dev div .max').text(data.max_std_dev);
+	area.find('.std-dev div .min').text(data.min_std_dev);
+	area.find('.std-dev div .avg').text(data.avg_std_dev);
+	plotLine(area.find('canvas').get(0),
+			data.timestamp,
+			[
+			 {'label': 'Max.', 'data':data.max, 'color': color1},
+			 {'label': 'Min.', 'data':data.min, 'color': color2},
+			 {'label': 'Avg.', 'data':data.avg, 'color': color3},
+			 ],
+			 area.find('div').get(0));
 }

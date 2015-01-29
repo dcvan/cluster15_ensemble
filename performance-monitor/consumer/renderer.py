@@ -318,7 +318,6 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         content_type = check_content_type(self)
         if not content_type:
             return
-        
         # get arguments
         query = {'type': workflow}
         if self.get_arguments('worker_size'):
@@ -397,19 +396,46 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 }
             self.render('experiments.html', data=data, opts=opts)
         elif content_type == 'application/json':
-            # returns data of interest
-            if not exp:
-                self.set_status(404, 'No data found')
+            self.set_status(501, 'Not implemented yet')
+                
+    def post(self, workflow):
+        '''
+        POST method: get experimental data based on a list of input 
+        experiment IDs
+        
+        :param str workflow: workflow type
+        
+        '''
+#         try:
+        content_type = check_content_type(self)
+        if not content_type:
+            return
+        if content_type == 'application/json':
+            data = json.loads(self.request.body)
+            if 'experiments' not in data or 'aspect' not in data:
+                self.set_status(400, '"experiment" and "aspect" fields are mandatory in user data')
                 return
-            if 'aspect' not in query:
-                self.set_status(400, 'Require specifying aspect')
+            if not isinstance(data['aspect'], unicode):
+                self.set_status(400, 'Expecting str from "aspect" field but %s found in user data' % type(data['aspect']))
+            if not isinstance(data['experiments'], list):
+                self.set_status(400, 'Expecting list from "experiment" field but %s found in user data' % type(data['experiment']))
                 return
-            else:
-                data = self._get_data(query['aspect'], exp)
-            if data:
-                self.write(data)
-            else:
-                self.set_status(400, 'No data return')
+            if data['aspect'] not in ['walltime', 'sys', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']:
+                self.set_status(400, 'Aspect %s not supported' % data['aspect'])
+                return
+            res = self._get_data(data['aspect'], data['experiments'], use=data['type'] if 'type' in data and data['type'] in ['chart', 'regular'] else 'regular')
+            if res is None: # unlikely happen 
+                self.set_status(400, 'Aspect %s not supported' % data['aspect'])
+                return 
+            if not len(res):
+                self.set_status(204, 'No data found')
+                return
+            self.write(res)
+        else:
+            self.set_status(501, 'Not implemented yet')
+#         except (TypeError, ValueError) as e:
+#             print e
+#             self.set_status(400, 'Invalid user data')
     
     def _update_status(self, exp):
         '''
@@ -431,123 +457,226 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
                 exp['status'] = 'finished'
         
-            
-            
+    def _get_data(self, aspect, exp_ids, use='regular'):
+        '''
+        Get experimental data from DB
+        
+        :param str aspect: an aspect of data
+        :param list exp_ids: a list of experiment IDs
+        :rtype dict
+        
+        '''
+        if not exp_ids:
+            return None
+        if len(aspect) >= 3 and aspect[0:3] == 'sys':
+            exp = [e for e in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': i } for i in exp_ids]}, {'_id': 0})]
+            if not exp:
+                return exp
+            if aspect == 'sys':
+                if use == 'regular':
+                    return {'result': exp}
+                elif use == 'chart':
+                    cpu = self._convert_to_chart_data([{
+                             'exp_id': e['exp_id'],
+                             'max': e['sys_max_cpu_percent'],
+                             'min': e['sys_min_cpu_percent'],
+                             'avg': e['sys_cpu_percent'],
+                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                             'count': e['count']
+                             } for e in exp], 'sys_cpu', exp_ids)
+                    mem = self._convert_to_chart_data([{
+                             'exp_id': e['exp_id'],
+                             'max': e['sys_max_mem_percent'],
+                             'min': e['sys_min_mem_percent'],
+                             'avg': e['sys_mem_percent'],
+                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                             'count': e['count']
+                             } for e in exp], 'sys_mem', exp_ids)
+                    read = self._convert_to_chart_data([{
+                             'exp_id': e['exp_id'],
+                             'value': e['sys_read_rate']/(1024 * 1024),
+                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                             'count': e['count']
+                             } for e in exp], 'sys_read', exp_ids)
+                    write = self._convert_to_chart_data([{
+                             'exp_id': e['exp_id'],
+                             'value': e['sys_write_rate']/(1024 * 1024),
+                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                             'count': e['count']
+                             } for e in exp], 'sys_write', exp_ids)
+                    send = self._convert_to_chart_data([{
+                             'exp_id': e['exp_id'],
+                             'value': e['sys_send_rate']/(1024 * 1024),
+                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                             'count': e['count']
+                             } for e in exp] , 'sys_send', exp_ids)
+                    recv = self._convert_to_chart_data([{
+                             'exp_id': e['exp_id'],
+                             'value': e['sys_recv_rate']/(1024 * 1024),
+                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                             'count': e['count']
+                             } for e in exp], 'sys_recv', exp_ids)
+                    
+                    return {
+                            'cpu': cpu,
+                            'mem': mem,
+                            'read': read,
+                            'write': write,
+                            'send': send,
+                            'recv': recv,
+                            }
+            elif aspect == 'sys_cpu':
+                core = [{'exp_id': e['exp_id'],
+                         'max': int(e['sys_max_cpu_percent']),
+                         'min': int(e['sys_min_cpu_percent']),
+                         'avg': int(e['sys_cpu_percent']),
+                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                         'count': int(e['count'])
+                         } for e in exp]
+                if use == 'regular':
+                    return {'result': core}
+                elif use == 'chart':
+                    return self._convert_to_chart_data(core, 'sys_cpu', exp_ids)
+            elif aspect == 'sys_mem':
+                core = [{'exp_id': e['exp_id'],
+                         'max': int(e['sys_max_mem_percent']),
+                         'min': int(e['sys_min_mem_percent']),
+                         'avg': int(e['sys_mem_percent']),
+                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                         'count': int(e['count'])
+                         } for e in exp]
+                if use == 'regular':
+                    return {'result': core}
+                elif use == 'chart':
+                    return self._convert_to_chart_data(core, 'sys_mem', exp_ids)
+            elif aspect == 'sys_read':
+                core = [{'exp_id': e['exp_id'],
+                         'value': int(e['sys_read_rate']/(1024 * 1024)),
+                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                         } for e in exp]
+                if use == 'regular':
+                    return {'result': core}
+                elif use == 'chart':
+                    return self._convert_to_chart_data(core, 'sys_read', exp_ids)
+            elif aspect == 'sys_write':
+                core = [{'exp_id': e['exp_id'],
+                         'value': int(e['sys_write_rate']/(1024 * 1024)),
+                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                         } for e in exp]
+                if use == 'regular':
+                    return {'result': core}
+                elif use == 'chart':
+                    return self._convert_to_chart_data(core, 'sys_write', exp_ids)
+            elif aspect == 'sys_send':
+                core = [{'exp_id': e['exp_id'],
+                         'value': int(e['sys_send_rate']/(1024 * 1024)),
+                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                         } for e in exp]  
+                if use == 'regular':
+                    return {'result': core}
+                elif use == 'chart':
+                    return self._convert_to_chart_data(core, 'sys_send', exp_ids)
+            elif aspect == 'sys_recv':
+                core =  [{'exp_id': e['exp_id'],
+                         'value': int(e['sys_recv_rate']/(1024 * 1024)),
+                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                         } for e in exp] 
+                if use == 'regular':
+                    return {'result': core}
+                elif use == 'chart':
+                    return self._convert_to_chart_data(core, 'sys_recv', exp_ids)
+            else:
+                return None
+        elif aspect == 'walltime':
+            exp = [e for e in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': i } for i in exp_ids]}, {'_id': 0})]
+            if not exp:
+                return exp
+            core =  [{'exp_id': e['exp_id'],
+                     'value': int(e['walltime']),
+                     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                     } for e in exp]
+            if use == 'regular':
+                return {'result': core}
+            elif use == 'chart':
+                return self._convert_to_chart_data(core, 'walltime', exp_ids)
+        else:
+            return None
+        
+    def _convert_to_chart_data(self, data, aspect, order):
+        '''
+        Convert raw data to usable data for Chart.js
+        
+        :param list data: data
+        :param dict
+        
+        '''
+        res, raw = {}, {}
+        if len(aspect) > 3 and aspect[:3] == 'sys':
+            for k in data:
+                exp_id = k['exp_id']
+                if exp_id not in raw:
+                    raw[exp_id] = {
+                            'exp_id': exp_id,
+                            'max': k['max' if aspect in ['sys_cpu', 'sys_mem'] else 'value'],
+                            'min': k['min' if aspect in ['sys_cpu', 'sys_mem'] else 'value'],
+                            'avg': (k['avg'] * k['count']) if aspect in ['sys_cpu', 'sys_mem'] else k['value'],
+                            'timestamp': k['timestamp'],
+                            'count': k['count'] if aspect in ['sys_cpu', 'sys_mem'] else 1
+                        }
+                else:
+                    raw[exp_id]['max'] = max(raw[exp_id]['max'], k['max' if aspect in ['sys_cpu', 'sys_mem'] else 'value'])
+                    raw[exp_id]['min'] = min(raw[exp_id]['min'], k['min' if aspect in ['sys_cpu', 'sys_mem'] else 'value'])
+                    raw[exp_id]['avg'] += (k['avg'] * k['count']) if aspect in ['sys_cpu', 'sys_mem'] else k['value']
+                    raw[exp_id]['count'] += k['count'] if aspect in ['sys_cpu', 'sys_mem'] else 1
+            res['timestamp'], res['exp_id'], res['max'], res['min'], res['avg'] = [], [], [], [], []
+            for k in order:
+                if k not in raw: continue
+                res['exp_id'].append(k)
+                res['timestamp'].append(raw[k]['timestamp'])
+                res['max'].append(raw[k]['max'])
+                res['min'].append(raw[k]['min'])
+                res['avg'].append(raw[k]['avg']/raw[k]['count'])
+            res['max_std_dev'] = self._calc_std_dev(res['max'])
+            res['min_std_dev'] = self._calc_std_dev(res['min'])
+            res['avg_std_dev'] = self._calc_std_dev(res['avg'])
+        elif aspect == 'walltime':
+            for k in data:
+                exp_id = k['exp_id']
+                if exp_id not in res:
+                    raw[exp_id] = {
+                            'exp_id': exp_id,
+                            'timestamp': k['timestamp'],
+                            'count': 1,
+                            'avg': k['value']
+                        }
+                else:
+                    raw[exp_id]['avg'] += k['value']
+                    raw[exp_id]['count'] += 1
+            res['exp_id'], res['timestamp'], res['values']= [], [], []
+            for k in order:
+                if k not in raw: continue
+                res['exp_id'].append(k)
+                res['timestamp'].append(raw[k]['timestamp'])
+                res['values'].append(raw[k]['avg']/raw[k]['count'])
+            res['std_dev'] = self._calc_std_dev(res['values'])
+        return res
+    
     def _calc_std_dev(self, data):
         '''
-        Calculate standard deviation of a list of numbers
+        Calculate standard deviation
         
-        :param list data: numbers
+        :param list data: a list of numbers
+        :rtype float
         
         '''
         try:
-            if len(data) > 1:
-                avg = sum(data)/len(data)
-                sqr_sum = sum([math.pow(w-avg, 2) for w in data])
-                return math.sqrt(sqr_sum/len(data) - 1)
-            else:
-                return 0
+            if len(data) <= 1:
+                return 0.0
+            avg = sum(data)/len(data)
+            sqr_sum = sum([math.pow(int(e) - avg, 2) for e in data])
+            return float('%.3f'%math.sqrt(sqr_sum/len(data) - 1))
         except ValueError:
-            return 0
+            return 0.0
         
-    def _get_data(self, aspect, exp):
-        '''
-        
-        '''
-        data = None
-        if aspect == 'run':
-            runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
-            data = {
-                'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(r['timestamp'])) for r in runs],
-                'walltime': [int(r['walltime']) for r in runs]    
-                } 
-            data['std_dev'] = self._calc_std_dev(data['walltime'])
-        elif aspect == 'sys_cpu' or aspect == 'sys_mem':
-            km = {
-                   'max': 'sys_max_cpu_percent' if aspect == 'sys_cpu' else 'sys_max_mem_percent',
-                   'min': 'sys_min_cpu_percent' if aspect == 'sys_cpu' else 'sys_min_mem_percent',
-                   'avg': 'sys_cpu_percent' if aspect =='sys_cpu' else 'sys_mem_percent',
-                   }
-            raw = [{'exp_id': s['exp_id'],
-                    'max': s[km['max']],
-                    'avg': s[km['avg']],
-                    'min': s[km['min']],
-                    'timestamp': s['timestamp'],
-                    'count': s['count']
-                    } for s in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
-            res = {}
-            for s in raw:
-                    if s['exp_id'] not in res:
-                        res[s['exp_id']] = {
-                                'exp_id': s['exp_id'],
-                                'max': s['max'],
-                                'min': s['min'],
-                                'avg': s['avg'] * s['count'],
-                                'count': s['count'],
-                                'timestamp': s['timestamp']
-                            }
-                    else:
-                        res[s['exp_id']]['max'] = max(s['max'], res[s['exp_id']]['max'])
-                        res[s['exp_id']]['min'] = min(s['min'], res[s['exp_id']]['min'])
-                        res[s['exp_id']]['avg'] += s['avg'] * s['count']
-                        res[s['exp_id']]['count'] += s['count']
-              
-            for s in res:
-                res[s]['avg'] /= res[s]['count']
-                del res[s]['count']
-            
-            data = {
-                'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(res[s]['timestamp'])) for s in res],
-                'max': [res[s]['max'] for s in res],
-                'min': [res[s]['min'] for s in res],
-                'avg': [res[s]['avg'] for s in res],
-            }
-            
-            data['max_std_dev'] = self._calc_std_dev(data['max'])
-            data['min_std_dev'] = self._calc_std_dev(data['min'])
-            data['avg_std_dev'] = self._calc_std_dev(data['avg'])
-        elif aspect == 'sys_read'or aspect == 'sys_write' or aspect == 'sys_send' or aspect == 'sys_recv':
-            km = {}
-            if aspect == 'sys_read':
-                km['val'] = 'sys_read_rate'
-            elif aspect == 'sys_write':
-                km['val'] = 'sys_write_rate'
-            elif aspect == 'sys_send':
-                km['val'] = 'sys_send_rate'
-            elif aspect == 'sys_recv':
-                km['val'] = 'sys_recv_rate'
-            raw = [{'exp_id': s['exp_id'],
-                    'val': s[km['val']] / 1024 / 1024,
-                    'timestamp': s['timestamp'],
-                    'count': s['count']
-                    } for s in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': e['exp_id']} for e in exp]}, {'_id': 0}).sort('timestamp')]
-            res = {}
-            for s in raw:
-                if s['exp_id'] not in res:
-                    res[s['exp_id']] = {
-                            'max': s['val'],
-                            'avg': s['val'],
-                            'min': s['val'],
-                            'count': s['count'],
-                            'timestamp': s['timestamp']
-                        }
-                else:
-                    res[s['exp_id']]['max'] = max(res[s['exp_id']]['max'], s['val'])
-                    res[s['exp_id']]['min'] = min(res[s['exp_id']]['min'], s['val'])
-                    res[s['exp_id']]['avg'] += s['val']
-            for s in res:
-                res[s]['avg'] /= res[s]['count']
-                del res[s]['count']
-                
-            data = {
-                'label': [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(res[s]['timestamp'])) for s in res],
-                'max': [res[s]['max'] for s in res],
-                'min': [res[s]['min'] for s in res],
-                'avg': [res[s]['avg'] for s in res],
-            }
-            
-            data['max_std_dev'] = self._calc_std_dev(data['max'])
-            data['min_std_dev'] = self._calc_std_dev(data['min'])
-            data['avg_std_dev'] = self._calc_std_dev(data['avg'])
-        return data
+
         

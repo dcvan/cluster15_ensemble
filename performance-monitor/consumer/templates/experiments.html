@@ -4,6 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="{{static_url('css/bootstrap.min.css')}}"/>
+<link rel="stylesheet" href="{{static_url('css/global.css')}}"/>
 <link rel="stylesheet" href="{{static_url('css/legend.css')}}"/>
 <link rel="stylesheet" href="{{static_url('css/experiments.css')}}"/>
 <link media="screen" rel="stylesheet" href="{{static_url('css/bootstrap-multiselect.css')}}" />
@@ -84,16 +85,16 @@
 	<table class="table table-hover">
 		<thead><tr>
 			<th class="exp-id">Experiment ID</th>
-			<th class="topology">Topology</th>
-			<th class="mode">Mode</th>
-			<th class="master-site">Master Site</th>
-			<th class="worker-site">Worker Sites</th>
-			<th class="worker-num">Number of Workers</th>
-			<th class="worker-size">Worker Size</th>
-			<th class="workload-size">Workload Size</th>
-			<th class="bandwidth">Bandwidth</th>
-			<th class="create-time">Create Time</th>
-			<th class="status">Status</th>
+			<th class="topology"><a class="sort">Topology</a></th>
+			<th class="mode"><a class="sort">Mode</a></th>
+			<th class="master-site"><a class="sort">Master Site</a></th>
+			<th class="worker-site"><a class="sort">Worker Sites</a></th>
+			<th class="worker-num"><a class="sort">Number of Workers</a></th>
+			<th class="worker-size"><a class="sort">Worker Size</a></th>
+			<th class="workload-size"><a class="sort">Workload Size</a></th>
+			<th class="bandwidth"><a class="sort">Bandwidth</a></th>
+			<th class="create-time"><a class="sort">Create Time</a></th>
+			<th class="status"><a class="sort">Status</a></th>
 			<th class="ops">Operations</th>
 		</tr></thead>
 		<tbody>
@@ -113,8 +114,9 @@
 				<td class="status">{{e['status']}}</td>
 				<td class="ops">
 					<button class="btn btn-success glyphicon glyphicon-file copy" data-clipboard-target="{{e['exp_id']}}"></button>
-					<button class="btn btn-warning glyphicon glyphicon-repeat redo"></button>
+ 					<button class="btn btn-warning glyphicon glyphicon-repeat redo"></button> 
 					<button class="btn btn-danger glyphicon glyphicon-remove del-experiment"></button>
+					<button class="btn btn-default glyphicon glyphicon-minus noshow"></button>
 				</td>
 			</tr>
 			{% end %}
@@ -126,43 +128,67 @@
 	<div id="walltime">
 			<canvas></canvas>
 			<div></div>
-			<div id='std-dev'></div>
+			<div class="std-dev">Standard Deviation: <span></span></div>
 	</div>
 	<h3>System CPU Usage</h3>
 	<div id="sys-cpu">
 			<canvas></canvas>
 			<div></div>
-			<div id='std-dev'></div>
+			<div class="std-dev">
+				<div>Max Standard Deviation: <span class="max"></span></div>
+				<div>Min Standard Deviation: <span class="min"></span></div>
+				<div>Avg Standard Deviation: <span class="avg"></span></div>
+			</div>
 	</div>
 	<h3>System Memory Usage</h3>
 	<div id="sys-mem">
 			<canvas></canvas>
 			<div></div>
-			<div id='std-dev'></div>
+			<div class="std-dev">
+				<div>Max Standard Deviation: <span class="max"></span></div>
+				<div>Min Standard Deviation: <span class="min"></span></div>
+				<div>Avg Standard Deviation: <span class="avg"></span></div>
+			</div>
 	</div>
 	<h3>System Read Rate</h3>
 	<div id="sys-read">
 			<canvas></canvas>
 			<div></div>
-			<div id='std-dev'></div>
+			<div class="std-dev">
+				<div>Max Standard Deviation: <span class="max"></span></div>
+				<div>Min Standard Deviation: <span class="min"></span></div>
+				<div>Avg Standard Deviation: <span class="avg"></span></div>
+			</div>
 	</div>
 	<h3>System Write Rate</h3>
 	<div id="sys-write">
 			<canvas></canvas>
 			<div></div>
-			<div id='std-dev'></div>
+			<div class="std-dev">
+				<div>Max Standard Deviation: <span class="max"></span></div>
+				<div>Min Standard Deviation: <span class="min"></span></div>
+				<div>Avg Standard Deviation: <span class="avg"></span></div>
+			</div>
 	</div>
 	<h3>System Send Rate</h3>
 	<div id="sys-send">
 			<canvas></canvas>
 			<div></div>
-			<div id='std-dev'></div>
+			<div class="std-dev">
+				<div>Max Standard Deviation: <span class="max"></span></div>
+				<div>Min Standard Deviation: <span class="min"></span></div>
+				<div>Avg Standard Deviation: <span class="avg"></span></div>
+			</div>
 	</div>
 	<h3>System Receive Rate</h3>
 	<div id="sys-recv">
 			<canvas></canvas>
 			<div></div>
-			<div id='std-dev'></div>
+			<div class="std-dev">
+				<div>Max Standard Deviation: <span class="max"></span></div>
+				<div>Min Standard Deviation: <span class="min"></span></div>
+				<div>Avg Standard Deviation: <span class="avg"></span></div>
+			</div>
 	</div>
 </section>
 </body>
