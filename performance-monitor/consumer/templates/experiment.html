@@ -69,7 +69,7 @@
 		<tbody>
 			{% for w in data['workers']%}
 				<tr>
-					<td><a href="{{'%s/workers/%s' % (current_uri, w['host'])}}">{{w['host']}}</a></td>
+					<td><a href="{{'/workflows/%s/experiments/%s/workers/%s' % (data['type'], data['exp_id'], w['host'])}}">{{w['host']}}</a></td>
 					<td>{{w['site'].upper()}}</td>
 					<td>{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime( w['timestamp']))}}</td>
 				</tr>

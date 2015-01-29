@@ -100,7 +100,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             exp['workers'] = [w for w in self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp_id}, {'_id': 0}).sort('host')]
             exp['runs'] = [r for r in self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp_id}, {'_id': 0}).sort('run_id')]
             if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
-            self.render('experiment.html', manifest=manifest, data=exp, current_uri=self.request.uri)
+            self.render('experiment.html', manifest=manifest, data=exp)
         elif content_type == 'application/json':
             del exp['create_time']
             del exp['exp_id']
@@ -359,14 +359,14 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         count = 0
         for r in rs:
             if 'worker_sites' in query:
-                sites = [s['site'] for s in r['worker_sites']]
-                flag = False
-                for s in query['worker_sites']:
-                    if s in sites:
-                        flag = True
-                        break
-                if not flag:
-                    continue
+                if 'worker_sites' in r:
+                    sites = [s['site'] for s in r['worker_sites']]
+                    flag = False
+                    for s in query['worker_sites']:
+                        if s in sites:
+                            flag = True
+                            break
+                    if not flag: continue
             if 'worker_num' in query:
                 worker_num = sum([int(s['num']) for s in r['worker_sites']])
                 if int(query['worker_num']) != worker_num:
@@ -381,7 +381,6 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             # renders page
             data = {
                 'type': workflow,
-                'current_uri': self.request.uri,
                 'experiments': exp,
                 }
             opts = {

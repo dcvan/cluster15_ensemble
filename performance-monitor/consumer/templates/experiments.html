@@ -100,7 +100,7 @@
 			
 			{% for e in data['experiments'] %}
 			<tr>
-				<td id="{{e['exp_id']}}" class="exp-id"><a href="{{'%s/experiments/%s' % (data['current_uri'], e['exp_id'])}}">{{e['exp_id']}}</a></td>
+				<td id="{{e['exp_id']}}" class="exp-id"><a href="{{'/workflows/%s/experiments/%s' % (data['type'], e['exp_id'])}}">{{e['exp_id']}}</a></td>
 				<td class="topology">{{e['topology']}}</td>
 				<td class="mode">{{e['mode']}}</td>
 				<td class="master-site">{{e['master_site'].upper()}}</td>

@@ -24,7 +24,7 @@ $(document).ready(function(){
 				'topology': $('#topology option:selected').val(),
 				'mode': $('#mode option:selected').val(),
 				'master_site': $('#master-site option:selected').val(),
-				'worker_size': $('#worker-size option:selected').val(),
+				'worker_size': ($('#topology option:selected').val() == 'multinode') ? $('#worker-size option:selected').val() : $('master-site option:selected').val(),
 				'storage_site': $('#storage-site option:selected').val(),
 				'storage_type': $('#storage-type option:selected').val(),
 				'run_num': $('#run-num input').val(),
