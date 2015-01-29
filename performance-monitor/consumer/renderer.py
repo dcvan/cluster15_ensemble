@@ -341,6 +341,8 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             query['limit'] = int(self.get_arguments('limit')[0])
         if self.get_arguments('aspect'):
             query['aspect'] = self.get_arguments('aspect')[0]
+        if self.get_arguments('sort'):
+            query['sort'] =  self.get_arguments('sort')[0]
             
         # create mongo query
         mongo_query = dict(query)
@@ -354,9 +356,10 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             del mongo_query['aspect']
         if 'worker_size' in mongo_query:
             mongo_query['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'name': mongo_query['worker_size']})['value']
-        
+        if 'sort' in mongo_query:
+            del mongo_query['sort']
         # get experiments of interest
-        rs = self._db[DB_NAME]['workflow']['experiment'].find(mongo_query, {'_id': 0}).sort('timestamp')
+        rs = self._db[DB_NAME]['workflow']['experiment'].find(mongo_query, {'_id': 0}).sort('timestamp' if 'sort' not in query else query['sort'])
         exp = []
         count = 0
         for r in rs:
