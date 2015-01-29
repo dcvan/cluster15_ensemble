@@ -138,6 +138,8 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             return 
         if param['action'] == 'remove':
             self._db[DB_NAME]['workflow']['experiment'].remove({'exp_id': exp_id})
+        else:
+            self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp_id}, {'$set': {'status': 'redo'}})
         self._db[DB_NAME]['experiment']['worker'].remove({'exp_id': exp_id})
         self._db[DB_NAME]['experiment']['job'].remove({'exp_id': exp_id})
         self._db[DB_NAME]['experiment']['system'].remove({'exp_id': exp_id})
@@ -375,6 +377,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 if count >= int(query['limit']):
                     break
                 count += 1
+            self._update_status(r)
             exp.append(r)
         
         if content_type == 'text/html':
@@ -405,6 +408,28 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             else:
                 self.set_status(400, 'No data return')
     
+    def _update_status(self, exp):
+        '''
+        Update the status of the experiment
+        
+        :param dict exp: an experiment instance
+        
+        '''
+        if exp['status'] == 'submitted' or exp['status'] == 'redo':
+            if self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
+                self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
+                exp['status'] = 'finished'
+            else:
+                if self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
+                    self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'running'}})
+                    exp['status'] = 'running'
+        elif exp['status'] == 'running':
+            if self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
+                self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
+                exp['status'] = 'finished'
+        
+            
+            
     def _calc_std_dev(self, data):
         '''
         Calculate standard deviation of a list of numbers
