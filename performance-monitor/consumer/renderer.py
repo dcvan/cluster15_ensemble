@@ -420,7 +420,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
                 exp['status'] = 'finished'
             else:
-                if self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
+                if self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
                     self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'running'}})
                     exp['status'] = 'running'
         elif exp['status'] == 'running':
