@@ -335,8 +335,8 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             query['run_num'] = self.get_arguments('workload')[0]
         if self.get_arguments('bandwidth'):
             query['bandwidth'] = int(self.get_arguments('bandwidth')[0]) * 1000 * 1000
-        if self.get_arguments('top'):
-            query['limit'] = int(self.get_arguments('top')[0])
+        if self.get_arguments('limit'):
+            query['limit'] = int(self.get_arguments('limit')[0])
         if self.get_arguments('aspect'):
             query['aspect'] = self.get_arguments('aspect')[0]
             
