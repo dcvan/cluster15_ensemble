@@ -32,7 +32,7 @@ $(document).ready(function(){
 	
 	$('.sort').click(function(){
 		var params = window.location.search.substring(1).split('&'),
-			val = $(this).text().toLowerCase(),
+			val = $(this).text().toLowerCase().split(' ').join('_'),
 			pairs = {};
 		for(var p in params){
 			if(params[p].length == 0) continue;

@@ -342,6 +342,8 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             query['aspect'] = self.get_arguments('aspect')[0]
         if self.get_arguments('sort'):
             query['sort'] =  self.get_arguments('sort')[0]
+            if query['sort'] == 'workload_size': 
+                query['sort'] = 'run_num'
             
         # create mongo query
         mongo_query = dict(query)
@@ -406,36 +408,36 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         :param str workflow: workflow type
         
         '''
-#         try:
-        content_type = check_content_type(self)
-        if not content_type:
-            return
-        if content_type == 'application/json':
-            data = json.loads(self.request.body)
-            if 'experiments' not in data or 'aspect' not in data:
-                self.set_status(400, '"experiment" and "aspect" fields are mandatory in user data')
+        try:
+            content_type = check_content_type(self)
+            if not content_type:
                 return
-            if not isinstance(data['aspect'], unicode):
-                self.set_status(400, 'Expecting str from "aspect" field but %s found in user data' % type(data['aspect']))
-            if not isinstance(data['experiments'], list):
-                self.set_status(400, 'Expecting list from "experiment" field but %s found in user data' % type(data['experiment']))
-                return
-            if data['aspect'] not in ['walltime', 'sys', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']:
-                self.set_status(400, 'Aspect %s not supported' % data['aspect'])
-                return
-            res = self._get_data(data['aspect'], data['experiments'], use=data['type'] if 'type' in data and data['type'] in ['chart', 'regular'] else 'regular')
-            if res is None: # unlikely happen 
-                self.set_status(400, 'Aspect %s not supported' % data['aspect'])
-                return 
-            if not len(res):
-                self.set_status(204, 'No data found')
-                return
-            self.write(res)
-        else:
-            self.set_status(501, 'Not implemented yet')
-#         except (TypeError, ValueError) as e:
-#             print e
-#             self.set_status(400, 'Invalid user data')
+            if content_type == 'application/json':
+                data = json.loads(self.request.body)
+                if 'experiments' not in data or 'aspect' not in data:
+                    self.set_status(400, '"experiment" and "aspect" fields are mandatory in user data')
+                    return
+                if not isinstance(data['aspect'], unicode):
+                    self.set_status(400, 'Expecting str from "aspect" field but %s found in user data' % type(data['aspect']))
+                if not isinstance(data['experiments'], list):
+                    self.set_status(400, 'Expecting list from "experiment" field but %s found in user data' % type(data['experiment']))
+                    return
+                if data['aspect'] not in ['walltime', 'sys', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']:
+                    self.set_status(400, 'Aspect %s not supported' % data['aspect'])
+                    return
+                res = self._get_data(data['aspect'], data['experiments'], use=data['type'] if 'type' in data and data['type'] in ['chart', 'regular'] else 'regular')
+                if res is None: # unlikely happen 
+                    self.set_status(400, 'Aspect %s not supported' % data['aspect'])
+                    return 
+                if not len(res):
+                    self.set_status(204, 'No data found')
+                    return
+                self.write(res)
+            else:
+                self.set_status(501, 'Not implemented yet')
+        except (TypeError, ValueError) as e:
+            print e
+            self.set_status(400, 'Invalid user data')
     
     def _update_status(self, exp):
         '''
