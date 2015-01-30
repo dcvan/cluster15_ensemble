@@ -4,10 +4,15 @@
 $(document).ready(function(){
 	display_topology();
 	display_worker_sites();
+	$('#mode option[value="standalone"]').prop('selected', true);
+	display_storage_type();
+	
 	$('#mode').change(function(){
 		display_topology();
 		display_worker_sites();
+		display_storage_type();
 	});
+	
 	$('#topology').change(function(){
 		display_worker_sites();
 	});
@@ -18,14 +23,23 @@ $(document).ready(function(){
 		}
 	});
 	
-	$('#submit').click(function(){
+	$('#storage-location').change(function(){
+		if($(this).find('option:selected').val() == 'local'){
+			$('#storage-size').hide();
+		}else{
+			$('#storage-size').show();
+		}
+	});
+	
+	$(document).on('click', '#submit', function(){
 		var data = {
+				'action': 'new_experiment',
 				'type': $('#types option:selected').val(),
 				'topology': $('#topology option:selected').val(),
 				'mode': $('#mode option:selected').val(),
 				'master_site': $('#master-site option:selected').val(),
 				'worker_size': $('#worker-size option:selected').val(),
-				'storage_site': $('#storage-site option:selected').val(),
+				'storage_location': $('#storage-location option:selected').val(),
 				'storage_type': $('#storage-type option:selected').val(),
 				'run_num': $('#run-num input').val(),
 				'reservation': $('#reservation input').val(),
@@ -91,6 +105,25 @@ function display_worker_sites(){
 		$('#workers .worker .site').prop('disabled', false);
 		$('#add').show();
 	}
+}
+
+function display_storage_type(){
+	$('#storage-type').empty();
+	var mode = $('#mode option:selected').val();
+	$.ajax({
+		uri: window.location.pathname,
+		type: 'POST',
+		data: JSON.stringify({'action': 'query_mode', 'mode': mode}),
+		contentType: 'application/json',
+		success:function(data){
+			if(data.length == 0 || !'storage_type' in data) return;
+			for(var i in data['storage_type']){
+				$('#storage-type').append($('<option>'+ data['storage_type'][i] +'</option>', {
+							value: data['storage_type'][i]
+						}));
+			}
+		}
+	});
 }
 
 

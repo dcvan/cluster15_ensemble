@@ -3,7 +3,6 @@ Created on Jan 13, 2015
 
 @author: dc
 '''
-import sys
 import json
 import uuid
 import jinja2
@@ -31,15 +30,20 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         GET method
         
         '''
-        data = {
-                'topology': [t for t in self._db[DB_NAME]['workflow']['topology'].find(fields={'_id': 0})],
-                'mode': [m for m in self._db[DB_NAME]['workflow']['mode'].find(fields={'_id': 0})],
-                'site': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
-                'worker_size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
-                'storage_site': [ss for ss in self._db[DB_NAME]['workflow']['storage_site'].find(fields={'_id': 0})],
-                'storage_type': [st for st in self._db[DB_NAME]['workflow']['storage_type'].find(fields={'_id': 0})],
-            }
-        self.render('workflows.html', workflows=[w for w in self._db[DB_NAME]['workflow']['type'].find({}, {'_id': 0}).sort('name')], data=data)
+        content_type = check_content_type(self)
+        if not content_type:
+            return
+        if content_type == 'text/html':
+            data = {
+                    'topology': ['intra-rack', 'inter-rack'],
+                    'mode': ['standalone', 'multinode'],
+                    'site': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
+                    'worker_size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
+                    'storage_location': ['local', 'remote'],
+                }
+            self.render('workflows.html', workflows=[w for w in self._db[DB_NAME]['workflow']['type'].find({}, {'_id': 0}).sort('name')], data=data)
+        elif content_type == 'application/json':
+            self.write(data);
     
     def post(self):
         '''
@@ -49,24 +53,43 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         content_type = check_content_type(self)
         if not content_type:
             return
-        data = json.loads(self.request.body)
-        if not self._db[DB_NAME]['workflow']['manifest'].find_one({
-                'type': data['type'],
-                'mode': data['mode'],
-                'storage_site': data['storage_site'],
-                'storage_type': data['storage_type'],
-            }):
-            self.set_status(404, 'Manifest not available yet')
-            return
-        data['exp_id'] = str(uuid.uuid4())
-        data['status'] = 'submitted'
-        data['create_time'] = int(time.time())
-        self._db[DB_NAME]['workflow']['experiment'].insert(data)
         if content_type == 'application/json':
-            self.write({
-                    'exp_id': data['exp_id'],
-                    'type': data['type'],
-                })
+            try:
+                data = json.loads(self.request.body)
+                if 'action' not in data:
+                    self.set_status(400, '"action" field required')
+                    return
+                if data['action'] not in ['new_experiment', 'query_mode']:
+                    self.set_status(400, 'Invalid action')
+                    return
+                if data['action'] == 'new_experiment':
+                    if not self._db[DB_NAME]['workflow']['manifest'].find_one({
+                            'type': data['type'],
+                            'mode': data['mode'],
+                            'storage_site': data['storage_site'],
+                            'storage_type': data['storage_type'],
+                        }):
+                        self.set_status(404, 'Manifest not available yet')
+                        return
+                    data['exp_id'] = str(uuid.uuid4())
+                    data['status'] = 'submitted'
+                    data['create_time'] = int(time.time())
+                    self._db[DB_NAME]['workflow']['experiment'].insert(data)
+                    if content_type == 'application/json':
+                        self.write({
+                                'exp_id': data['exp_id'],
+                                'type': data['type'],
+                            })
+                elif data['action']:
+                    if 'mode' not in data:
+                        self.set_status(400, '"mode" field required')
+                        return
+                    if data['mode'] not in ['standalone', 'multinode']:
+                        self.set_status(400, 'Invalid mode')
+                        return
+                    self.write({'storage_type': self._db[DB_NAME]['workflow']['storage'].find_one({'mode': data['mode']}, {'_id': 0})['types']})
+            except ValueError:
+                self.set_status(400, 'Invalid user data');
         
 class ExperimentRenderer(tornado.web.RedirectHandler):
     '''
@@ -167,6 +190,8 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
         exp['master_postscript'] = jinja2.Template(t['master_postscript']).render(param={
                                                                                         'exp_id': exp['exp_id'],
+                                                                                        'mode': exp['mode'],
+                                                                                        'storage_type': exp['storage_type'],
                                                                                         'site': exp['master_site'],
                                                                                         'executables': exp['executables'],
                                                                                         'worker_num': 1 if exp['mode'] == 'standalone' else sum([int(s['num']) for s in exp['worker_sites']]),
@@ -176,6 +201,7 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             for w in exp['worker_sites']:
                 w['worker_postscript'] = jinja2.Template(t['worker_postscript']).render(param={
                                                                                             'exp_id': exp['exp_id'],
+                                                                                            'storage_type': exp['storage_type'],
                                                                                             'site': w['site'],
                                                                                             'executables': exp['executables']   
                                                                                             })
@@ -392,8 +418,8 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 'experiments': exp,
                 }
             opts = {
-                    'topology': [t for t in self._db[DB_NAME]['workflow']['topology'].find(fields={'_id': 0})],
-                    'mode': [m for m in self._db[DB_NAME]['workflow']['mode'].find(fields={'_id': 0})],
+                    'topology': ['intra-rack', 'inter-rack'],
+                    'mode': ['standalone', 'multinode'],
                     'sites': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
                     'worker-size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
                 }

@@ -44,7 +44,7 @@
 		<label for="mode">Mode</label>
 		<select id="mode" class="form-control">
 			{% for m in data['mode'] %}
-			<option value="{{m['name']}}">{{m['name']}}</option>
+			<option value="{{m}}">{{m}}</option>
 			{% end %}
 		</select>
 	</div>
@@ -52,7 +52,7 @@
 		<label for="topology">Topology</label>
 		<select id="topology" class="form-control">
 			{% for t in data['topology'] %}
-			<option value="{{t['name']}}">{{t['name']}}</option>
+			<option value="{{t}}">{{t}}</option>
 			{% end %}
 		</select>
 	</div>
@@ -94,19 +94,16 @@
 		</select>
 	</div>
 	<div class="form-group">
-		<label for="storage-site">Storage Site</label>
-		<select id="storage-site" class="form-control">
-			{% for ss in data['storage_site'] %}
-			<option value="{{ss['name']}}">{{ss['name']}}</option>
+		<label for="storage-location">Storage Location</label>
+		<select id="storage-location" class="form-control">
+			{% for ss in data['storage_location'] %}
+			<option value="{{ss}}">{{ss}}</option>
 			{% end %}
 		</select>
 	</div>
 	<div class="form-group">
 		<label for="storage-type">Storage Type</label>
 		<select id="storage-type" class="form-control">
-			{% for st in data['storage_type'] %}
-			<option value="{{st['name']}}">{{st['name']}}</option>
-			{% end %}
 		</select>			
 	</div>
 	<div class="form-group">

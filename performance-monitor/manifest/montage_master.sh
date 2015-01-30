@@ -37,10 +37,11 @@ EOF
  
 service condor restart
 
-# NFS server setup
 mkdir -p /mnt/scratch
 chown -R pegasus-user:pegasus-user /mnt/scratch
 
+{% if param['storage_type'] == 'nfs' %}
+# NFS server setup
 yum -y install nfs-utils nfs-utils-lib
 cat &gt;&gt; /etc/exports &lt;&lt; EOF
 /mnt/scratch *(rw,sync,no_root_squash,no_subtree_check)
@@ -48,6 +49,7 @@ EOF
 exportfs -a
 /etc/init.d/rpcbind start
 /etc/init.d/nfs start
+{% endif %}
 
 # workflow setup
 

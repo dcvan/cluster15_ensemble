@@ -68,9 +68,11 @@ while [ ! "$(condor_status | grep $MY_HOSTNAME)" ];do
     sleep 10
 done
 
-# NFS setup
 mkdir -p /mnt/scratch
 chown -R pegasus-user:pegasus-user /mnt/scratch
+
+{% if param['storage_type'] == 'nfs' %}
+# NFS setup
 yum -y install nfs-utils nfs-utils-lib
 cat &gt;&gt; /etc/fstab &lt;&lt; EOF
 $MASTER:/mnt/scratch       /mnt/scratch    nfs     vers=3,proto=tcp,hard,nolock,intr,timeo=600,retrans=2,wsize=32768,rsize=32768   0       0
@@ -81,6 +83,7 @@ while [ "$?" -gt 0 ];do
     sleep 10s
     mount -a -t nfs
 done
+{% endif %}
 
 # workflow setup
 tar zxf /home/pegasus-user/genomics/references.tgz -C /home/pegasus-user/genomics
