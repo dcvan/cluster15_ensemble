@@ -157,13 +157,13 @@ function get_sys_usage(exp, aspect){
 				if(aspect == 'sys_mem')
 					get_sys_figure(data, $('#sys-mem'), '%');
 				if(aspect == 'sys_read')
-					get_sys_figure(data, $('#sys-read'), 'MB/s');
+					get_sys_figure(data, $('#sys-read'), ' MB/s');
 				if(aspect == 'sys_write')
-					get_sys_figure(data, $('#sys-write'), 'MB/s');
+					get_sys_figure(data, $('#sys-write'), ' MB/s');
 				if(aspect == 'sys_send')
-					get_sys_figure(data, $('#sys-send'), 'MB/s');
+					get_sys_figure(data, $('#sys-send'), ' MB/s');
 				if(aspect == 'sys_recv')
-					get_sys_figure(data, $('#sys-recv'), 'MB/s');
+					get_sys_figure(data, $('#sys-recv'), ' MB/s');
 			}
 	});
 }

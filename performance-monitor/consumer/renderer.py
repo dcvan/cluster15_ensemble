@@ -459,7 +459,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
                 exp['status'] = 'finished'
         
-    def _get_data(self, aspect, exp_ids, use='regular'):
+    def _get_data(self, aspect, exp_ids, use='regular', job=None):
         '''
         Get experimental data from DB
         
@@ -686,5 +686,4 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         except ValueError:
             return 0.0
         
-
         
