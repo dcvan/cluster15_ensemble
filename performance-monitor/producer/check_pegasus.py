@@ -505,4 +505,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         logging.warning('Ctrl-c found. Exit')
     except:
-        logging.error('Unexpected error: %s\n Exit' % str(sys.exc_info[0]))
+        logging.exception('Unexpected exception')

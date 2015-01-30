@@ -3,6 +3,7 @@ Created on Jan 13, 2015
 
 @author: dc
 '''
+import sys
 import json
 import uuid
 import jinja2
@@ -435,8 +436,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 self.write(res)
             else:
                 self.set_status(501, 'Not implemented yet')
-        except (TypeError, ValueError) as e:
-            print e
+        except (TypeError, ValueError):
             self.set_status(400, 'Invalid user data')
     
     def _update_status(self, exp):
@@ -594,7 +594,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             if not exp:
                 return exp
             core =  [{'exp_id': e['exp_id'],
-                     'value': int(e['walltime']),
+                     'value': int(e['walltime']) if e['walltime'] else 0,
                      'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
                      } for e in exp]
             if use == 'regular':
