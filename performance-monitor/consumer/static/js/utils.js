@@ -50,7 +50,7 @@ function plotBar(canvas, labels, ds, legend_area){
 }
 
 function resize(canvas){
-	canvas.width = 1200;
+	canvas.width = 1050;
 	canvas.height = 500;
 }
 

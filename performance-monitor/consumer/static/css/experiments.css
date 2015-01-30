@@ -1,4 +1,8 @@
 @CHARSET "UTF-8";
+h3{
+	min-width: 1300px;
+		float: left;
+}
 
 div#analysis{
 	margin-bottom: 50px;
@@ -6,6 +10,10 @@ div#analysis{
 
 input{
 	max-width: 120px;
+}
+
+canvas{
+	float:left;
 }
 
 .btn{
@@ -28,6 +36,13 @@ input{
 }
 .ops{
 	min-width: 200px;
+}
+.graph{
+	min-width: 1300px;
+}
+.analysis{
+	float: left;
+	height: 500px;
 }
 
 #table-content{

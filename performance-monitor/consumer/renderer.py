@@ -638,6 +638,9 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 res['max'].append(raw[k]['max'])
                 res['min'].append(raw[k]['min'])
                 res['avg'].append(raw[k]['avg']/raw[k]['count'])
+            res['overall_max'] = max(res['max'])
+            res['overall_min'] = min(res['min'])
+            res['overall_avg'] = sum(res['avg'])/len(res['avg']) if len(res['avg']) else 0
             res['max_std_dev'] = self._calc_std_dev(res['max'])
             res['min_std_dev'] = self._calc_std_dev(res['min'])
             res['avg_std_dev'] = self._calc_std_dev(res['avg'])
@@ -660,6 +663,9 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 res['exp_id'].append(k)
                 res['timestamp'].append(raw[k]['timestamp'])
                 res['values'].append(raw[k]['avg']/raw[k]['count'])
+            res['overall_max'] = max(res['values'])
+            res['overall_min'] = min(res['values'])
+            res['overall_avg'] = sum(res['values'])/len(res['values']) if len(res['values']) else 0
             res['std_dev'] = self._calc_std_dev(res['values'])
         return res
     

@@ -119,8 +119,18 @@ function get_walltime(exp){
 			if(data.length == 0) return;
 			//draw figure
 			$('#walltime').empty();
-			$('#walltime').append('<canvas></canvas><div></div><div class="std-dev">Standard Deviation: <span></span></div>');
-			$('#walltime .std-dev span').text(data.std_dev);
+			$('#walltime').append('<canvas></canvas>'
+						+ '<div></div>'
+						+ '<div class="analysis">'
+						+ '<div>Max: <span class="max"></span></div>'
+						+ '<div>Min: <span class="min"></span></div>'
+						+ '<div>Avg: <span class="avg"></span></div>'
+						+ '<div>Standard Deviation: <span class="avg-std-dev"></span></div>'
+						+ '</div>');
+			$('#walltime').find(' .analysis div .max').text(data.overall_max + 'mins');
+			$('#walltime').find(' .analysis div .min').text(data.overall_min + 'mins');
+			$('#walltime').find(' .analysis div .avg').text(data.overall_avg + 'mins');
+			$('#walltime').find(' .analysis div .avg-std-dev').text(data.std_dev + 'mins');
 			plotLine($('#walltime canvas').get(0), 
 					data.timestamp,
 					[{'label': 'Walltime', 'data': data.values, 'color': color1},],
@@ -143,41 +153,45 @@ function get_sys_usage(exp, aspect){
 		success: function(data){
 				if(data.length == 0) return
 				if(aspect == 'sys_cpu')
-					get_sys_figure(data, $('#sys-cpu'));
+					get_sys_figure(data, $('#sys-cpu'), '%');
 				if(aspect == 'sys_mem')
-					get_sys_figure(data, $('#sys-mem'));
+					get_sys_figure(data, $('#sys-mem'), '%');
 				if(aspect == 'sys_read')
-					get_sys_figure(data, $('#sys-read'));
+					get_sys_figure(data, $('#sys-read'), 'MB/s');
 				if(aspect == 'sys_write')
-					get_sys_figure(data, $('#sys-write'));
+					get_sys_figure(data, $('#sys-write'), 'MB/s');
 				if(aspect == 'sys_send')
-					get_sys_figure(data, $('#sys-send'));
+					get_sys_figure(data, $('#sys-send'), 'MB/s');
 				if(aspect == 'sys_recv')
-					get_sys_figure(data, $('#sys-recv'));
+					get_sys_figure(data, $('#sys-recv'), 'MB/s');
 			}
 	});
 }
 
-
-
-function get_sys_figure(data, area){
+function get_sys_figure(data, area, unit){
 	area.empty();
 	area.append('<canvas></canvas>'
 			+ '<div></div>'
-			+ '<div class="std-dev">'
-			+ '<div>Max Standard Deviation: <span class="max"></span></div>'
-			+ '<div>Min Standard Deviation: <span class="min"></span></div>'
-			+ '<div>Avg Standard Deviation: <span class="avg"></span></div>'
+			+ '<div class="analysis">'
+			+ '<div>Max: <span class="max"></span></div>'
+			+ '<div>Min: <span class="min"></span></div>'
+			+ '<div>Avg: <span class="avg"></span></div>'
+			+ '<div>Max Standard Deviation: <span class="max-std-dev"></span></div>'
+			+ '<div>Min Standard Deviation: <span class="min-std-dev"></span></div>'
+			+ '<div>Avg Standard Deviation: <span class="avg-std-dev"></span></div>'
 			+ '</div>');
-	area.find('.std-dev div .max').text(data.max_std_dev);
-	area.find('.std-dev div .min').text(data.min_std_dev);
-	area.find('.std-dev div .avg').text(data.avg_std_dev);
+	area.find('.analysis div .max').text(data.overall_max + unit);
+	area.find('.analysis div .min').text(data.overall_min + unit);
+	area.find('.analysis div .avg').text(data.overall_avg + unit);
+	area.find('.analysis div .max-std-dev').text(data.max_std_dev + unit);
+	area.find('.analysis div .min-std-dev').text(data.min_std_dev + unit);
+	area.find('.analysis div .avg-std-dev').text(data.avg_std_dev + unit);
 	plotLine(area.find('canvas').get(0),
 			data.timestamp,
 			[
-			 {'label': 'Avg.', 'data':data.max, 'color': color1},
-			 {'label': 'Max.', 'data':data.min, 'color': color2},
-			 {'label': 'Min.', 'data':data.avg, 'color': color3},
+			 {'label': 'Max.', 'data':data.max, 'color': color1},
+			 {'label': 'Min.', 'data':data.min, 'color': color3},
+			 {'label': 'Avg.', 'data':data.avg, 'color': color2},
 			 ],
 			 area.find('div').get(0));
 }
