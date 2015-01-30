@@ -1,7 +1,7 @@
 /**
  * 
  */
-var color1 = '151,187,205', color2 = '170,57,57', color3='102,255,51';
+var color1 = '151,187,205', color2 = '170,57,57', color3='255,211,0';
 $(document).ready(function(){
 	refresh_figures();
 	var clip = new ZeroClipboard($('.copy'), {
@@ -175,9 +175,9 @@ function get_sys_figure(data, area){
 	plotLine(area.find('canvas').get(0),
 			data.timestamp,
 			[
-			 {'label': 'Max.', 'data':data.max, 'color': color1},
-			 {'label': 'Min.', 'data':data.min, 'color': color2},
-			 {'label': 'Avg.', 'data':data.avg, 'color': color3},
+			 {'label': 'Avg.', 'data':data.max, 'color': color1},
+			 {'label': 'Max.', 'data':data.min, 'color': color2},
+			 {'label': 'Min.', 'data':data.avg, 'color': color3},
 			 ],
 			 area.find('div').get(0));
 }
