@@ -61,28 +61,30 @@ class WorkflowMonitor(Process):
                     d = '%s%s' % (self._workdir_base, w) if self._workdir_base[-1] == '/' else '%s/%s' % (self._workdir_base, w)
                     if os.path.isdir(d):
                         out, err = subprocess.Popen(('pegasus-status -l %s' % d).split(' '), stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-                        if not err:
-                            for l in out.split('\n'):
-                                if re.match('[ \t]+[0-9]+', l):
-                                    status = re.split('[ \t]+', l)[9] 
-                                    if status != 'Running':
-                                        self._finished.add(w)
-                                        msg = {
-                                                'exp_id': self._exp_id,
-                                                'run_id': int(time.time()),
-                                                'status': status,
-                                                'type': 'run',
-                                                'timestamp': time.time(),
-                                                'walltime': self._get_walltime(d)
-                                            }
-                                        self._msg_q.put(msg)
-                                        logging.info('Message sent to Message Sender')
-                                        if msg['walltime']:
-                                            logging.debug('Run number: %d\tWalltime: %d\tStatus: %s' % (msg['run_id'], msg['walltime'], msg['status']))
-                                        else:
-                                            logging.debug('Run number: %d\tStatus: %s' % (msg['run_id'], msg['status']))
-                                        self._done += 1
-                                    break
+                        if err:
+                            logging.debug('Error occurs during executing "pegasus-statistics": %s' % err)
+                            continue
+                        for l in out.split('\n'):
+                            if re.match('[ \t]+[0-9]+', l):
+                                status = re.split('[ \t]+', l)[9] 
+                                if status != 'Running':
+                                    self._finished.add(w)
+                                    msg = {
+                                            'exp_id': self._exp_id,
+                                            'run_id': int(time.time()),
+                                            'status': status,
+                                            'type': 'run',
+                                            'timestamp': time.time(),
+                                            'walltime': self._get_walltime(d)
+                                        }
+                                    self._msg_q.put(msg)
+                                    logging.info('Message sent to Message Sender')
+                                    if msg['walltime']:
+                                        logging.debug('Run number: %d\tWalltime: %d\tStatus: %s' % (msg['run_id'], msg['walltime'], msg['status']))
+                                    else:
+                                        logging.debug('Run number: %d\tStatus: %s' % (msg['run_id'], msg['status']))
+                                    self._done += 1
+                                break
             self._heartbeat += 1
             if self._heartbeat >= self.HEARTBEAT_LIMIT:
                 logging.info('Send heartbeat signal to keep the AMQP connection alive')
