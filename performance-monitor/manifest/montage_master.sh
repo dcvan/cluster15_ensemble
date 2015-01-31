@@ -67,6 +67,7 @@ set -e
 
 MONTAGE_HOME=\$(pwd)
 TOP_DIR=\$(pwd)
+DATA_DIR='/mnt/scratch'
 HOSTNAME=\$(/bin/hostname -f)
 DATA_CONFIG="condorio" 
 STAGING_SITE="local"
@@ -139,7 +140,7 @@ END
 
 cp \$TOP_DIR/workflow/cache.list .
 
-perl -pi.bak -e "s{\@\@REPLACE_HERE\@\@}{\$TOP_DIR}g" cache.list
+perl -pi.bak -e "s{\@\@REPLACE_HERE\@\@}{\$DATA_DIR}g" cache.list
 
 pegasus-plan \
     --conf pegasusrc \
