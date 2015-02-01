@@ -153,6 +153,9 @@ pegasus-plan \
 
 EOF
 
+cp -a /home/pegasus-user/20131031/montage/input /mnt/scratch
+cp -a /home/pegasus-user/20131031/montage/workflow /mnt/scratch
+
 # monitor setup
 yum -y install python-pip python-devel git
 pip install pika tornado psutil argparse
