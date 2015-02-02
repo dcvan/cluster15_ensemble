@@ -145,20 +145,6 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             del exp['status']
             self.write(exp)
             
-    def post(self, workflow, exp_id):
-        '''
-        POST method: provides manifest download
-        
-        '''
-        exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
-        if not exp:
-            self.set_status(404, 'Experiment not found')
-            return 
-       
-        self.set_header('Content-Type', 'application/rdf+xml')
-        self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['type'], exp['topology'], exp['mode'], exp['worker_size'], exp['master_site']]))
-        self.write(self._get_manifest(workflow, exp))
-        
     def delete(self, workflow, exp_id):
         '''
         DELETE method: delete an experiment
@@ -213,6 +199,13 @@ class ManifestRenderer(tornado.web.RequestHandler):
                 self.set_status(501, 'Not implemented yet')
         except KeyError as ke:
             self.set_status(400, str(ke))
+            
+    def post(self, workflow, exp_id):
+        '''
+        POST method: download the manifest
+        
+        '''
+        pass
             
     def _get_manifest(self, workflow, exp):
         '''
