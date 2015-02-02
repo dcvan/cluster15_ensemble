@@ -33,7 +33,7 @@
     <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0"/>
     <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#master"/>
 
-    {% if param['storage_site'] == 'remote' %}
+    {% if param['storage_type'].lower() == 'iscsi' %}
        <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Link107"/>
     	<collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Storage0"/>
     {% endif %}
@@ -105,7 +105,7 @@
 	<!-- Basic -->
    <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#master">
     <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master"/>
-    {% if param['storage_site'] == 'remote' %}
+    {% if param['storage_type'].lower() == 'iscsi' %}
     <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Link107-master"/>
     <request-schema:dependOn rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Storage0"/>
     {% endif %}
@@ -130,7 +130,7 @@
     <layer:label_ID>172.16.1.1</layer:label_ID>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/ip4.owl#IPAddress"/>
   </rdf:Description>
-  {% if param['storage_site'] == 'remote' %}
+ {% if param['storage_type'].lower() == 'iscsi' %}
   <!-- Storage -->
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Link107">
     <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Link107-master"/>

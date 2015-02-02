@@ -1,13 +1,14 @@
 /**
- * New node file
+ * Workflow Page
  */
 $(document).ready(function(){
 	display_topology();
 	display_worker_sites();
-	$('#mode option[value="standalone"]').prop('selected', true);
+	$('#deployment option[value="standalone"]').prop('selected', true);
 	display_storage_type();
+	display_storage_config();
 	
-	$('#mode').change(function(){
+	$('#deployment').change(function(){
 		display_topology();
 		display_worker_sites();
 		display_storage_type();
@@ -23,48 +24,51 @@ $(document).ready(function(){
 		}
 	});
 	
-	$('#storage-location').change(function(){
-		if($(this).find('option:selected').val() == 'local'){
-			$('#storage-size').hide();
-		}else{
-			$('#storage-size').show();
-		}
-	});
+	$('#storage-type').change(function(){
+		display_storage_config();
+	})
 	
 	$(document).on('click', '#submit', function(){
 		var data = {
-				'action': 'new_experiment',
 				'type': $('#types option:selected').val(),
 				'topology': $('#topology option:selected').val(),
-				'mode': $('#mode option:selected').val(),
+				'deployment': $('#deployment option:selected').val(),
 				'master_site': $('#master-site option:selected').val(),
 				'worker_size': $('#worker-size option:selected').val(),
-				'storage_location': $('#storage-location option:selected').val(),
 				'storage_type': $('#storage-type option:selected').val(),
-				'run_num': $('#run-num input').val(),
-				'reservation': $('#reservation input').val(),
-				'bandwidth': $('#bandwidth input').val() * 1000 * 1000,
-				'storage_size': $('#storage-size input').val(),
+				'filesystem': $('#filesystem option:selected').val(),
+				'workload': parseInt($('#workload input').val()),
+				'reservation': parseInt($('#reservation input').val()),
 			};
+		
 		if($('#worker-sites').is(':visible')){
-			data['worker_sites'] = [];
+			var worker_sites = [], num_of_workers = 0;
 			$('.worker').each(function(){
 				data['worker_sites'].push({
 					'site': $(this).find('option:selected').val(),
-					'num': $(this).find('input').val()
+					'num': parseInt($(this).find('input').val())
 				});	
+				data['num_of_workers'] += parseInt($(this).find('input').val());
 			});
 		}else{
 			data['worker_sites'] = [{'site': data['master_site'], 'num': 1}];
+			data['num_of_workers'] = 1;
 		}
 		
+		if($('#storage-config').is(':visible')){
+			data['storage_site'] = $('#storage-config #detail .site select option:selected').val();
+			data['storage_bw'] = parseInt($('#storage_config #detail #storage-bw input').val()) * 1000 * 1000;
+			data['storage_size'] = parseInt($('#storage_config #detail #storage-size input').val()); 
+		}
+		console.log(JSON.stringify(data));
 		$.ajax({
 			url: window.location.pathname,
 			type: 'POST',
 			data: JSON.stringify(data),
 			contentType: 'application/json',
 			success: function(data){
-				window.location.replace(get_url('/workflows/' + data.type + '/experiments/' + data.exp_id));
+				console.log(JSON.stringify(data));
+				$(location).attr('href', get_url('/workflows/' + data.type + '/experiments/' + data.exp_id));
 			}
 		});
 	});
@@ -80,7 +84,7 @@ $(document).ready(function(){
 });
 
 function display_topology(){
-	if($('#mode option:selected').val() == 'standalone'){
+	if($('#deployment option:selected').val() == 'standalone'){
 		$('#topology option[value="intra-rack"]').prop('selected', true);
 		$('#topology').prop('disabled', true);
 	}else{
@@ -89,10 +93,12 @@ function display_topology(){
 }
 
 function display_worker_sites(){
-	if ($('#mode option:selected').val() == 'multinode'){
+	if ($('#deployment option:selected').val() == 'multinode'){
 		$('#worker-sites').show();
+		$('#bandwidth').show();
 	}else{
 		$('#worker-sites').hide();
+		$('#bandwidth').hide();
 	}
 	
 	if($('#topology option:selected').val() == 'intra-rack'){
@@ -108,26 +114,30 @@ function display_worker_sites(){
 }
 
 function display_storage_type(){
-	$('#storage-type').empty();
-	var mode = $('#mode option:selected').val();
+	$('#filesystem').empty();
+	var deployment = $('#deployment option:selected').val();
+	$.ajaxSetup({
+		url: '/deployments/' + deployment
+	});
 	$.ajax({
-		uri: window.location.pathname,
-		type: 'POST',
-		data: JSON.stringify({'action': 'query_mode', 'mode': mode}),
+		type: 'GET',
 		contentType: 'application/json',
 		success:function(data){
-			if(data.length == 0 || !'storage_type' in data) return;
-			for(var i in data['storage_type']){
-				$('#storage-type').append($('<option>'+ data['storage_type'][i] +'</option>', {
-							value: data['storage_type'][i]
+			if(data.length == 0 || !'fs' in data) return;
+			for(var i in data['fs']){
+				$('#filesystem').append($('<option>'+ data['fs'][i] +'</option>', {
+							value: data['fs'][i]
 						}));
 			}
 		}
 	});
 }
 
-
-
-
-
+function display_storage_config(){
+	if($('#storage-type option:selected').val() == 'native'){
+		$('#storage-config').hide();
+	}else{
+		$('#storage-config').show();
+	}
+}
 

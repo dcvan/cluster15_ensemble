@@ -5,7 +5,7 @@ $(document).ready(function(){
 	var clip = new ZeroClipboard($('#copy-id'), {
 		moviePath: '/static/ZeroClipboard.swf'
 	});
-	
+	get_manifest();
 	$("#redo").click(function(){
 		$.ajax({
 			url: window.location.pathname,
@@ -50,3 +50,18 @@ $(document).ready(function(){
 		});
 	});
 });
+
+function get_manifest(){
+	$.ajaxSetup({
+		url: window.location.pathname + '/manifest',
+	});
+	$.ajax({
+		type: 'GET',
+		contentType:'application/json',
+		success:function(data){
+			if(data.length == 0 || !'manifest' in data) return;
+			$('#manifest').text(data['manifest']);
+			prettyPrint();
+		}
+	});
+}

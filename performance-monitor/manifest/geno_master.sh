@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 
 # host setup
-{% if param['mode'] == 'standalone' %}
+{% if param['deployment'] == 'standalone' %}
 while [ ! "$(ifconfig eth0)" ];do
     sleep 5
 done
 {% endif %}
 
 cat &gt;/etc/hosts &lt;&lt;EOF
-{"$(ifconfig eth0|grep 'inet addr'|awk -F':' '{print $2}'|awk '{print $1}')" if param['mode'] == 'standalone' else '172.16.1.1'}}  master.expnet   master   salt
+{"$(ifconfig eth0|grep 'inet addr'|awk -F':' '{print $2}'|awk '{print $1}')" if param['deployment'] == 'standalone' else '172.16.1.1'}}  master.expnet   master   salt
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 EOF
 
 hostname master
-{% if param['mode'] == 'multinode' %}
+{% if param['deployment'] == 'multinode' %}
 for i in {100..200}; do
        name=$(($i - 100))
           echo 172.16.1.$i  condor-w$name condor-w$name\.expnet &gt;&gt; /etc/hosts
@@ -23,7 +23,7 @@ for i in {100..200}; do
 
 # condor setup
 cat &gt;  /etc/condor/config.d/90-master &lt;&lt; EOF
-{% if param['mode'] == 'standalone' %}
+{% if param['deployment'] == 'standalone' %}
 DAEMON_LIST = MASTER, STARTD, NEGOTIATOR, SCHEDD, COLLECTOR
 {% else %}
 DAEMON_LIST = COLLECTOR, MASTER, NEGOTIATOR, SCHEDD
@@ -34,7 +34,7 @@ HOSTALLOW_READ = *
 HOSTALLOW_WRITE = *
 EOF
 
-{% if param['mode'] == 'standalone' %}
+{% if param['deployment'] == 'standalone' %}
 cat &gt; /etc/condor/config.d/20-security &lt;&lt;EOF
 SEC_PASSWORD_FILE = /etc/condor/pool.password
 SEC_DAEMON_AUTHENTICATION = REQUIRED
@@ -69,7 +69,7 @@ service condor restart
 mkdir -p /mnt/scratch
 chown -R pegasus-user:pegasus-user /mnt/scratch
 
-{% if param['storage_type'] == 'nfs' %}
+{% if param['filesystem'] == 'nfs' %}
 # NFS server setup
 yum -y install nfs-utils nfs-utils-lib
 cat &gt;&gt; /etc/exports &lt;&lt; EOF
@@ -118,9 +118,9 @@ pip install pika tornado psutil argparse
 git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 
 # start monitor 
-python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -m -d /home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf -r {{param['run_num']}} &amp; 
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -m -d /home/pegasus-user/genomics/wf_exon_irods/pegasus-user/pegasus/exonalignwf -r {{param['workload']}} &amp; 
 
-while [ "$(condor_status -total | grep -E 'Total[ \t ]+[0-9]'|awk '{print $2}')" != "{{param['worker_num']}}"  ];do
+while [ "$(condor_status -total | grep -E 'Total[ \t ]+[0-9]'|awk '{print $2}')" != "{{param['num_of_workers']}}"  ];do
       sleep 5
 done 
 

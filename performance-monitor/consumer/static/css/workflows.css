@@ -1,5 +1,5 @@
 @CHARSET "UTF-8";
-#workers, .worker{
+#storage-config #detail, #workers, .worker{
 	border: solid 1px #cccccc;
 	padding: 10px;
 	border-radius: 5px;

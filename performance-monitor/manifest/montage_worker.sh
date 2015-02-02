@@ -87,7 +87,7 @@ done
 mkdir -p /mnt/scratch
 chown -R pegasus-user:pegasus-user /mnt/scratch
 
-{% if param['storage_type'] == 'nfs' %}
+{% if param['filesystem'] == 'nfs' %}
 # NFS setup
 yum -y install nfs-utils nfs-utils-lib
 cat &gt;&gt; /etc/fstab &lt;&lt; EOF

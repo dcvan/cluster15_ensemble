@@ -3,12 +3,14 @@ Created on Jan 13, 2015
 
 @author: dc
 '''
+import os
 import json
 import uuid
 import jinja2
 import time
 import math
 import tornado.web
+
 from config import DB_NAME, check_content_type
 
 class WorkflowsRenderer(tornado.web.RedirectHandler):
@@ -36,14 +38,15 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         if content_type == 'text/html':
             data = {
                     'topology': ['intra-rack', 'inter-rack'],
-                    'mode': ['standalone', 'multinode'],
+                    'deployment': ['standalone', 'multinode'],
                     'site': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
                     'worker_size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
-                    'storage_location': ['local', 'remote'],
+                    'storage_type': ['native', 'ISCSI'],
                 }
             self.render('workflows.html', workflows=[w for w in self._db[DB_NAME]['workflow']['type'].find({}, {'_id': 0}).sort('name')], data=data)
         elif content_type == 'application/json':
-            self.write(data);
+            self.write({'workflows': [w for w in self._db[DB_NAME]['workflow']['type']]})
+            self.finish()
     
     def post(self):
         '''
@@ -56,41 +59,54 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         if content_type == 'application/json':
             try:
                 data = json.loads(self.request.body)
-                if 'action' not in data:
-                    self.set_status(400, '"action" field required')
-                    return
-                if data['action'] not in ['new_experiment', 'query_mode']:
-                    self.set_status(400, 'Invalid action')
-                    return
-                if data['action'] == 'new_experiment':
-                    if not self._db[DB_NAME]['workflow']['manifest'].find_one({
-                            'type': data['type'],
-                            'mode': data['mode'],
-                            'storage_site': data['storage_site'],
-                            'storage_type': data['storage_type'],
-                        }):
-                        self.set_status(404, 'Manifest not available yet')
-                        return
+                if set(data.keys()) == set(['type', 'topology', 'deployment', 
+                                           'master_site', 'worker_sites', 'worker_size', 'storage_type',
+                                           'filesystem', 'workload', 'reservation', 'num_of_workers']):
+                    # TO-DO: data validation
                     data['exp_id'] = str(uuid.uuid4())
                     data['status'] = 'submitted'
                     data['create_time'] = int(time.time())
+                    data['last_update_time'] = int(time.time())
                     self._db[DB_NAME]['workflow']['experiment'].insert(data)
-                    if content_type == 'application/json':
-                        self.write({
+                    self.write({
                                 'exp_id': data['exp_id'],
                                 'type': data['type'],
+                                'create_time': int(time.time())
                             })
-                elif data['action']:
-                    if 'mode' not in data:
-                        self.set_status(400, '"mode" field required')
-                        return
-                    if data['mode'] not in ['standalone', 'multinode']:
-                        self.set_status(400, 'Invalid mode')
-                        return
-                    self.write({'storage_type': self._db[DB_NAME]['workflow']['storage'].find_one({'mode': data['mode']}, {'_id': 0})['types']})
+                else:
+                    self.set_status(400, 'Missing required field(s)')
             except ValueError:
                 self.set_status(400, 'Invalid user data');
+        else:
+            self.set_status(501, 'Not implemented yet')
+            
+class DeploymentRender(tornado.web.RequestHandler):
+    '''
+    Renders deployment info
+     
+    '''
+    def initialize(self, db):
+        '''
+        Init
         
+        '''
+        self._db = db
+        
+    def get(self, deployment):
+        '''
+        GET method: get file system info
+        
+        '''
+        content_type = check_content_type(self)
+        if not content_type: return
+        if content_type == 'application/json':
+            fs = self._db[DB_NAME]['workflow']['fs'].find_one({'deployment': deployment})
+            if fs:
+                self.write({'fs': fs['types']})
+            else:
+                self.set_status(204, "No content found")
+                return
+            
 class ExperimentRenderer(tornado.web.RedirectHandler):
     '''
     Renders specific experiment info
@@ -115,16 +131,14 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
             self.set_status(404, 'Experiment not found')
             return 
         content_type = check_content_type(self)
-        if not content_type:
-            return
+        if not content_type: return
         if content_type == 'text/html':
-            manifest = self._get_manifest(workflow, exp)
             exp['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'value': exp['worker_size']}, {'_id': 0})['name']
             exp['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(exp['create_time']))
             exp['workers'] = [w for w in self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp_id}, {'_id': 0}).sort('host')]
             exp['runs'] = [r for r in self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp_id}, {'_id': 0}).sort('run_id')]
-            if exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
-            self.render('experiment.html', manifest=manifest, data=exp)
+            if 'bandwidth' in exp and exp['bandwidth']: exp['bandwidth'] /= (1000 * 1000)
+            self.render('experiment.html', data=exp)
         elif content_type == 'application/json':
             del exp['create_time']
             del exp['exp_id']
@@ -169,48 +183,74 @@ class ExperimentRenderer(tornado.web.RedirectHandler):
         self._db[DB_NAME]['experiment']['system'].remove({'exp_id': exp_id})
         self._db[DB_NAME]['experiment']['run'].remove({'exp_id': exp_id})
         
+class ManifestRenderer(tornado.web.RequestHandler):
+    '''
+    Renders manifest info
+    
+    '''
+    def initialize(self, db):
+        '''
+        Init 
+        
+        '''
+        self._db = db
+        
+    def get(self, workflow, exp_id):
+        '''
+        GET method: renders manifest info
+        
+        '''
+        try:
+            content_type = check_content_type(self)
+            if not content_type: return
+            if content_type == 'application/json':
+                exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
+                if exp:
+                    self.write({'manifest': os.linesep.join([l for l in self._get_manifest(workflow, exp).splitlines() if l])})
+                else:
+                    self.set_status(404, 'Experiment not found')
+            else:
+                self.set_status(501, 'Not implemented yet')
+        except KeyError as ke:
+            self.set_status(400, str(ke))
+            
     def _get_manifest(self, workflow, exp):
         '''
+        Generate manifest
+        
+        :param dict exp: experiment parameters
+        :rtype str
+        :raise KeyEror
+        
         '''
-        exp['image'] = self._db[DB_NAME]['workflow']['image'].find_one({'name': workflow})
-        t = self._db[DB_NAME]['workflow']['manifest'].find_one({
-                    'type': exp['type'],
-                    'mode': exp['mode'],
-                    'storage_site': exp['storage_site'],
-                    'storage_type': exp['storage_type'],
-                    }, {'_id': 0, 'master_postscript': 1, 'worker_postscript': 1})
-        if not t:
-            self.set_status(404, 'Manifest not available yet')
-            return
-        if exp['mode'] == 'multinode' and not exp['bandwidth']:
+        exp['image'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id':0, 'image': 1})['image']
+        t = self._db[DB_NAME]['workflow']['manifest'].find_one({'type': workflow}, {'_id': 0, 'master_postscript': 1, 'worker_postscript': 1})
+        if 'bandwidth' in exp and exp['deployment'] == 'multinode' and not exp['bandwidth']:
             exp['bandwidth'] = 500000000
-        if exp['storage_site'] == 'remote' and not exp['storage_size']:
+        if 'storage_size' in exp and exp['storage_site'].lower() == 'iscsi' and not exp['storage_size']:
             exp['storage_size'] = 50
         exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
         exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
         exp['master_postscript'] = jinja2.Template(t['master_postscript']).render(param={
                                                                                         'exp_id': exp['exp_id'],
-                                                                                        'mode': exp['mode'],
-                                                                                        'storage_type': exp['storage_type'],
+                                                                                        'deployment': exp['deployment'],
+                                                                                        'filesystem': exp['filesystem'],
                                                                                         'site': exp['master_site'],
                                                                                         'executables': exp['executables'],
-                                                                                        'worker_num': 1 if exp['mode'] == 'standalone' else sum([int(s['num']) for s in exp['worker_sites']]),
-                                                                                        'run_num': exp['run_num']
+                                                                                        'num_of_workers': exp['num_of_workers'],
+                                                                                        'workload': exp['workload']
                                                                                             })
         if 'worker_postscript' in t:
             for w in exp['worker_sites']:
                 w['worker_postscript'] = jinja2.Template(t['worker_postscript']).render(param={
                                                                                             'exp_id': exp['exp_id'],
-                                                                                            'storage_type': exp['storage_type'],
+                                                                                            'filesystem': exp['filesystem'],
                                                                                             'site': w['site'],
                                                                                             'executables': exp['executables']   
                                                                                             })
-        if 'worker_sites' in exp:
-            for w in exp['worker_sites']:
-                w['num'] = int(w['num'])
         mantemp = self._db[DB_NAME]['workflow']['template'].find_one({'name': 'manifest'})['value']
         return jinja2.Template(mantemp).render(param=exp)
-        
+    
 class RunsRenderer(tornado.web.RedirectHandler):
     '''
     Renders runs
@@ -232,6 +272,7 @@ class RunsRenderer(tornado.web.RedirectHandler):
         '''
         if not self._db[DB_NAME]['workflow']['experiment'].find({'exp_id': exp_id}).count():
             self.set_status(404, 'Experiment not found')
+            return
         runs = [r for r in self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp_id}, {'_id': 0})]
         if not runs:
             self.set_status(204, 'No finished runs')
@@ -711,5 +752,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             return float('%.3f'%math.sqrt(sqr_sum/len(data) - 1))
         except ValueError:
             return 0.0
+        
+
         
         

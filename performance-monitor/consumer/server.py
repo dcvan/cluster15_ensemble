@@ -3,14 +3,13 @@ Created on Jan 12, 2015
 
 @author: dc
 '''
-
+import pymongo
 import tornado.web
 import tornado.ioloop 
-import pymongo
 
 from message_consumer import ArchiveConsumer
 from connection import MessageConnection
-from renderer import WorkflowsRenderer, WorkflowRenderer, ExperimentRenderer, RunsRenderer, WorkerRenderer
+from renderer import WorkflowsRenderer, DeploymentRender, WorkflowRenderer, ExperimentRenderer, RunsRenderer, WorkerRenderer, ManifestRenderer
 from config import MESSAGE_BROKER_URI, ARCHIVE_HOST, ARCHIVE_PORT
 
 class Application(tornado.web.Application):
@@ -25,11 +24,13 @@ class Application(tornado.web.Application):
         '''
         self._amqp_conn = MessageConnection(MESSAGE_BROKER_URI)
         self._mongo_conn = pymongo.MongoClient(ARCHIVE_HOST, ARCHIVE_PORT)
-        self._start_archive_consumer()
+#         self._start_archive_consumer()
         handlers = [
                   (r'/', WorkflowsRenderer, dict(db=self._mongo_conn)),
+                  (r'/deployments/([a-z-]+)', DeploymentRender, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)', WorkflowRenderer,  dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)', ExperimentRenderer, dict(db=self._mongo_conn)),
+                  (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/manifest', ManifestRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/runs', RunsRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/workers/([a-z0-9-]+)', WorkerRenderer, dict(db=self._mongo_conn)),
                   (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': 'static/'})
