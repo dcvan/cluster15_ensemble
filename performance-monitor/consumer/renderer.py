@@ -402,7 +402,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 elif i in ['num_of_workers', 'workload'] and self.get_arguments(i):
                     query['$and'].append({i: int(self.get_arguments(i)[0])})
                 elif self.get_arguments(i):
-                    query['$and'].append({i: {'$in': self.get_arguments(i)[0]}})
+                    query['$and'].append({i: {'$in': self.get_arguments(i)}})
             
             sort_by = self.get_arguments('sort')[0] if self.get_arguments('sort') else 'timestamp'
             top = int(self.get_arguments('top'))[0] if self.get_arguments('top') else None
