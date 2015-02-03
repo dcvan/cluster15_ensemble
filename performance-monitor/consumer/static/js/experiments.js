@@ -32,7 +32,7 @@ $(document).ready(function(){
 	
 	$('.sort').click(function(){
 		var params = window.location.search.substring(1).split('&'),
-			val = $(this).text().toLowerCase().split(' ').join('_'),
+			val = $(this).data('key');
 			pairs = {};
 		for(var p in params){
 			if(params[p].length == 0) continue;
@@ -106,14 +106,15 @@ function refresh_figures(){
 
 function get_walltime(exp){
 	if(!exp.length) return;
+	var url = window.location.pathname + '/analysis?aspect=walltime&use=chart';
+	for(i = 0; i < exp.length; i ++){
+		url += '&exp_id=' + exp[i];
+	}
+	$.ajaxSetup({
+		url: url
+	});
 	$.ajax({
-		uri: window.location.pathname,
-		type: 'POST',
-		data: JSON.stringify({
-			'aspect': 'walltime',
-			'experiments': exp,
-			'type': 'chart'
-		}),
+		type: 'GET',
 		contentType: 'application/json',
 		success: function(data){
 			if(data.length == 0) return;
@@ -141,14 +142,15 @@ function get_walltime(exp){
 
 function get_sys_usage(exp, aspect){
 	if(!exp.length) return;
+	var url = window.location.pathname + '/analysis?aspect=' + aspect + '&use=chart';
+	for(i = 0; i < exp.length; i ++){
+		url += '&exp_id=' + exp[i];
+	}
+	$.ajaxSetup({
+		url: url
+	});
 	$.ajax({
-		uri: window.location.pathname,
-		type: 'POST',
-		data: JSON.stringify({
-			'aspect': aspect,
-			'experiments': exp,
-			'type': 'chart'
-		}),
+		type: 'GET',
 		contentType: 'application/json',
 		success: function(data){
 				if(data.length == 0) return

@@ -34,7 +34,7 @@
 					  	<li class="clear" role="presentation" data-title="{{' '.join(k.split('-')).capitalize()}}"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
 					  	<li role="presentation" class="divider"></li>
 					  	{% for i in opts[k] %}
-					    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].capitalize()}}</a></li>
+					    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].capitalize() if isinstance(i, dict) else i.capitalize()}}</a></li>
 					    {% end %}
 				 	 </ul>
 				</div>
@@ -85,16 +85,16 @@
 	<table class="table table-hover">
 		<thead><tr>
 			<th class="exp-id">Experiment ID</th>
-			<th class="topology"><a class="sort">Topology</a></th>
-			<th class="mode"><a class="sort">Mode</a></th>
-			<th class="master-site"><a class="sort">Master Site</a></th>
-			<th class="worker-site"><a class="sort">Worker Sites</a></th>
-			<th class="worker-num"><a class="sort">Number of Workers</a></th>
-			<th class="worker-size"><a class="sort">Worker Size</a></th>
-			<th class="workload-size"><a class="sort">Workload Size</a></th>
-			<th class="bandwidth"><a class="sort">Bandwidth</a></th>
-			<th class="create-time"><a class="sort">Create Time</a></th>
-			<th class="status"><a class="sort">Status</a></th>
+			<th class="topology"><a class="sort" data-key="topology">Topology</a></th>
+			<th class="deployment"><a class="sort" data-key="deployment">Deployment</a></th>
+			<th class="master-site"><a class="sort" data-key="master_site">Master Site</a></th>
+			<th class="worker-site"><a class="sort" data-key="worker_sites">Worker Sites</a></th>
+			<th class="worker-num"><a class="sort" data-key="num_of_workers"># of Workers</a></th>
+			<th class="worker-size"><a class="sort" data-key="worker_size">Worker Size</a></th>
+			<th class="workload"><a class="sort" data-key="workload"># of Workloads</a></th>
+			<th class="bandwidth"><a class="sort" data-key="bandwidth">Bandwidth</a></th>
+			<th class="create-time"><a class="sort" data-key="create_time">Create Time</a></th>
+			<th class="status"><a class="sort" data-key="status">Status</a></th>
 			<th class="ops">Operations</th>
 		</tr></thead>
 		<tbody>
@@ -103,13 +103,13 @@
 			<tr>
 				<td id="{{e['exp_id']}}" class="exp-id"><a href="{{'/workflows/%s/experiments/%s' % (data['type'], e['exp_id'])}}">{{e['exp_id']}}</a></td>
 				<td class="topology">{{e['topology']}}</td>
-				<td class="mode">{{e['mode']}}</td>
+				<td class="deployment">{{e['deployment']}}</td>
 				<td class="master-site">{{e['master_site'].upper()}}</td>
 				<td class="worker-site">{{','.join([s['site'].upper() for s in e['worker_sites']]) if 'worker_sites' in e else '-'}}</td>
-				<td class="worker-num">{{sum([int(s['num']) for s in e['worker_sites']]) if e['mode'] == 'multinode' else '-'}}</td>
+				<td class="worker-num">{{e['num_of_workers']}}</td>
 				<td class="worker-size">{{e['worker_size']}}</td>
-				<td class="workload-size">{{e['run_num']}}</td>
-				<td class="bandwidth">{{e['bandwidth'] / (1000 * 1000) if e['mode'] == 'multinode' else '-'}}</td>
+				<td class="workload">{{e['workload']}}</td>
+				<td class="bandwidth">{{e['bandwidth'] if 'bandwidth' in e else '-'}}</td>
 				<td class="create-time">{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['create_time']))}}</td>
 				<td class="status">{{e['status']}}</td>
 				<td class="ops">

@@ -28,7 +28,7 @@ canvas{
 	margin-bottom: 0;
 }
 
-.worker_num, .workload-size .bandwidth{
+.worker_num, .workload .bandwidth{
 	max-width:20px;
 	padding:0;
 	margin:0;

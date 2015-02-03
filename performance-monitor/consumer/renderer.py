@@ -67,6 +67,15 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
                     data['status'] = 'submitted'
                     data['create_time'] = int(time.time())
                     data['last_update_time'] = int(time.time())
+                    for w in data['worker_sites']:
+                        w['num'] = int(w['num'])
+                    data['num_of_workers'] = int(data['num_of_workers'])
+                    data['workload'] = int(data['workload'])
+                    data['reservation'] = int(data['reservation'])
+                    if 'storage_size' in data:
+                        data['storage_size'] = int(data['storage_size'])
+                    if 'bandwidth' in data:
+                        data['bandwidth'] = int(data['bandwidth'])
                     self._db[DB_NAME]['workflow']['experiment'].insert(data)
                     self.write({
                                 'exp_id': data['exp_id'],
@@ -186,28 +195,36 @@ class ManifestRenderer(tornado.web.RequestHandler):
         GET method: renders manifest info
         
         '''
-        try:
-            content_type = check_content_type(self)
-            if not content_type: return
-            if content_type == 'application/json':
-                exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
-                if exp:
-                    self.write({'manifest': os.linesep.join([l for l in self._get_manifest(workflow, exp).splitlines() if l])})
-                else:
-                    self.set_status(404, 'Experiment not found')
+        content_type = check_content_type(self)
+        if not content_type: return
+        if content_type == 'application/json':
+            exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
+            if exp and exp['type'] == workflow:
+                self.write({'manifest': os.linesep.join([l for l in self._get_manifest(workflow, exp).splitlines() if l])})
             else:
-                self.set_status(501, 'Not implemented yet')
-        except KeyError as ke:
-            self.set_status(400, str(ke))
+                self.set_status(404, 'Experiment not found')
+        else:
+            self.set_status(501, 'Not implemented yet')
             
     def post(self, workflow, exp_id):
         '''
         POST method: download the manifest
         
         '''
-        pass
+        content_type = check_content_type(self)
+        if not content_type: return
+        if content_type == 'application/json':
+            exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
+            if exp and exp['type'] == workflow:
+                self.set_header('Content-Type', 'application/rdf+xml')
+                self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['master_site'], exp['exp_id']]))
+                self.write({'manifest': os.linesep.join([l for l in self._get_manifest(exp).splitlines() if l])})
+            else:
+                self.set_status(404, 'Experiment not found')
+        else:
+            self.set_status(501, 'Not implemented yet')
             
-    def _get_manifest(self, workflow, exp):
+    def _get_manifest(self, exp):
         '''
         Generate manifest
         
@@ -216,14 +233,14 @@ class ManifestRenderer(tornado.web.RequestHandler):
         :raise KeyEror
         
         '''
-        exp['image'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id':0, 'image': 1})['image']
-        t = self._db[DB_NAME]['workflow']['manifest'].find_one({'type': workflow}, {'_id': 0, 'master_postscript': 1, 'worker_postscript': 1})
+        exp['image'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': exp['type']}, {'_id':0, 'image': 1})['image']
+        t = self._db[DB_NAME]['workflow']['manifest'].find_one({'type': exp['type']}, {'_id': 0, 'master_postscript': 1, 'worker_postscript': 1})
         if 'bandwidth' in exp and exp['deployment'] == 'multinode' and not exp['bandwidth']:
             exp['bandwidth'] = 500000000
         if 'storage_size' in exp and exp['storage_site'].lower() == 'iscsi' and not exp['storage_size']:
             exp['storage_size'] = 50
         exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
-        exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})['executables']
+        exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': exp['type']}, {'_id': 0})['executables']
         exp['master_postscript'] = jinja2.Template(t['master_postscript']).render(param={
                                                                                         'exp_id': exp['exp_id'],
                                                                                         'deployment': exp['deployment'],
@@ -369,136 +386,52 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         GET method: renders experiments listing page
         
         '''
-        # check workflow availability
-        workflow_exist = self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}, {'_id': 0})
-        if not workflow_exist:
-            self.set_status(404, 'Workflow not available')
-            return 
-        
-        # check MIME type support
         content_type = check_content_type(self)
-        if not content_type:
+        if not content_type: return
+        if not self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}):
+            self.set_status(404, 'Workflow not available')
             return
-        # get arguments
-        query = {'type': workflow}
-        if self.get_arguments('worker_size'):
-            query['worker_size'] = self.get_arguments('worker_size')[0]
-        if self.get_arguments('mode'):
-            query['mode'] = self.get_arguments('mode')[0]
-        if self.get_arguments('topology'):
-            query['topology'] = self.get_arguments('topology')[0]
-        if self.get_arguments('master_site'):
-            query['master_site'] = self.get_arguments('master_site')[0]
-        if self.get_arguments('worker_site'):
-            query['worker_sites'] = self.get_arguments('worker_site')
-        if self.get_arguments('worker_num'):
-            query['worker_num'] = int(self.get_arguments('worker_num')[0])
-        if self.get_arguments('workload'):
-            query['run_num'] = self.get_arguments('workload')[0]
-        if self.get_arguments('bandwidth'):
-            query['bandwidth'] = int(self.get_arguments('bandwidth')[0]) * 1000 * 1000
-        if self.get_arguments('limit'):
-            query['limit'] = int(self.get_arguments('limit')[0])
-        if self.get_arguments('aspect'):
-            query['aspect'] = self.get_arguments('aspect')[0]
-        if self.get_arguments('sort'):
-            query['sort'] =  self.get_arguments('sort')[0]
-            if query['sort'] == 'workload_size': 
-                query['sort'] = 'run_num'
-            
-        # create mongo query
-        mongo_query = dict(query)
-        if 'worker_num' in mongo_query:
-            del mongo_query['worker_num']
-        if 'worker_sites' in mongo_query:
-            del mongo_query['worker_sites']
-        if 'limit' in mongo_query:
-            del mongo_query['limit']
-        if 'aspect' in mongo_query:
-            del mongo_query['aspect']
-        if 'worker_size' in mongo_query:
-            mongo_query['worker_size'] = self._db[DB_NAME]['workflow']['vm_size'].find_one({'name': mongo_query['worker_size']})['value']
-        if 'sort' in mongo_query:
-            del mongo_query['sort']
-        # get experiments of interest
-        rs = self._db[DB_NAME]['workflow']['experiment'].find(mongo_query, {'_id': 0}).sort('timestamp' if 'sort' not in query else query['sort'])
-        exp = []
-        count = 0
-        for r in rs:
-            if 'worker_sites' in query:
-                if 'worker_sites' in r:
-                    sites = [s['site'] for s in r['worker_sites']]
-                    flag = False
-                    for s in query['worker_sites']:
-                        if s in sites:
-                            flag = True
-                            break
-                    if not flag: continue
-            if 'worker_num' in query:
-                worker_num = sum([int(s['num']) for s in r['worker_sites']])
-                if int(query['worker_num']) != worker_num:
-                    continue
-            if 'limit' in query:
-                if count >= int(query['limit']):
-                    break
-                count += 1
-            self._update_status(r)
-            exp.append(r)
-        
-        if content_type == 'text/html':
-            # renders page
-            data = {
-                'type': workflow,
-                'experiments': exp,
-                }
-            opts = {
-                    'topology': ['intra-rack', 'inter-rack'],
-                    'mode': ['standalone', 'multinode'],
-                    'sites': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
-                    'worker-size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
-                }
-            self.render('experiments.html', data=data, opts=opts)
-        elif content_type == 'application/json':
-            self.set_status(501, 'Not implemented yet')
-                
-    def post(self, workflow):
-        '''
-        POST method: get experimental data based on a list of input 
-        experiment IDs
-        
-        :param str workflow: workflow type
-        
-        '''
         try:
-            content_type = check_content_type(self)
-            if not content_type:
-                return
-            if content_type == 'application/json':
-                data = json.loads(self.request.body)
-                if 'experiments' not in data or 'aspect' not in data:
-                    self.set_status(400, '"experiment" and "aspect" fields are mandatory in user data')
-                    return
-                if not isinstance(data['aspect'], unicode):
-                    self.set_status(400, 'Expecting str from "aspect" field but %s found in user data' % type(data['aspect']))
-                if not isinstance(data['experiments'], list):
-                    self.set_status(400, 'Expecting list from "experiment" field but %s found in user data' % type(data['experiment']))
-                    return
-                if data['aspect'] not in ['walltime', 'sys', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']:
-                    self.set_status(400, 'Aspect %s not supported' % data['aspect'])
-                    return
-                res = self._get_data(data['aspect'], data['experiments'], use=data['type'] if 'type' in data and data['type'] in ['chart', 'regular'] else 'regular')
-                if res is None: # unlikely happen 
-                    self.set_status(400, 'Aspect %s not supported' % data['aspect'])
-                    return 
-                if not len(res):
-                    self.set_status(204, 'No data found')
-                    return
-                self.write(res)
+            query = {'$and': [{'type': workflow}]} 
+            args = [ 'deployment', 'topology', 'master_site', 'worker_site', 'num_of_workers', 'workload', 'bandwidth']
+            for i in args:
+                if i == 'worker_site' and self.get_arguments(i):
+                    query['$and'].append({'worker_sites': {'$elemMatch': {'site': {'$in': self.get_arguments(i)}}}})
+                elif i == 'bandwidth' and self.get_arguments(i):
+                    query['$and'].append({i: self.get_arguments(i)[0] * 1000 * 1000})
+                elif i in ['num_of_workers', 'workload'] and self.get_arguments(i):
+                    query['$and'].append({i: int(self.get_arguments(i)[0])})
+                elif self.get_arguments(i):
+                    query['$and'].append({i: {'$in': self.get_arguments(i)[0]}})
+            
+            sort_by = self.get_arguments('sort')[0] if self.get_arguments('sort') else 'timestamp'
+            top = int(self.get_arguments('top'))[0] if self.get_arguments('top') else None
+        
+            res = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0}).sort(sort_by)
+            if top:
+                res = res.limit(top)
+            if res.count() > 0:
+                if content_type == 'text/html':
+                    data = {
+                        'type': workflow,
+                        'experiments': [e for e in res if e]    
+                        }
+                    opts = {
+                        'topology': ['intra-rack', 'inter-rack'],
+                        'deployment': ['standalone', 'multinode'],
+                        'sites': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
+                        'worker-size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
+                        }
+                    self.render('experiments.html', data=data, opts=opts)
+                elif content_type == 'application/json':
+                    self.write({'result': [e for e in res if e]})
+                else:
+                    self.set_status(501, 'Not implemented yet')
             else:
-                self.set_status(501, 'Not implemented yet')
-        except (TypeError, ValueError):
-            self.set_status(400, 'Invalid user data')
-    
+                self.set_status(204, 'No data found')
+        except ValueError as ve:
+            self.set_status(401, 'Invalid user data: %s' % str(ve))
+                
     def _update_status(self, exp):
         '''
         Update the status of the experiment
@@ -518,157 +451,109 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             if self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
                 self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
                 exp['status'] = 'finished'
-        
-    def _get_data(self, aspect, exp_ids, use='regular', job=None):
+
+class AnalysisRenderer(tornado.web.RequestHandler):
+    '''
+    Renders analysis data
+    
+    '''
+    def initialize(self, db):
         '''
-        Get experimental data from DB
+        Init
         
-        :param str aspect: an aspect of data
-        :param list exp_ids: a list of experiment IDs
+        :param pymongo.MongoClient db: the MongoDB connection
+         
+        '''
+        self._db = db
+        
+        
+    def get(self, workflow):
+        '''
+        GET method
+        
+        :param str workflow: the workflow type
+        
+        '''
+        content_type = check_content_type(self)
+        if not content_type: return
+        if not self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}):
+            self.set_status(404, 'Workflow not found')
+            return
+        if content_type == 'application/json':
+            try:
+                query = {
+                    'aspect': self.get_argument('aspect'),
+                    'use': self.get_arguments('use')[0] if self.get_arguments('use') else 'regular',
+                    'exp_ids': set(self.get_arguments('exp_id'))     
+                    }
+                if query['aspect'] not in ['walltime', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']: 
+                    self.set_status(400, 'Invalid aspect specified')
+                    return
+                query['use'] = 'regular' if query['use'] not in ['regular', 'chart'] else query['use']
+                query['exp_ids'] = query['exp_ids'] if query['exp_ids'] else [e['exp_id'] for e in 
+                                            self._db[DB_NAME]['workflow']['experiment'].find({'type': workflow}, {'_id': 0, 'exp_id': 1}).sort('timestamp')]
+                data = self._get_data(query)
+                if data:
+                    self.write(data)
+                else:
+                    self.set_status(204, 'No data found')
+            except tornado.web.MissingArgumentError as mae:
+                self.set_status(400, 'Invalid user data: %s' % str(mae))
+        else:
+            self.set_status(501, 'Not implemented yet')
+
+    def _get_data(self, query):
+        '''
+        Get data from DB
+        
+        :param dict query: parameters
         :rtype dict
         
         '''
-        if not exp_ids:
-            return None
-        if len(aspect) >= 3 and aspect[0:3] == 'sys':
-            exp = [e for e in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': i } for i in exp_ids]}, {'_id': 0})]
-            if not exp:
-                return exp
-            if aspect == 'sys':
-                if use == 'regular':
-                    return {'result': exp}
-                elif use == 'chart':
-                    cpu = self._convert_to_chart_data([{
-                             'exp_id': e['exp_id'],
-                             'max': e['sys_max_cpu_percent'],
-                             'min': e['sys_min_cpu_percent'],
-                             'avg': e['sys_cpu_percent'],
-                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                             'count': e['count']
-                             } for e in exp], 'sys_cpu', exp_ids)
-                    mem = self._convert_to_chart_data([{
-                             'exp_id': e['exp_id'],
-                             'max': e['sys_max_mem_percent'],
-                             'min': e['sys_min_mem_percent'],
-                             'avg': e['sys_mem_percent'],
-                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                             'count': e['count']
-                             } for e in exp], 'sys_mem', exp_ids)
-                    read = self._convert_to_chart_data([{
-                             'exp_id': e['exp_id'],
-                             'value': e['sys_read_rate']/(1024 * 1024),
-                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                             'count': e['count']
-                             } for e in exp], 'sys_read', exp_ids)
-                    write = self._convert_to_chart_data([{
-                             'exp_id': e['exp_id'],
-                             'value': e['sys_write_rate']/(1024 * 1024),
-                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                             'count': e['count']
-                             } for e in exp], 'sys_write', exp_ids)
-                    send = self._convert_to_chart_data([{
-                             'exp_id': e['exp_id'],
-                             'value': e['sys_send_rate']/(1024 * 1024),
-                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                             'count': e['count']
-                             } for e in exp] , 'sys_send', exp_ids)
-                    recv = self._convert_to_chart_data([{
-                             'exp_id': e['exp_id'],
-                             'value': e['sys_recv_rate']/(1024 * 1024),
-                             'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                             'count': e['count']
-                             } for e in exp], 'sys_recv', exp_ids)
-                    
-                    return {
-                            'cpu': cpu,
-                            'mem': mem,
-                            'read': read,
-                            'write': write,
-                            'send': send,
-                            'recv': recv,
-                            }
-            elif aspect == 'sys_cpu':
-                core = [{'exp_id': e['exp_id'],
-                         'max': int(e['sys_max_cpu_percent']),
-                         'min': int(e['sys_min_cpu_percent']),
-                         'avg': int(e['sys_cpu_percent']),
-                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                         'count': int(e['count'])
-                         } for e in exp]
-                if use == 'regular':
-                    return {'result': core}
-                elif use == 'chart':
-                    return self._convert_to_chart_data(core, 'sys_cpu', exp_ids)
-            elif aspect == 'sys_mem':
-                core = [{'exp_id': e['exp_id'],
-                         'max': int(e['sys_max_mem_percent']),
-                         'min': int(e['sys_min_mem_percent']),
-                         'avg': int(e['sys_mem_percent']),
-                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                         'count': int(e['count'])
-                         } for e in exp]
-                if use == 'regular':
-                    return {'result': core}
-                elif use == 'chart':
-                    return self._convert_to_chart_data(core, 'sys_mem', exp_ids)
-            elif aspect == 'sys_read':
-                core = [{'exp_id': e['exp_id'],
-                         'value': int(e['sys_read_rate']/(1024 * 1024)),
-                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                         } for e in exp]
-                if use == 'regular':
-                    return {'result': core}
-                elif use == 'chart':
-                    return self._convert_to_chart_data(core, 'sys_read', exp_ids)
-            elif aspect == 'sys_write':
-                core = [{'exp_id': e['exp_id'],
-                         'value': int(e['sys_write_rate']/(1024 * 1024)),
-                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                         } for e in exp]
-                if use == 'regular':
-                    return {'result': core}
-                elif use == 'chart':
-                    return self._convert_to_chart_data(core, 'sys_write', exp_ids)
-            elif aspect == 'sys_send':
-                core = [{'exp_id': e['exp_id'],
-                         'value': int(e['sys_send_rate']/(1024 * 1024)),
-                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                         } for e in exp]  
-                if use == 'regular':
-                    return {'result': core}
-                elif use == 'chart':
-                    return self._convert_to_chart_data(core, 'sys_send', exp_ids)
-            elif aspect == 'sys_recv':
-                core =  [{'exp_id': e['exp_id'],
-                         'value': int(e['sys_recv_rate']/(1024 * 1024)),
-                         'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
-                         } for e in exp] 
-                if use == 'regular':
-                    return {'result': core}
-                elif use == 'chart':
-                    return self._convert_to_chart_data(core, 'sys_recv', exp_ids)
+        raw = None
+        if len(query['aspect']) >= 3 and query['aspect'][0:3] == 'sys':
+            exp = [e for e in self._db[DB_NAME]['experiment']['system'].find({'$or': [{'exp_id': i } for i in query['exp_ids']]}, {'_id': 0})]
+            if not exp: return exp
+            kw = {}
+            if query['aspect'] in ['sys_cpu', 'sys_mem']:
+                kw['max'] = 'sys_max_%s_percent' % query['aspect'].split('_')[1]
+                kw['min'] = 'sys_min_%s_percent' % query['aspect'].split('_')[1]
+                kw['avg'] = '%s_percent' % query['aspect']
+                raw = [{'exp_id': e['exp_id'],
+                     'max': int(e[kw['max']]),
+                     'min': int(e[kw['min']]),
+                     'avg': int(e[kw['avg']]),
+                     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                     'count': int(e['count'])
+                     } for e in exp]
             else:
-                return None
-        elif aspect == 'walltime':
-            exp = [e for e in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': i } for i in exp_ids]}, {'_id': 0})]
-            if not exp:
-                return exp
-            core =  [{'exp_id': e['exp_id'],
+                kw['value'] = '%s_rate' % query['aspect']
+                raw = [{'exp_id': e['exp_id'],
+                     'value': int(e[kw['value']]) / (1024 * 1024),
+                     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                     } for e in exp]
+        elif query['aspect'] == 'walltime':
+            exp = [e for e in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': i } for i in query['exp_ids']]}, {'_id': 0})]
+            if not exp: return exp
+            raw =  [{'exp_id': e['exp_id'],
                      'value': int(e['walltime']) if e['walltime'] else 0,
                      'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
                      } for e in exp]
-            if use == 'regular':
-                return {'result': core}
-            elif use == 'chart':
-                return self._convert_to_chart_data(core, 'walltime', exp_ids)
-        else:
-            return None
         
+        if not raw: # unlikely
+            return raw
+        elif query['use'] == 'regular':
+            return {'result': raw}
+        elif query['use'] == 'chart':
+            return self._convert_to_chart_data(raw, query['aspect'], query['exp_ids'])
+
     def _convert_to_chart_data(self, data, aspect, order):
         '''
         Convert raw data to usable data for Chart.js
         
         :param list data: data
+        :param str aspect: aspect the data is related on
+        :param list order: the initial order of exp_ids
         :param dict
         
         '''
@@ -745,7 +630,4 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             return float('%.3f'%math.sqrt(sqr_sum/len(data) - 1))
         except ValueError:
             return 0.0
-        
-
-        
         

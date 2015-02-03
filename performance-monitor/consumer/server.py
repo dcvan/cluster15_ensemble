@@ -9,7 +9,7 @@ import tornado.ioloop
 
 from message_consumer import ArchiveConsumer
 from connection import MessageConnection
-from renderer import WorkflowsRenderer, DeploymentRender, WorkflowRenderer, ExperimentRenderer, RunsRenderer, WorkerRenderer, ManifestRenderer
+from renderer import WorkflowsRenderer, DeploymentRender, WorkflowRenderer, AnalysisRenderer, ExperimentRenderer, RunsRenderer, WorkerRenderer, ManifestRenderer
 from config import MESSAGE_BROKER_URI, ARCHIVE_HOST, ARCHIVE_PORT
 
 class Application(tornado.web.Application):
@@ -29,6 +29,7 @@ class Application(tornado.web.Application):
                   (r'/', WorkflowsRenderer, dict(db=self._mongo_conn)),
                   (r'/deployments/([a-z-]+)', DeploymentRender, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)', WorkflowRenderer,  dict(db=self._mongo_conn)),
+                  (r'/workflows/([a-z-_]+)/analysis', AnalysisRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)', ExperimentRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/manifest', ManifestRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/runs', RunsRenderer, dict(db=self._mongo_conn)),
