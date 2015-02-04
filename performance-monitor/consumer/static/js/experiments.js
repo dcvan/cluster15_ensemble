@@ -30,6 +30,10 @@ $(document).ready(function(){
 		});
 	});
 	
+	$(document).on('click', '.download-image', function(){
+		render_image($(this).parent(), 900, 300);
+	});
+	
 	$('.sort').click(function(){
 		var params = window.location.search.substring(1).split('&'),
 			val = $(this).data('key');
@@ -132,10 +136,9 @@ function get_walltime(exp){
 			$('#walltime').find(' .analysis div .min').text(data.overall_min + 'mins');
 			$('#walltime').find(' .analysis div .avg').text(data.overall_avg + 'mins');
 			$('#walltime').find(' .analysis div .avg-std-dev').text(data.std_dev + 'mins');
-			plotLine($('#walltime canvas').get(0), 
+			plotLine($('#walltime'), 
 					data.timestamp,
-					[{'label': 'Walltime', 'data': data.values, 'color': color1},],
-					$('#walltime div').get(0));
+					[{'label': 'Walltime', 'data': data.values, 'color': color1},]);
 		}
 	});
 }
@@ -188,12 +191,11 @@ function get_sys_figure(data, area, unit){
 	area.find('.analysis div .max-std-dev').text(data.max_std_dev + unit);
 	area.find('.analysis div .min-std-dev').text(data.min_std_dev + unit);
 	area.find('.analysis div .avg-std-dev').text(data.avg_std_dev + unit);
-	plotLine(area.find('canvas').get(0),
+	plotLine(area,
 			data.timestamp,
 			[
 			 {'label': 'Max.', 'data':data.max, 'color': color1},
 			 {'label': 'Min.', 'data':data.min, 'color': color3},
 			 {'label': 'Avg.', 'data':data.avg, 'color': color2},
-			 ],
-			 area.find('div').get(0));
+			 ]);
 }

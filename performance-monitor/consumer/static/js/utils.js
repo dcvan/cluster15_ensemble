@@ -2,11 +2,21 @@
  * 
  */
 
-function plotLine(canvas, labels, ds, legend_area){
+function plotLine(container, labels, ds){
+	var canvas = container.find('canvas').get(0),
+		legend_area = container.find('div').get(0),
+		analysis = container.find('.analysis');
 	resize(canvas);
+	
 	var lineData = {
 			labels: labels,
 			datasets: []
+	}, 
+	opts = {
+			bezierCurve: false,
+			onAnimationComplete: function(){
+				analysis.append($('<button class="btn btn-default download-image">Save Image</button>'));
+			}
 	};
 	
 	for(i = 0; i < ds.length; i ++){
@@ -22,7 +32,8 @@ function plotLine(canvas, labels, ds, legend_area){
 		});
 	}
 	var context = canvas.getContext('2d');
-	var chart = new Chart(context).Line(lineData, {bezierCurve: true});
+	var chart = new Chart(context).Line(lineData, opts);
+	
 	legend(legend_area, lineData);
 	return chart;
 }
@@ -32,6 +43,9 @@ function plotBar(canvas, labels, ds, legend_area){
 	var barData = {
 			labels: labels,
 			datasets: []
+	},
+	opts = {
+			bezierCurve: false,
 	};
 	
 	for(i = 0; i < ds.length; i ++){
@@ -44,7 +58,7 @@ function plotBar(canvas, labels, ds, legend_area){
 			data: ds[i].data
 		});
 	}
-	var chart = new Chart(canvas.getContext('2d')).Bar(barData, {barShowStroke: true});
+	var chart = new Chart(canvas.getContext('2d')).Bar(barData, opts);
 	legend(legend_area, barData);
 	return chart;
 }
@@ -54,6 +68,32 @@ function resize(canvas){
 	canvas.height = 500;
 }
 
+
 function get_url(path){
 	return "http://" + document.location.host + path; 
 }
+
+function render_image(container, height, width){
+	var canvas = container.find('canvas').get(0),
+		legend_area = container.find('div').get(0),
+		analysis = container.find('.analysis'),
+		paint = document.createElement('canvas');
+	console.log(container.width(), canvas.height);
+	paint.width = container.width();
+	paint.height = canvas.height;
+	var ctx = paint.getContext('2d');
+	ctx.drawImage(canvas, 0, 0);
+	html2canvas(legend_area, {
+		onrendered: function(l){
+			ctx.drawImage(l, canvas.width, 0);
+			html2canvas(analysis, {
+				onrendered: function(a){
+					ctx.drawImage(a, canvas.width, l.height);
+					Canvas2Image.saveAsJPEG(paint);
+				}
+			});
+			
+		}
+	});
+}
+

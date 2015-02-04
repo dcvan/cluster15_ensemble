@@ -200,7 +200,7 @@ class ManifestRenderer(tornado.web.RequestHandler):
         if content_type == 'application/json':
             exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
             if exp and exp['type'] == workflow:
-                self.write({'manifest': os.linesep.join([l for l in self._get_manifest(workflow, exp).splitlines() if l])})
+                self.write({'manifest': os.linesep.join([l for l in self._get_manifest(exp).splitlines() if l])})
             else:
                 self.set_status(404, 'Experiment not found')
         else:
@@ -234,14 +234,14 @@ class ManifestRenderer(tornado.web.RequestHandler):
         
         '''
         exp['image'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': exp['type']}, {'_id':0, 'image': 1})['image']
-        t = self._db[DB_NAME]['workflow']['manifest'].find_one({'type': exp['type']}, {'_id': 0, 'master_postscript': 1, 'worker_postscript': 1})
+        t = self._db[DB_NAME]['workflow']['type'].find_one({'name': exp['type']}, {'_id': 0, 'postscript': 1})
         if 'bandwidth' in exp and exp['deployment'] == 'multinode' and not exp['bandwidth']:
             exp['bandwidth'] = 500000000
         if 'storage_size' in exp and exp['storage_site'].lower() == 'iscsi' and not exp['storage_size']:
             exp['storage_size'] = 50
         exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
         exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': exp['type']}, {'_id': 0})['executables']
-        exp['master_postscript'] = jinja2.Template(t['master_postscript']).render(param={
+        exp['master_postscript'] = jinja2.Template(t['postscript']['master']).render(param={
                                                                                         'exp_id': exp['exp_id'],
                                                                                         'deployment': exp['deployment'],
                                                                                         'filesystem': exp['filesystem'],
@@ -252,7 +252,7 @@ class ManifestRenderer(tornado.web.RequestHandler):
                                                                                             })
         if 'worker_postscript' in t:
             for w in exp['worker_sites']:
-                w['worker_postscript'] = jinja2.Template(t['worker_postscript']).render(param={
+                w['worker_postscript'] = jinja2.Template(t['postscript']['worker']).render(param={
                                                                                             'exp_id': exp['exp_id'],
                                                                                             'filesystem': exp['filesystem'],
                                                                                             'site': w['site'],

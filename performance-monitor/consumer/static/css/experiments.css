@@ -44,6 +44,11 @@ canvas{
 	float: left;
 	height: 500px;
 }
+.download-image{
+	margin-top: 20px;
+	float: left;
+}
+
 
 #table-content{
 	max-height: 500px;
