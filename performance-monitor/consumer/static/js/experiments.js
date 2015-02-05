@@ -15,6 +15,8 @@ $(document).ready(function(){
 	
 	$(document).on('click', '#experiments .nav li a', function(){
 		var status = $(this).attr('id');
+		var tbody = $('#experiments #table-content tbody');
+		tbody.empty();
 		if(status == 'finished'){
 			$('#sys-analysis').show();
 		}else{
@@ -28,9 +30,7 @@ $(document).ready(function(){
 			contentType: 'application/json',
 			success: function(data){
 				if(data.length == 0 || !'result' in data) return;
-				var tbody = $('#experiments #table-content tbody'),
-					experiments = data['result'];
-				tbody.empty();
+				var experiments = data['result'];
 				for(var i in experiments){
 					var row = $('<tr>'), e = experiments[i];
 					row.append($('<td class="create-time" data-id="'+ e.exp_id +'"><a href="' + window.location.pathname + '/experiments/' + e.exp_id +'">'+ e.create_time+'</a></td>'));
