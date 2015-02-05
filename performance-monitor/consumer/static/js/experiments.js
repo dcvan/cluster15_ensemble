@@ -181,15 +181,16 @@ function get_sys_chart(aspect, area){
 
 function get_walltime(exp, area){
 	if(!exp.length) return;
-	var url = window.location.pathname + '/analysis?aspect=walltime&use=chart';
-	for(i = 0; i < exp.length; i ++){
-		url += '&exp_id=' + exp[i];
-	}
 	$.ajaxSetup({
-		url: url
+		url: window.location.pathname + '/analysis'
 	});
 	$.ajax({
-		type: 'GET',
+		type: 'POST',
+		data: JSON.stringify({
+			exp_ids: exp,
+			aspect: 'walltime',
+			use: 'chart'
+		}),
 		contentType: 'application/json',
 		success: function(data){
 			if(data == null || data.length == 0) return;
@@ -215,15 +216,16 @@ function get_walltime(exp, area){
 
 function get_sys_usage(exp, aspect, area){
 	if(!exp.length) return;
-	var url = window.location.pathname + '/analysis?aspect=' + aspect + '&use=chart';
-	for(i = 0; i < exp.length; i ++){
-		url += '&exp_id=' + exp[i];
-	}
 	$.ajaxSetup({
-		url: url
+		url: window.location.pathname + '/analysis'
 	});
 	$.ajax({
-		type: 'GET',
+		type: 'POST	',
+		data: JSON.stringify({
+			exp_ids: exp,
+			aspect: aspect,
+			use: 'chart'
+		}),
 		contentType: 'application/json',
 		success: function(data){
 				if(data == null || data.length == 0) return;

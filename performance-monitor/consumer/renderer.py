@@ -465,9 +465,9 @@ class AnalysisRenderer(tornado.web.RequestHandler):
         self._db = db
         
         
-    def get(self, workflow):
+    def post(self, workflow):
         '''
-        GET method
+        POST method
         
         :param str workflow: the workflow type
         
@@ -479,24 +479,23 @@ class AnalysisRenderer(tornado.web.RequestHandler):
             return
         if content_type == 'application/json':
             try:
-                query = {
-                    'aspect': self.get_argument('aspect'),
-                    'use': self.get_arguments('use')[0] if self.get_arguments('use') else 'regular',
-                    'exp_ids': set(self.get_arguments('exp_id'))     
-                    }
-                if query['aspect'] not in ['walltime', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']: 
-                    self.set_status(400, 'Invalid aspect specified')
+                query = json.loads(self.request.body)
+                if 'aspect' not in query:
+                    self.set_status(400, '"aspect" field is required')
                     return
-                query['use'] = 'regular' if query['use'] not in ['regular', 'chart'] else query['use']
-                query['exp_ids'] = query['exp_ids'] if query['exp_ids'] else [e['exp_id'] for e in 
+                if query['aspect'] not in ['walltime', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']: 
+                    self.set_status(400, 'Invalid aspect: %s' % query['aspect'])
+                    return
+                query['use'] = 'regular' if 'use' not in query or query['use'] not in ['regular', 'chart'] else query['use']
+                query['exp_ids'] = query['exp_ids'] if 'exp_ids' in query and query['exp_ids'] else [e['exp_id'] for e in 
                                             self._db[DB_NAME]['workflow']['experiment'].find({'type': workflow}, {'_id': 0, 'exp_id': 1}).sort('timestamp')]
                 data = self._get_data(query)
                 if data:
                     self.write(data)
                 else:
                     self.set_status(204, 'No data found')
-            except tornado.web.MissingArgumentError as mae:
-                self.set_status(400, 'Invalid user data: %s' % str(mae))
+            except ValueError as ve:
+                self.set_status(400, 'Invalid user data: %s' % str(ve))
         else:
             self.set_status(501, 'Not implemented yet')
 
