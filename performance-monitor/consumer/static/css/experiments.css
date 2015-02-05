@@ -4,7 +4,7 @@ h3{
 	float: left;
 }
 
-div#analysis{
+div#filter{
 	margin-bottom: 50px;
 }
 
@@ -55,6 +55,9 @@ canvas{
 	overflow:auto;
 }
 
-
-
+#chart{
+	padding: 10px;
+	min-width: 1300px;
+	min-height: 550px;
+}
 

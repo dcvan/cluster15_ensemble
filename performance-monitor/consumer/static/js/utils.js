@@ -2,6 +2,15 @@
  * 
  */
 
+function form_query(arg){
+	if(arg == null || arg.length == 0) return null;
+	if(window.location.search.substring(1).length == 0)
+		return '?' + arg;
+	var params = window.location.search.substring(1).split('&');
+	params.push(arg);
+	return '?' + params.join('&');
+}
+
 function plotLine(container, labels, ds){
 	var canvas = container.find('canvas').get(0),
 		legend_area = container.find('div').get(0),
@@ -78,14 +87,15 @@ function render_image(container, height, width){
 		legend_area = container.find('div').get(0),
 		analysis = container.find('.analysis'),
 		paint = document.createElement('canvas');
-	console.log(container.width(), canvas.height);
 	paint.width = container.width();
 	paint.height = canvas.height;
 	var ctx = paint.getContext('2d');
-	ctx.drawImage(canvas, 0, 0);
+	ctx.fillStyle = '#fff';
+	ctx.fillRect(0, 0, paint.width, paint.height);
+	ctx.drawImage(canvas, 5, 5);
 	html2canvas(legend_area, {
 		onrendered: function(l){
-			ctx.drawImage(l, canvas.width, 0);
+			ctx.drawImage(l, canvas.width, 5);
 			html2canvas(analysis, {
 				onrendered: function(a){
 					ctx.drawImage(a, canvas.width, l.height);

@@ -25,9 +25,9 @@
 <body>
 <section class="container">
 	<h1>{{data['type'].capitalize()}}</h1>
-	<div id="analysis">
+	<div id="filter">
 		<div class="form-inline">
-		{% for k in opts %}
+		{% for k in data %}
 			<div class="form-group">
 			{% if k != 'sites' %}
 				<div id="{{k}}" class="dropdown">
@@ -35,7 +35,7 @@
 				  	<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
 					  	<li class="clear" role="presentation" data-title="{{' '.join(k.split('-')).capitalize()}}"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
 					  	<li role="presentation" class="divider"></li>
-					  	{% for i in opts[k] %}
+					  	{% for i in data[k] %}
 					    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].capitalize() if isinstance(i, dict) else i.capitalize()}}</a></li>
 					    {% end %}
 				 	 </ul>
@@ -49,7 +49,7 @@
 				  	<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
 					  	<li class="clear" role="presentation" data-title="Master Site"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
 					  	<li class="entry" role="presentation" class="divider"></li>
-					  	{% for i in opts['sites'] %}
+					  	{% for i in data['sites'] %}
 					    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].upper()}}</a></li>
 					    {% end %}
 				 	 </ul>
@@ -57,7 +57,7 @@
 		</div>
 		<div class="form-group">
 			<select id="worker-sites" multiple="multiple">
-				{% for i in opts['sites'] %}
+				{% for i in data['sites'] %}
 					<option value="{{i['name']}}">{{i['name'].upper()}}</option>
 				{% end %}
 			</select>
@@ -81,139 +81,46 @@
 		
 	</div>
 	
-	
 	<h2>Experiments</h2>
-	<div id="table-content">
-	<table class="table table-hover">
-		<thead><tr>
-			<th class="exp-id">Experiment ID</th>
-			<th class="topology"><a class="sort" data-key="topology">Topology</a></th>
-			<th class="deployment"><a class="sort" data-key="deployment">Deployment</a></th>
-			<th class="master-site"><a class="sort" data-key="master_site">Master Site</a></th>
-			<th class="worker-site"><a class="sort" data-key="worker_sites">Worker Sites</a></th>
-			<th class="worker-num"><a class="sort" data-key="num_of_workers"># of Workers</a></th>
-			<th class="worker-size"><a class="sort" data-key="worker_size">Worker Size</a></th>
-			<th class="workload"><a class="sort" data-key="workload"># of Workloads</a></th>
-			<th class="bandwidth"><a class="sort" data-key="bandwidth">Bandwidth</a></th>
-			<th class="create-time"><a class="sort" data-key="create_time">Create Time</a></th>
-			<th class="status"><a class="sort" data-key="status">Status</a></th>
-			<th class="ops">Operations</th>
-		</tr></thead>
-		<tbody>
-			
-			{% for e in data['experiments'] %}
-			<tr>
-				<td id="{{e['exp_id']}}" class="exp-id"><a href="{{'/workflows/%s/experiments/%s' % (data['type'], e['exp_id'])}}">{{e['exp_id']}}</a></td>
-				<td class="topology">{{e['topology']}}</td>
-				<td class="deployment">{{e['deployment']}}</td>
-				<td class="master-site">{{e['master_site'].upper()}}</td>
-				<td class="worker-site">{{','.join([s['site'].upper() for s in e['worker_sites']]) if 'worker_sites' in e else '-'}}</td>
-				<td class="worker-num">{{e['num_of_workers']}}</td>
-				<td class="worker-size">{{e['worker_size']}}</td>
-				<td class="workload">{{e['workload']}}</td>
-				<td class="bandwidth">{{e['bandwidth'] if 'bandwidth' in e else '-'}}</td>
-				<td class="create-time">{{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['create_time']))}}</td>
-				<td class="status">{{e['status']}}</td>
-				<td class="ops">
-					<button class="btn btn-success glyphicon glyphicon-file copy" data-clipboard-target="{{e['exp_id']}}"></button>
- 					<button class="btn btn-warning glyphicon glyphicon-repeat redo"></button> 
-					<button class="btn btn-danger glyphicon glyphicon-remove del-experiment"></button>
-					<button class="btn btn-default glyphicon glyphicon-minus noshow"></button>
-				</td>
-			</tr>
-			{% end %}
-		</tbody>
-	</table>
+	<div id="experiments">
+		<ul class="nav nav-tabs">
+			<li role="representation"><a id="finished" href="#">Finished</a></li>
+			<li role="representation"><a id="running" href="#">Running</a></li>
+			<li role="representation"><a id="redo" href="#">Redo</a></li>
+			<li role="representation"><a id="submitted" href="#">Submitted</a></li>
+		</ul>
+		<div id="table-content">
+			<table class="table table-hover">
+				<thead><tr>
+					<th class="create-time"><a class="sort" data-key="create_time">Create Time</a></th>
+					<th class="topology"><a class="sort" data-key="topology">Topology</a></th>
+					<th class="deployment"><a class="sort" data-key="deployment">Deployment</a></th>
+					<th class="master-site"><a class="sort" data-key="master_site">Master Site</a></th>
+					<th class="worker-site"><a class="sort" data-key="worker_sites">Worker Sites</a></th>
+					<th class="worker-num"><a class="sort" data-key="num_of_workers"># of Workers</a></th>
+					<th class="worker-size"><a class="sort" data-key="worker_size">Worker Size</a></th>
+					<th class="workload"><a class="sort" data-key="workload"># of Workloads</a></th>
+					<th class="bandwidth"><a class="sort" data-key="bandwidth">Bandwidth</a></th>
+					<th class="ops">Operations</th>
+				</tr></thead>
+				<tbody>
+				</tbody>
+			</table>
+		</div>
 	</div>
-	<h2>System Analysis</h2>
-	<h3>Walltime</h3>
-	<div id="walltime" class="graph">
-			<canvas></canvas>
-			<div></div>
-			<div class="analysis">
-				<div>Max: <span class="max"></span></div>
-				<div>Min: <span class="min"></span></div>
-				<div>Avg: <span class="avg"></span></div>
-				<div>Standard Deviation: <span class="avg-std-dev"></span></div>
-			</div>
-	</div>
-	<h3>System CPU Usage</h3>
-	<div id="sys-cpu" class="graph">
-			<canvas></canvas>
-			<div></div>
-			<div class="analysis">
-				<div>Max: <span class="max"></span></div>
-				<div>Min: <span class="min"></span></div>
-				<div>Avg: <span class="avg"></span></div>
-				<div>Max Standard Deviation: <span class="max-std-dev"></span></div>
-				<div>Min Standard Deviation: <span class="min-std-dev"></span></div>
-				<div>Avg Standard Deviation: <span class="avg-std-dev"></span></div>
-			</div>
-	</div>
-	<h3>System Memory Usage</h3>
-	<div id="sys-mem" class="graph">
-			<canvas></canvas>
-			<div></div>
-			<div class="analysis">
-				<div>Max: <span class="max"></span></div>
-				<div>Min: <span class="min"></span></div>
-				<div>Avg: <span class="avg"></span></div>
-				<div>Max Standard Deviation: <span class="max-std-dev"></span></div>
-				<div>Min Standard Deviation: <span class="min-std-dev"></span></div>
-				<div>Avg Standard Deviation: <span class="avg-std-dev"></span></div>
-			</div>
-	</div>
-	<h3>System Read Rate</h3>
-	<div id="sys-read" class="graph">
-			<canvas></canvas>
-			<div></div>
-			<div class="analysis">
-				<div>Max: <span class="max"></span></div>
-				<div>Min: <span class="min"></span></div>
-				<div>Avg: <span class="avg"></span></div>
-				<div>Max Standard Deviation: <span class="max-std-dev"></span></div>
-				<div>Min Standard Deviation: <span class="min-std-dev"></span></div>
-				<div>Avg Standard Deviation: <span class="avg-std-dev"></span></div>
-			</div>
-	</div>
-	<h3>System Write Rate</h3>
-	<div id="sys-write" class="graph">
-			<canvas></canvas>
-			<div></div>
-			<div class="analysis">
-				<div>Max: <span class="max"></span></div>
-				<div>Min: <span class="min"></span></div>
-				<div>Avg: <span class="avg"></span></div>
-				<div>Max Standard Deviation: <span class="max-std-dev"></span></div>
-				<div>Min Standard Deviation: <span class="min-std-dev"></span></div>
-				<div>Avg Standard Deviation: <span class="avg-std-dev"></span></div>
-			</div>
-	</div>
-	<h3>System Send Rate</h3>
-	<div id="sys-send" class="graph">
-			<canvas></canvas>
-			<div></div>
-			<div class="analysis">
-				<div>Max: <span class="max"></span></div>
-				<div>Min: <span class="min"></span></div>
-				<div>Avg: <span class="avg"></span></div>
-				<div>Max Standard Deviation: <span class="max-std-dev"></span></div>
-				<div>Min Standard Deviation: <span class="min-std-dev"></span></div>
-				<div>Avg Standard Deviation: <span class="avg-std-dev"></span></div>
-			</div>
-	</div>
-	<h3>System Receive Rate</h3>
-	<div id="sys-recv" class="graph">
-			<canvas></canvas>
-			<div></div>
-			<div class="analysis">
-				<div>Max: <span class="max"></span></div>
-				<div>Min: <span class="min"></span></div>
-				<div>Avg: <span class="avg"></span></div>
-				<div>Max Standard Deviation: <span class="max-std-dev"></span></div>
-				<div>Min Standard Deviation: <span class="min-std-dev"></span></div>
-				<div>Avg Standard Deviation: <span class="avg-std-dev"></span></div>
-			</div>
+	<div id="sys-analysis">
+		<h2>System Analysis</h2>
+		<ul id="aspect" class="nav nav-tabs">
+			<li role="presentation" data-aspect="walltime" class="active"><a id="walltime" href="#">Walltime</a></li>
+			<li role="presentation" data-aspect="sys_cpu"><a id="sys-cpu" href="#">CPU Usage</a></li>
+			<li role="presentation" data-aspect="sys_mem"><a id="sys-mem" href="#">Memory Usage</a></li>
+			<li role="presentation" data-aspect="sys_read"><a id="sys-read" href="#">Read Rate </a></li>
+			<li role="presentation" data-aspect="sys_write"><a id="sys-write" href="#">Write Rate</a></li>
+			<li role="presentation" data-aspect="sys_send"><a id="sys-send" href="#">Send Rate</a></li>
+			<li role="presentation" data-aspect="sys_recv"><a id="sys-recv" href="#">Receive Rate</a></li>
+		</ul>
+		<div id="stat"></div>
+		<div id="chart"></div>
 	</div>
 </section>
 </body>

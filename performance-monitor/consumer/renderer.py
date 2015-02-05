@@ -391,46 +391,44 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         if not self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}):
             self.set_status(404, 'Workflow not available')
             return
-        try:
-            query = {'$and': [{'type': workflow}]} 
-            args = [ 'deployment', 'topology', 'master_site', 'worker_site', 'num_of_workers', 'workload', 'bandwidth']
-            for i in args:
-                if i == 'worker_site' and self.get_arguments(i):
-                    query['$and'].append({'worker_sites': {'$elemMatch': {'site': {'$in': self.get_arguments(i)}}}})
-                elif i == 'bandwidth' and self.get_arguments(i):
-                    query['$and'].append({i: self.get_arguments(i)[0] * 1000 * 1000})
-                elif i in ['num_of_workers', 'workload'] and self.get_arguments(i):
-                    query['$and'].append({i: int(self.get_arguments(i)[0])})
-                elif self.get_arguments(i):
-                    query['$and'].append({i: {'$in': self.get_arguments(i)}})
+        if content_type == 'text/html':
+            data = {
+                'type': workflow,
+                'topology': ['intra-rack', 'inter-rack'],
+                'deployment': ['standalone', 'multinode'],
+                'sites': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
+                'worker-size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
+                }
+            self.render('experiments.html', data=data)
+        elif content_type == 'application/json':
+            try:
+                query = {'$and': [{'type': workflow, 'status': self.get_argument('status')}]} 
+                args = [ 'deployment', 'topology', 'master_site', 'worker_site', 'num_of_workers', 'workload', 'bandwidth']
+                for i in args:
+                    if i == 'worker_site' and self.get_arguments(i):
+                        query['$and'].append({'worker_sites': {'$elemMatch': {'site': {'$in': self.get_arguments(i)}}}})
+                    elif i == 'bandwidth' and self.get_arguments(i):
+                        query['$and'].append({i: self.get_arguments(i)[0] * 1000 * 1000})
+                    elif i in ['num_of_workers', 'workload'] and self.get_arguments(i):
+                        query['$and'].append({i: int(self.get_arguments(i)[0])})
+                    elif self.get_arguments(i):
+                        query['$and'].append({i: {'$in': self.get_arguments(i)}})
+                
+                sort_by = self.get_arguments('sort')[0] if self.get_arguments('sort') else 'timestamp'
+                top = int(self.get_arguments('top'))[0] if self.get_arguments('top') else None
             
-            sort_by = self.get_arguments('sort')[0] if self.get_arguments('sort') else 'timestamp'
-            top = int(self.get_arguments('top'))[0] if self.get_arguments('top') else None
-        
-            res = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0}).sort(sort_by)
-            if top:
-                res = res.limit(top)
-            if res.count() > 0:
-                if content_type == 'text/html':
-                    data = {
-                        'type': workflow,
-                        'experiments': [e for e in res if e]    
-                        }
-                    opts = {
-                        'topology': ['intra-rack', 'inter-rack'],
-                        'deployment': ['standalone', 'multinode'],
-                        'sites': [s for s in self._db[DB_NAME]['workflow']['site'].find(fields={'_id': 0})],
-                        'worker-size': [w for w in self._db[DB_NAME]['workflow']['vm_size'].find(fields={'_id': 0})],
-                        }
-                    self.render('experiments.html', data=data, opts=opts)
-                elif content_type == 'application/json':
-                    self.write({'result': [e for e in res if e]})
+                res = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0}).sort(sort_by)
+                if top:
+                    res = res.limit(top)
+                if res.count() > 0:
+                    exp = [e for e in res if e]
+                    for e in exp:
+                        e['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['create_time']))
+                    self.write({'result': exp})
                 else:
-                    self.set_status(501, 'Not implemented yet')
-            else:
-                self.set_status(204, 'No data found')
-        except ValueError as ve:
-            self.set_status(401, 'Invalid user data: %s' % str(ve))
+                    self.set_status(204, 'No data found')
+            except tornado.web.MissingArgumentError:
+                self.set_status(400, 'Argument "status" is required')
                 
     def _update_status(self, exp):
         '''
