@@ -3,10 +3,12 @@
  */
 var color1 = '151,187,205', color2 = '170,57,57', color3='255,211,0';
 $(document).ready(function(){
-	var clip = new ZeroClipboard($('.copy'), {
-		moviePath: '/static/ZeroClipboard.swf'
+	$(function(){
+		$('#start-time-picker').datetimepicker({format: 'LLL'});
 	});
-	
+	$(function(){
+		$('#end-time-picker').datetimepicker({format: 'LLL'});
+	});
 	$('.nav li a').click(function(){
 		activate_tab($(this));
 	})
@@ -126,15 +128,8 @@ $(document).ready(function(){
 		dropdown.val($(this).text().toLowerCase());
 	});
 	
-	$('.copy').click(function(){
-		clip = new ZeroClipboard($('.copy'), {
-			moviePath: '/static/ZeroClipboard.swf'
-		});
-	});
-	
 	$(document).on('click', '#search', function(){
 		query = get_query();
-		console.log(JSON.stringify(query));
 		if(query.length)
 			$(location).attr('href', window.location.pathname + '?' + query);
 	});
@@ -152,7 +147,9 @@ function activate_tab(e){
 function get_query(){
 	var data = [];
 	$('#filter div .dropdown, #filter .form-group input').each(function(){
-		var k = $(this).get(0).id.replace('-', '_'), v = $(this).val();
+		var k = $(this).get(0).id.replace(/-/g, '_'), v = $(this).val();
+		console.log(v, v.length);
+		if((k == 'start_time' || k == 'end_time') && v.length > 0) v = moment(v, 'LLL').format('X');
 		if(v != null && k.length && v.length){
 			data.push(k + '=' + v);
 		}

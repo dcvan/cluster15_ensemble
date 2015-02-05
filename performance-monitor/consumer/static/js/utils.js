@@ -37,12 +37,12 @@ function plotLine(container, labels, ds){
 		           pointStrokeColor: '#fff',
 		           pointHighlightFill: '#fff',
 		           pointHighlightStroke: 'rgba(' + ds[i].color + ',1)',
-		           data: ds[i].data
+		           data: ds[i].data,
+		           metadata: 'hello'
 		});
 	}
 	var context = canvas.getContext('2d');
 	var chart = new Chart(context).Line(lineData, opts);
-	
 	legend(legend_area, lineData);
 	return chart;
 }

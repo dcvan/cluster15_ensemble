@@ -4,16 +4,21 @@ h3{
 	float: left;
 }
 
-div#filter{
-	margin-bottom: 50px;
-}
-
 input{
 	max-width: 120px;
 }
 
 canvas{
 	float:left;
+}
+
+.form-inline{
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+#start-time-picker, #end-time-picker{
+	float: left;
 }
 
 .btn{
@@ -23,32 +28,41 @@ canvas{
 }
 
 .btn#search{
-	float:none;
 	margin-left: 5px;
 	margin-bottom: 0;
+	float: none;
 }
 
-.worker_num, .workload .bandwidth{
-	max-width:20px;
+.num-of-workers, .workload .bandwidth{
 	padding:0;
 	margin:0;
 	border:0;
 }
+
 .ops{
 	min-width: 200px;
 }
+
 .graph{
 	min-width: 1300px;
 }
+
 .analysis{
 	float: left;
 	height: 500px;
 }
+
 .download-image{
 	margin-top: 20px;
 	float: left;
 }
 
+#filter{
+	margin-bottom: 20px;
+	padding: 10px;
+	border: #ccc solid 1px;
+	border-radius: 5px;
+}
 
 #table-content{
 	max-height: 500px;
@@ -60,4 +74,7 @@ canvas{
 	min-width: 1300px;
 	min-height: 550px;
 }
+
+
+
 

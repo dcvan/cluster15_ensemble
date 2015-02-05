@@ -8,14 +8,16 @@
 <link rel="stylesheet" href="{{static_url('css/legend.css')}}"/>
 <link rel="stylesheet" href="{{static_url('css/experiments.css')}}"/>
 <link media="screen" rel="stylesheet" href="{{static_url('css/bootstrap-multiselect.css')}}" />
+<link media="screen" rel="stylesheet" href="{{static_url('css/bootstrap-datetimepicker.min.css')}}" />
 <script src="{{static_url('js/jquery-1.11.2.min.js')}}"></script>
 <script src="{{static_url('js/bootstrap.min.js')}}"></script>
-<script src="{{static_url('js/ZeroClipboard.js')}}"></script>
 <script src="{{static_url('js/Chart.min.js')}}">
 	var Chartjs = Chart.noConflict();
 </script>
 <script src="{{static_url('js/legend.js')}}"></script>
 <script src="{{static_url('js/bootstrap-multiselect.js')}}"></script>
+<script src="{{static_url('js/moment.min.js')}}"></script>
+<script src="{{static_url('js/bootstrap-datetimepicker.js')}}"></script>
 <script src="{{static_url('js/html2canvas.js')}}"></script>
 <script src="{{static_url('js/canvas2image.js')}}"></script>
 <script src="{{static_url('js/utils.js')}}"></script>
@@ -26,60 +28,84 @@
 <section class="container">
 	<h1>{{data['type'].capitalize()}}</h1>
 	<div id="filter">
+		<!-- Selects -->
 		<div class="form-inline">
-		{% for k in data %}
-			<div class="form-group">
-			{% if k != 'sites' %}
-				<div id="{{k}}" class="dropdown">
-					<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true">{{' '.join(k.split('-')).capitalize()}}<span class="caret"></span></button>
-				  	<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
-					  	<li class="clear" role="presentation" data-title="{{' '.join(k.split('-')).capitalize()}}"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
-					  	<li role="presentation" class="divider"></li>
-					  	{% for i in data[k] %}
-					    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].capitalize() if isinstance(i, dict) else i.capitalize()}}</a></li>
-					    {% end %}
-				 	 </ul>
+				{% for k in data %}
+				<div class="form-group">
+					{% if k != 'sites' %}
+					<div id="{{k}}" class="dropdown">
+						<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true">{{' '.join(k.split('-')).capitalize()}}<span class="caret"></span></button>
+						  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
+							  <li class="clear" role="presentation" data-title="{{' '.join(k.split('-')).capitalize()}}"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
+							  <li role="presentation" class="divider"></li>
+							  {% for i in data[k] %}
+							    <li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].capitalize() if isinstance(i, dict) else i.capitalize()}}</a></li>
+							   {% end %}
+						 	</ul>
+					</div>
+					{% end %}
+				</div>
+				{% end %}
+				
+				<div class="form-group">
+					<div id="master-site" class="dropdown">
+							<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true">Master Site<span class="caret"></span></button>
+						  	<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
+							  	<li class="clear" role="presentation" data-title="Master Site"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
+							  	<li class="entry" role="presentation" class="divider"></li>
+							  	{% for i in data['sites'] %}
+							    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].upper()}}</a></li>
+							    {% end %}
+						 	 </ul>
+					</div>
+				</div>
+				
+				<div class="form-group">
+					<select id="worker-sites" multiple="multiple">
+						{% for i in data['sites'] %}
+							<option value="{{i['name']}}">{{i['name'].upper()}}</option>
+						{% end %}
+					</select>
 				</div>
 			</div>
-			{% end %}
-		{% end %}
-		<div class="form-group">
-			<div id="master-site" class="dropdown">
-					<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true">Master Site<span class="caret"></span></button>
-				  	<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
-					  	<li class="clear" role="presentation" data-title="Master Site"><a role="menuitem" tabindex="-1" href="#">Clear</a></li>
-					  	<li class="entry" role="presentation" class="divider"></li>
-					  	{% for i in data['sites'] %}
-					    	<li class="entry" role="presentation"><a role="menuitem" tabindex="-1" href="#">{{i['name'].upper()}}</a></li>
-					    {% end %}
-				 	 </ul>
-			</div>
-		</div>
-		<div class="form-group">
-			<select id="worker-sites" multiple="multiple">
-				{% for i in data['sites'] %}
-					<option value="{{i['name']}}">{{i['name'].upper()}}</option>
-				{% end %}
-			</select>
-		</div>
-		
-			<div class="form-group">
-				<input id="worker-num" class="form-control" type="number" placeholder="# of Workers"/>
-			</div>
-			<div class="form-group">
-				<input id="workload" class="form-control"  type="number" placeholder="# of Workloads"/>
-			</div>
-			<div class="form-group">
-				<input id="bandwidth" class="form-control"  type="number"  placeholder="Bandwidth(Mbps)"/>
-			</div>
-			<div class="form-group">
-				<input id="limit" class="form-control"  type="number"  placeholder="Top"/>
+			<!-- Numeric Input -->
+			<div class="form-inline">
+				<div class="form-group">
+					<input id="num-of-workers" class="form-control" type="number" placeholder="# of Workers"/>
+				</div>
+				
+				<div class="form-group">
+					<input id="workload" class="form-control"  type="number" placeholder="# of Workloads"/>
+				</div>
+	
+				<div class="form-group">
+					<input id="bandwidth" class="form-control"  type="number"  placeholder="Bandwidth(Mbps)"/>
+				</div>
+				<div class="form-group">
+					<input id="limit" class="form-control"  type="number"  placeholder="Top"/>
+				</div>
 			</div>
 			
-			<button id="search" class="btn btn-success pull-right">Search</button>
-		</div>
-		
-	</div>
+			<!-- Time Picker -->
+			<div class="form-inline">
+	            <div class="form-group">
+	                <div class='input-group date' id='start-time-picker'>
+	                    <input id="start-time" type='text' class="form-control" placeholder="Start Time"/>
+	                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+	                    </span>
+	                </div>
+	            </div>
+	            
+	             <div class="form-group">
+	                <div class='input-group date' id='end-time-picker'>
+	                    <input id="end-time" type='text' class="form-control" placeholder="End Time"/>
+	                    <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span>
+	                    </span>
+	                </div>
+	            </div>
+            </div>
+		<button id="search" class="btn btn-success">Search</button>
+  	</div>
 	
 	<h2>Experiments</h2>
 	<div id="experiments">

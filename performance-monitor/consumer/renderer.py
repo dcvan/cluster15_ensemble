@@ -403,18 +403,22 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         elif content_type == 'application/json':
             try:
                 query = {'$and': [{'type': workflow, 'status': self.get_argument('status')}]} 
-                args = [ 'deployment', 'topology', 'master_site', 'worker_site', 'num_of_workers', 'workload', 'bandwidth']
+                args = [ 'deployment', 'topology', 'master_site', 'worker_site', 'num_of_workers', 'workload', 'bandwidth', 'start_time', 'end_time']
                 for i in args:
                     if i == 'worker_site' and self.get_arguments(i):
                         query['$and'].append({'worker_sites': {'$elemMatch': {'site': {'$in': self.get_arguments(i)}}}})
                     elif i == 'bandwidth' and self.get_arguments(i):
-                        query['$and'].append({i: self.get_arguments(i)[0] * 1000 * 1000})
+                        query['$and'].append({i: int(self.get_arguments(i)[0]) * 1000 * 1000})
+                    elif i == 'start_time' and self.get_arguments(i):
+                        query['$and'].append({'create_time': {'$gt': int(self.get_arguments(i)[0])}})
+                    elif i == 'end_time' and self.get_arguments(i):
+                        query['$and'].append({'create_time': {'$lt': int(self.get_arguments(i)[0])}})
                     elif i in ['num_of_workers', 'workload'] and self.get_arguments(i):
                         query['$and'].append({i: int(self.get_arguments(i)[0])})
                     elif self.get_arguments(i):
                         query['$and'].append({i: {'$in': self.get_arguments(i)}})
                 
-                sort_by = self.get_arguments('sort')[0] if self.get_arguments('sort') else 'timestamp'
+                sort_by = self.get_arguments('sort')[0] if self.get_arguments('sort') else 'create_time'
                 top = int(self.get_arguments('top'))[0] if self.get_arguments('top') else None
             
                 res = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0}).sort(sort_by)
@@ -427,6 +431,8 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                     self.write({'result': exp})
                 else:
                     self.set_status(204, 'No data found')
+            except ValueError as ve:
+                self.set_status(400, 'Invalid user data: %s' % str(ve))
             except tornado.web.MissingArgumentError:
                 self.set_status(400, 'Argument "status" is required')
                 
