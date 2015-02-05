@@ -115,7 +115,7 @@
 			{% end %}
 		</tbody>
 	</table>
-	<form id="download" action="/workflows/{{data['type']}}/experiments/{{data['exp_id']}}" method="POST">
+	<form id="download" action="/workflows/{{data['type']}}/experiments/{{data['exp_id']}}/manifest" method="POST">
 	<h2>Manifest <small><a href="#" onclick="$('#download').submit();">Download</a></small></h2>
 	</form>
 	<?prettify lang-xml linenums=1 nocode?>

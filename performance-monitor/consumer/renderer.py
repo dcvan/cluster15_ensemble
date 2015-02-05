@@ -237,7 +237,7 @@ class ManifestRenderer(tornado.web.RequestHandler):
         t = self._db[DB_NAME]['workflow']['type'].find_one({'name': exp['type']}, {'_id': 0, 'postscript': 1})
         if 'bandwidth' in exp and exp['deployment'] == 'multinode' and not exp['bandwidth']:
             exp['bandwidth'] = 500000000
-        if 'storage_size' in exp and exp['storage_site'].lower() == 'iscsi' and not exp['storage_size']:
+        if 'storage_size' in exp and exp['storage_type'].lower() == 'iscsi' and not exp['storage_size']:
             exp['storage_size'] = 50
         exp['resource_type'] = 'BareMetalCE' if exp['worker_size'] == 'ExoGENI-M4' else 'VM'
         exp['executables'] = self._db[DB_NAME]['workflow']['type'].find_one({'name': exp['type']}, {'_id': 0})['executables']
