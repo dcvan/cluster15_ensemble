@@ -24,7 +24,7 @@ class Application(tornado.web.Application):
         '''
         self._amqp_conn = MessageConnection(MESSAGE_BROKER_URI)
         self._mongo_conn = pymongo.MongoClient(ARCHIVE_HOST, ARCHIVE_PORT)
-#         self._start_archive_consumer()
+        self._start_archive_consumer()
         handlers = [
                   (r'/', WorkflowsRenderer, dict(db=self._mongo_conn)),
                   (r'/deployments/([a-z-]+)', DeploymentRender, dict(db=self._mongo_conn)),

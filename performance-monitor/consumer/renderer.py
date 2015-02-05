@@ -213,12 +213,12 @@ class ManifestRenderer(tornado.web.RequestHandler):
         '''
         content_type = check_content_type(self)
         if not content_type: return
-        if content_type == 'application/json':
+        if content_type == 'application/x-www-form-urlencoded':
             exp = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp_id}, {'_id': 0})
             if exp and exp['type'] == workflow:
                 self.set_header('Content-Type', 'application/rdf+xml')
                 self.set_header('Content-Disposition', 'attachment;filename=%s' % '-'.join([exp['master_site'], exp['exp_id']]))
-                self.write({'manifest': os.linesep.join([l for l in self._get_manifest(exp).splitlines() if l])})
+                self.write(os.linesep.join([l for l in self._get_manifest(exp).splitlines() if l]))
             else:
                 self.set_status(404, 'Experiment not found')
         else:
