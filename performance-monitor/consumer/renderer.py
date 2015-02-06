@@ -250,7 +250,7 @@ class ManifestRenderer(tornado.web.RequestHandler):
                                                                                         'num_of_workers': exp['num_of_workers'],
                                                                                         'workload': exp['workload']
                                                                                             })
-        if 'worker_postscript' in t:
+        if 'worker' in t['postscript']:
             for w in exp['worker_sites']:
                 w['worker_postscript'] = jinja2.Template(t['postscript']['worker']).render(param={
                                                                                             'exp_id': exp['exp_id'],
