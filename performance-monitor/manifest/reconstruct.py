@@ -13,12 +13,12 @@ if __name__ == '__main__':
     db['cluster15']['workflow']['storage_site'].drop()
     db['cluster15']['workflow']['storage_type'].drop()
     db['cluster15']['workflow']['manifest'].drop()
-    
+     
     # workflow.image
     img = db['cluster15']['workflow']['image']
     images = [i for i in img.find({}, {'_id': 0})]
     wf = db['cluster15']['workflow']['type']
-    
+     
     for i in images:
         wf.update({'name': i['name']}, {'$set': {'image': {
                                                             'uri': i['uri'],
@@ -71,7 +71,12 @@ if __name__ == '__main__':
     for r in runs:
         r['timestamp'] = int(r['timestamp'])
         r['walltime'] = int(r['walltime'])
+        db['cluster15']['workflow']['experiment'].update({'exp_id': r['exp_id']}, {'$set': {'last_update_time': r['timestamp']}})
         run.remove({'run_id': r['run_id'], 'exp_id': r['exp_id']})
         run.insert(r)
-        
+    exp = db['cluster15']['workflow']['experiment']
+    exps = [e for e in exp.find({}, {'_id': 0})]
+    for e in exps:
+        if 'last_update_time' not in e:
+            exp.update({'exp_id': e['exp_id']}, {'$set': {'last_update_time': int(e['create_time'])}})
 

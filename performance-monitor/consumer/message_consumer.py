@@ -240,10 +240,10 @@ class ArchiveConsumer(MessageConsumer):
         :param str body: message text body   
        
         '''
-        print 'Message received: ', body
         if body == 'alive':  return
         msg_type = deliver.routing_key.split('.')[2]
         data = json.loads(body)
-        # buf
-        print data
+        exp = self._db[DB_NAME]['workflow']['experiment']
+        if 'type' in data:
+            if data['type'] == 'worker': exp.update({'exp_id': data['exp_id']}, {'$set': {'status': 'setup'}})
         self._db[DB_NAME]['experiment'][msg_type].insert(data)

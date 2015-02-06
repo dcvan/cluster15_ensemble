@@ -82,6 +82,10 @@ function get_url(path){
 	return "http://" + document.location.host + path; 
 }
 
+function format_date(d){
+	return moment(d, 'X').format('YYYY-MM-DD HH:mm:ss');
+}
+
 function render_image(container, height, width){
 	var canvas = container.find('canvas').get(0),
 		legend_area = container.find('div').get(0),

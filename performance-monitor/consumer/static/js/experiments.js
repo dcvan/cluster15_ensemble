@@ -29,11 +29,13 @@ $(document).ready(function(){
 			type: 'GET',
 			contentType: 'application/json',
 			success: function(data){
-				if(data.length == 0 || !'result' in data) return;
+				if(data == null || data.length == 0 || !'result' in data) return;
 				var experiments = data['result'];
 				for(var i in experiments){
 					var row = $('<tr>'), e = experiments[i];
-					row.append($('<td class="create-time" data-id="'+ e.exp_id +'"><a href="' + window.location.pathname + '/experiments/' + e.exp_id +'">'+ e.create_time+'</a></td>'));
+					row.append($('<td class="last-update-time" data-id="'+ e.exp_id +'"><a href="' 
+							+ window.location.pathname + '/experiments/' + e.exp_id +'">'
+							+ format_date(e.last_update_time) + '</a></td>'));
 					row.append($('<td class="topology">' + e.topology + '</td>'));
 					row.append($('<td class="deployment">' + e.deployment + '</td>'));
 					row.append($('<td class="master-site">' + e.master_site.toUpperCase() + '</td>'));
@@ -66,7 +68,7 @@ $(document).ready(function(){
 	
 	$(document).on('click', '#sys-analysis .nav li a', function(){
 		var aspect = $(this).attr('id').replace('-', '_');
-		get_sys_chart(aspect, $('#sys-analysis #chart'));
+		get_sys_usage(aspect, $('#sys-analysis #chart'));
 	});
 
 	$('#experiments .nav li #finished').trigger('click');
@@ -78,7 +80,7 @@ $(document).ready(function(){
 	$(document).on('click', '.noshow', function(){
 		$(this).parent().parent().hide();
 		aspect = $('#sys-analysis .nav .active').find('a').attr('id').replace('-', '_');
-		get_sys_chart(aspect, $('#sys-analysis #chart'));
+		get_sys_usage(aspect, $('#sys-analysis #chart'));
 	});
 	
 	$('.del-experiment').click(function(){
@@ -161,21 +163,6 @@ function get_query(){
 	return data.join('&');
 }
 
-function get_sys_chart(aspect, area){
-	var exp = [];
-	$('#experiments #table-content table tbody tr:visible').each(function(){
-		var id = $(this).find('td.create-time').data('id');
-		exp.push(id);
-	});
-	if(aspect == "walltime"){
-		get_walltime(exp, area);
-	}else if($.inArray(aspect, ['sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']) > -1){
-		get_sys_usage(exp, aspect, area);
-	}else{
-		console.log('Unknown aspect: ' + aspect);
-	}
-}
-
 function get_walltime(exp, area){
 	if(!exp.length) return;
 	$.ajaxSetup({
@@ -211,13 +198,23 @@ function get_walltime(exp, area){
 	});
 }
 
-function get_sys_usage(exp, aspect, area){
-	if(!exp.length) return;
+function get_sys_usage(aspect, area){
+	if($.inArray(aspect, ['walltime', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']) <= -1){
+		console.log('Unknown aspect: ' + aspect);
+		return;
+	}
+	
+	var exp = [];
+	$('#experiments #table-content table tbody tr:visible').each(function(){
+		var id = $(this).find('td.last-update-time').data('id');
+		exp.push(id);
+	});
+	if(exp.length == 0) return;
 	$.ajaxSetup({
 		url: window.location.pathname + '/analysis'
 	});
 	$.ajax({
-		type: 'POST	',
+		type: 'POST',
 		data: JSON.stringify({
 			exp_ids: exp,
 			aspect: aspect,
@@ -226,6 +223,8 @@ function get_sys_usage(exp, aspect, area){
 		contentType: 'application/json',
 		success: function(data){
 				if(data == null || data.length == 0) return;
+				if(aspect == 'walltime')
+					get_sys_figure(data, area, ' mins')
 				if(aspect == 'sys_cpu')
 					get_sys_figure(data, area, '%');
 				if(aspect == 'sys_mem')
@@ -244,27 +243,48 @@ function get_sys_usage(exp, aspect, area){
 
 function get_sys_figure(data, area, unit){
 	area.empty();
+	var analysis = $('<div class="analysis"></div>');
 	area.append('<canvas></canvas>'
-			+ '<div></div>'
-			+ '<div class="analysis">'
-			+ '<div>Max: <span class="max"></span></div>'
-			+ '<div>Min: <span class="min"></span></div>'
-			+ '<div>Avg: <span class="avg"></span></div>'
-			+ '<div>Max Standard Deviation: <span class="max-std-dev"></span></div>'
-			+ '<div>Min Standard Deviation: <span class="min-std-dev"></span></div>'
-			+ '<div>Avg Standard Deviation: <span class="avg-std-dev"></span></div>'
-			+ '</div>');
-	area.find('.analysis div .max').text(data.overall_max + unit);
-	area.find('.analysis div .min').text(data.overall_min + unit);
-	area.find('.analysis div .avg').text(data.overall_avg + unit);
-	area.find('.analysis div .max-std-dev').text(data.max_std_dev + unit);
-	area.find('.analysis div .min-std-dev').text(data.min_std_dev + unit);
-	area.find('.analysis div .avg-std-dev').text(data.avg_std_dev + unit);
-	plotLine(area,
-			data.timestamp,
-			[
-			 {'label': 'Max.', 'data':data.max, 'color': color1},
-			 {'label': 'Min.', 'data':data.min, 'color': color3},
-			 {'label': 'Avg.', 'data':data.avg, 'color': color2},
-			 ]);
+			+ '<div></div>');
+	if('overall_max' in data)
+		analysis.append($('<div>Max: <span class="max">'+ data.overall_max + unit +'</span></div>'));
+	if('overall_min' in data)
+		analysis.append($('<div>Min: <span class="min">'+ data.overall_min + unit +'</span></div>'));
+	if('overall_avg' in data)
+		analysis.append($('<div>Avg: <span class="avg">'+ data.overall_avg + unit +'</span></div>'));
+	if('max_std_dev' in data)
+		analysis.append($('<div>Max Standard Deviation: <span class="max-std-dev">'+ data.max_std_dev + unit +'</span></div>'));
+	if('min_std_dev' in data)
+		analysis.append($('<div>Min Standard Deviation: <span class="min-std-dev">'+ data.min_std_dev + unit +'</span></div>'));
+	if('avg_std_dev' in data)
+		analysis.append($('<div>Avg Standard Deviation: <span class="avg-std-dev">'+ data.avg_std_dev + unit +'</span></div>'));
+	area.append(analysis);
+	for(var i in data.timestamp)
+		data.timestamp[i] = format_date(data.timestamp[i]);
+	dataset = [];
+	if('values' in data)
+		dataset.push({
+			label: 'Avg.',
+			data: data.values,
+			color: color1,
+		});
+	else{
+		dataset.push({
+			label: 'Max.',
+			data: data.max,
+			color: color1
+		});
+		dataset.push({
+			label: 'Min.',
+			data: data.min,
+			color: color3
+		});
+		dataset.push({
+			label: 'Avg.',
+			data: data.avg,
+			color: color2,
+		});	
+	}
+	plotLine(area, data.timestamp, dataset);
 }
+

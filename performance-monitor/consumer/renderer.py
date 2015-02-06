@@ -340,7 +340,7 @@ class WorkerRenderer(tornado.web.RedirectHandler):
             return
         res = {}
         if data['aspect'] == 'system':
-            res['label'] = [time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(s['timestamp'])) for s in stat ]
+            res['label'] = [s['timestamp'] for s in stat ]
             res['sys_cpu_percent'] = [s['sys_cpu_percent'] for s in stat]
             res['sys_max_cpu_percent'] = [s['sys_max_cpu_percent'] for s in stat]
             res['sys_min_cpu_percent'] = [s['sys_min_cpu_percent'] for s in stat]
@@ -405,29 +405,28 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 query = {'$and': [{'type': workflow, 'status': self.get_argument('status')}]} 
                 args = [ 'deployment', 'topology', 'master_site', 'worker_site', 'num_of_workers', 'workload', 'bandwidth', 'start_time', 'end_time']
                 for i in args:
-                    if i == 'worker_site' and self.get_arguments(i):
-                        query['$and'].append({'worker_sites': {'$elemMatch': {'site': {'$in': self.get_arguments(i)}}}})
-                    elif i == 'bandwidth' and self.get_arguments(i):
-                        query['$and'].append({i: int(self.get_arguments(i)[0]) * 1000 * 1000})
-                    elif i == 'start_time' and self.get_arguments(i):
-                        query['$and'].append({'create_time': {'$gt': int(self.get_arguments(i)[0])}})
-                    elif i == 'end_time' and self.get_arguments(i):
-                        query['$and'].append({'create_time': {'$lt': int(self.get_arguments(i)[0])}})
-                    elif i in ['num_of_workers', 'workload'] and self.get_arguments(i):
-                        query['$and'].append({i: int(self.get_arguments(i)[0])})
-                    elif self.get_arguments(i):
-                        query['$and'].append({i: {'$in': self.get_arguments(i)}})
+                    if self.get_arguments(i):
+                        if i == 'worker_site':
+                            query['$and'].append({'worker_sites': {'$elemMatch': {'site': {'$in': self.get_arguments(i)}}}})
+                        elif i == 'bandwidth':
+                            query['$and'].append({i: int(self.get_arguments(i)[0]) * 1000 * 1000})
+                        elif i == 'start_time':
+                            query['$and'].append({'create_time': {'$gt': int(self.get_arguments(i)[0])}})
+                        elif i == 'end_time':
+                            query['$and'].append({'create_time': {'$lt': int(self.get_arguments(i)[0])}})
+                        elif i in ['num_of_workers', 'workload']:
+                            query['$and'].append({i: int(self.get_arguments(i)[0])})
+                        else:
+                            query['$and'].append({i: {'$in': self.get_arguments(i)}})
                 
-                sort_by = self.get_arguments('sort')[0] if self.get_arguments('sort') else 'create_time'
+                sort_by = self.get_arguments('sort')[0] if self.get_arguments('sort') else 'last_update_time'
                 top = int(self.get_arguments('top'))[0] if self.get_arguments('top') else None
             
                 res = self._db[DB_NAME]['workflow']['experiment'].find(query, {'_id': 0}).sort(sort_by)
-                if top:
-                    res = res.limit(top)
                 if res.count() > 0:
+                    if top: res = res.limit(top)
                     exp = [e for e in res if e]
-                    for e in exp:
-                        e['create_time'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['create_time']))
+                    for e in exp: self._update_status(e)
                     self.write({'result': exp})
                 else:
                     self.set_status(204, 'No data found')
@@ -443,16 +442,22 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         :param dict exp: an experiment instance
         
         '''
-        if exp['status'] == 'submitted' or exp['status'] == 'redo':
-            if self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
+        if exp['status'] == 'submitted' or exp['status'] == 'redo' or exp['status'] == 'setup':
+            finished = self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count()
+            expected = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp['exp_id']}, {'_id': 0, 'workload': 1})['workload']
+            if finished == expected:
                 self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
                 exp['status'] = 'finished'
             else:
-                if self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
+                discovered = self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count()
+                expected = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp['exp_id']}, {'_id': 0, 'num_of_workers': 1})['num_of_workers']
+                if discovered == expected:
                     self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'running'}})
                     exp['status'] = 'running'
         elif exp['status'] == 'running':
-            if self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count() > 0:
+            finished = self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count()
+            expected = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp['exp_id']}, {'_id': 0, 'workload': 1})['workload']
+            if finished == expected:
                 self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
                 exp['status'] = 'finished'
 
@@ -526,21 +531,21 @@ class AnalysisRenderer(tornado.web.RequestHandler):
                      'max': int(e[kw['max']]),
                      'min': int(e[kw['min']]),
                      'avg': int(e[kw['avg']]),
-                     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                     'timestamp': int(e['timestamp']),
                      'count': int(e['count'])
                      } for e in exp]
             else:
                 kw['value'] = '%s_rate' % query['aspect']
                 raw = [{'exp_id': e['exp_id'],
                      'value': int(e[kw['value']]) / (1024 * 1024),
-                     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                     'timestamp': int(e['timestamp']),
                      } for e in exp]
         elif query['aspect'] == 'walltime':
             exp = [e for e in self._db[DB_NAME]['experiment']['run'].find({'$or': [{'exp_id': i } for i in query['exp_ids']]}, {'_id': 0})]
             if not exp: return exp
             raw =  [{'exp_id': e['exp_id'],
                      'value': int(e['walltime']) if e['walltime'] else 0,
-                     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(e['timestamp'])),
+                     'timestamp': int(e['timestamp']),
                      } for e in exp]
         
         if not raw: # unlikely
@@ -614,7 +619,7 @@ class AnalysisRenderer(tornado.web.RequestHandler):
             res['overall_max'] = max(res['values'])
             res['overall_min'] = min(res['values'])
             res['overall_avg'] = sum(res['values'])/len(res['values']) if len(res['values']) else 0
-            res['std_dev'] = self._calc_std_dev(res['values'])
+            res['avg_std_dev'] = self._calc_std_dev(res['values'])
         return res
     
     def _calc_std_dev(self, data):

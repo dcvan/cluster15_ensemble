@@ -4,7 +4,6 @@ import pika
 import socket
 import subprocess
 import os
-import sys
 import re
 import shutil
 import argparse
@@ -372,7 +371,7 @@ class JobMonitor(Process):
                                 elif p.name() == 'java':
                                     self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in parent_cmd[1:3]])
                                 else:
-                                     self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[:2]])
+                                    self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[:2]])
                                 logging.info('Message dict created')
                                 logging.debug('Cmdline: %s' % self._cur_stat['cmdline'])
                                 self._cur_job = proc.pid
