@@ -94,8 +94,6 @@ function render_image(container, height, width){
 	paint.width = container.width();
 	paint.height = canvas.height;
 	var ctx = paint.getContext('2d');
-	ctx.fillStyle = '#fff';
-	ctx.fillRect(0, 0, paint.width, paint.height);
 	ctx.drawImage(canvas, 5, 5);
 	html2canvas(legend_area, {
 		onrendered: function(l){
@@ -103,7 +101,9 @@ function render_image(container, height, width){
 			html2canvas(analysis, {
 				onrendered: function(a){
 					ctx.drawImage(a, canvas.width, l.height + 5);
-					Canvas2Image.saveAsJPEG(paint);
+					var pdf = new jsPDF('l', 'mm', [345, 133]);
+					pdf.addImage(paint.toDataURL('image/png', 1.0), 'PNG', 0, 0);
+					pdf.save('download.pdf');
 				}
 			});
 			
