@@ -67,6 +67,11 @@ class WorkflowMonitor(Process):
                             if re.match('[ \t]+[0-9]+', l):
                                 status = re.split('[ \t]+', l)[9] 
                                 if status != 'Running':
+                                    walltime = self._get_walltime(d)
+                                    if not walltime:
+                                        logging.warning('Walltime is not available')
+                                        logging.debug('Status: %s' % status)
+                                        continue;
                                     self._finished.add(w)
                                     msg = {
                                             'exp_id': self._exp_id,
@@ -74,7 +79,7 @@ class WorkflowMonitor(Process):
                                             'status': status,
                                             'type': 'run',
                                             'timestamp': time.time(),
-                                            'walltime': self._get_walltime(d)
+                                            'walltime': walltime
                                         }
                                     self._msg_q.put(msg)
                                     logging.info('Message sent to Message Sender')
