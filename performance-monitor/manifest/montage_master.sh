@@ -178,7 +178,7 @@ done
 
 # start workflow
 sleep 10
-for (( i = 0; i &lt; {{param['run_num']}}; i ++ ))
+for (( i = 0; i &lt; {{param['workload']}}; i ++ ))
 do
 	su pegasus-user -c 'cd /home/pegasus-user/20131031/montage/; bash submit'
 	sleep 2

@@ -126,7 +126,7 @@ done
 
 # start workflow
 sleep 10
-for (( i = 0; i &lt; {{param['run_num']}}; i ++  ))
+for (( i = 0; i &lt; {{param['workload']}}; i ++  ))
 do
 su pegasus-user -c 'cd /home/pegasus-user/genomics/wf_exon_irods; bash genplan.sh'
     sleep 2
