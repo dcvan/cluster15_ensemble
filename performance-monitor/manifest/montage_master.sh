@@ -8,7 +8,7 @@ done
 {% endif %}
 
 cat &gt;/etc/hosts &lt;&lt;EOF
-{"$(ifconfig eth0|grep 'inet addr'|awk -F':' '{print $2}'|awk '{print $1}')" if param['deployment'] == 'standalone' else '172.16.1.1'}}  master.expnet   master   salt
+{{"$(ifconfig eth0|grep 'inet addr'|awk -F':' '{print $2}'|awk '{print $1}')" if param['deployment'] == 'standalone' else '172.16.1.1'}}  master.expnet   master   salt
 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
 ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
 EOF
