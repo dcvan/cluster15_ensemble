@@ -81,7 +81,7 @@
    		<domain:hasResourceType rdf:resource="http://geni-orca.renci.org/owl/compute.owl#{{param['resource_type']}}"/>
    		<layer:numCE rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">{{w['num']}}</layer:numCE>
    		<request-schema:groupName>{{w['site']}}</request-schema:groupName>
-   		<request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">{{w['worker_postscript']}}</request-schema:postBootScript>
+   		<request-schema:postBootScript rdf:datatype="http://www.w3.org/2001/XMLSchema#string">{{param['worker_postscript']}}</request-schema:postBootScript>
    		<rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#ServerCloud"/>
  		</rdf:Description>
     <!-- Domain -->
