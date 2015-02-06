@@ -4,6 +4,7 @@ Created on Jan 12, 2015
 @author: dc
 '''
 import json
+import time
 
 from config import EXCHANGE_NAME, DB_NAME
 
@@ -245,5 +246,8 @@ class ArchiveConsumer(MessageConsumer):
         data = json.loads(body)
         exp = self._db[DB_NAME]['workflow']['experiment']
         if 'type' in data:
-            if data['type'] == 'worker': exp.update({'exp_id': data['exp_id']}, {'$set': {'status': 'setup'}})
+            if data['type'] == 'worker': 
+                exp.update({'exp_id': data['exp_id']}, {'$set': {'status': 'setup', 'last_update_time': int(time.time())}})
+            if data['type'] == 'run':
+                exp.update({'exp_id': data['exp_id']}, {'$set': {'last_update_time': int(time.time())}})
         self._db[DB_NAME]['experiment'][msg_type].insert(data)
