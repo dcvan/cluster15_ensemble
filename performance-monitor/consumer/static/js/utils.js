@@ -102,7 +102,7 @@ function render_image(container, height, width){
 			ctx.drawImage(l, canvas.width, 5);
 			html2canvas(analysis, {
 				onrendered: function(a){
-					ctx.drawImage(a, canvas.width, l.height);
+					ctx.drawImage(a, canvas.width, l.height + 5);
 					Canvas2Image.saveAsJPEG(paint);
 				}
 			});
