@@ -204,10 +204,11 @@ function get_sys_usage(aspect, area){
 		return;
 	}
 	
-	var exp = [];
+	var exp = [], timestamps = [];
 	$('#experiments #table-content table tbody tr:visible').each(function(){
-		var id = $(this).find('td.last-update-time').data('id');
-		exp.push(id);
+		var last_update_time = $(this).find('td.last-update-time');
+		exp.push(last_update_time.data('id'));
+		timestamps.push(last_update_time.text());
 	});
 	if(exp.length == 0) return;
 	$.ajaxSetup({
@@ -223,6 +224,7 @@ function get_sys_usage(aspect, area){
 		contentType: 'application/json',
 		success: function(data){
 				if(data == null || data.length == 0) return;
+				data.timestamp = timestamps;
 				if(aspect == 'walltime')
 					get_sys_figure(data, area, ' mins')
 				if(aspect == 'sys_cpu')
@@ -259,8 +261,6 @@ function get_sys_figure(data, area, unit){
 	if('avg_std_dev' in data)
 		analysis.append($('<div>Avg Standard Deviation: <span class="avg-std-dev">'+ data.avg_std_dev + unit +'</span></div>'));
 	area.append(analysis);
-	for(var i in data.timestamp)
-		data.timestamp[i] = format_date(data.timestamp[i]);
 	dataset = [];
 	if('values' in data)
 		dataset.push({

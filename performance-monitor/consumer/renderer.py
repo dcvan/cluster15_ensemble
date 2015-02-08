@@ -391,6 +391,7 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         if not self._db[DB_NAME]['workflow']['type'].find_one({'name': workflow}):
             self.set_status(404, 'Workflow not available')
             return
+        self._update_status()
         if content_type == 'text/html':
             data = {
                 'type': workflow,
@@ -426,7 +427,6 @@ class WorkflowRenderer(tornado.web.RequestHandler):
                 if res.count() > 0:
                     if top: res = res.limit(top)
                     exp = [e for e in res if e]
-                    for e in exp: self._update_status(e)
                     self.write({'result': exp})
                 else:
                     self.set_status(204, 'No data found')
@@ -435,31 +435,28 @@ class WorkflowRenderer(tornado.web.RequestHandler):
             except tornado.web.MissingArgumentError:
                 self.set_status(400, 'Argument "status" is required')
                 
-    def _update_status(self, exp):
+    def _update_status(self):
         '''
         Update the status of the experiment
         
         :param dict exp: an experiment instance
         
         '''
-        if exp['status'] == 'submitted' or exp['status'] == 'redo' or exp['status'] == 'setup':
-            finished = self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count()
-            expected = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp['exp_id']}, {'_id': 0, 'workload': 1})['workload']
-            if finished == expected:
-                self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
-                exp['status'] = 'finished'
-            else:
-                discovered = self._db[DB_NAME]['experiment']['worker'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count()
-                expected = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp['exp_id']}, {'_id': 0, 'num_of_workers': 1})['num_of_workers']
-                if discovered == expected:
-                    self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'running'}})
-                    exp['status'] = 'running'
-        elif exp['status'] == 'running':
-            finished = self._db[DB_NAME]['experiment']['run'].find({'exp_id': exp['exp_id']}, {'_id': 0}).count()
-            expected = self._db[DB_NAME]['workflow']['experiment'].find_one({'exp_id': exp['exp_id']}, {'_id': 0, 'workload': 1})['workload']
-            if finished == expected:
-                self._db[DB_NAME]['workflow']['experiment'].update({'exp_id': exp['exp_id']}, {'$set': {'status': 'finished'}})
-                exp['status'] = 'finished'
+        handler = self._db[DB_NAME]['workflow']['experiment']
+        exp = handler.find(fields={ '_id': 0, 'exp_id': 1, 'status': 1, 'workload': 1, 'num_of_workers': 1})
+        for e in exp:
+            if e['status'] == 'submitted' or e['status'] == 'redo' or e['status'] == 'setup':
+                finished = self._db[DB_NAME]['experiment']['run'].find({'exp_id': e['exp_id']}, {'_id': 0}).count()
+                if finished == e['workload']:
+                    handler.update({'exp_id': e['exp_id']}, {'$set': {'status': 'finished'}})
+                else:
+                    discovered = self._db[DB_NAME]['experiment']['worker'].find({'exp_id': e['exp_id']}, {'_id': 0}).count()
+                    if discovered == e['num_of_workers']:
+                        handler.update({'exp_id': e['exp_id']}, {'$set': {'status': 'running'}})
+            elif e['status'] == 'running':
+                finished = self._db[DB_NAME]['experiment']['run'].find({'exp_id': e['exp_id']}, {'_id': 0}).count()
+                if finished == e['workload']:
+                    handler.update({'exp_id': e['exp_id']}, {'$set': {'status': 'finished'}})
 
 class AnalysisRenderer(tornado.web.RequestHandler):
     '''

@@ -210,6 +210,7 @@ class ArchiveConsumer(MessageConsumer):
         super(ArchiveConsumer, self).__init__('#')
         self._bufs = {}
         self._db = db
+        self._exp_db = self._db[DB_NAME]['workflow']['experiment']
     
     def stop(self):
         '''
@@ -244,10 +245,8 @@ class ArchiveConsumer(MessageConsumer):
         if body == 'alive':  return
         msg_type = deliver.routing_key.split('.')[2]
         data = json.loads(body)
-        exp = self._db[DB_NAME]['workflow']['experiment']
-        if 'type' in data:
-            if data['type'] == 'worker': 
-                exp.update({'exp_id': data['exp_id']}, {'$set': {'status': 'setup', 'last_update_time': int(time.time())}})
-            if data['type'] == 'run':
-                exp.update({'exp_id': data['exp_id']}, {'$set': {'last_update_time': int(time.time())}})
+        if msg_type == 'worker': 
+            self._exp_db.update({'exp_id': data['exp_id']}, {'$set': {'status': 'setup', 'last_update_time': data['timestamp']}})
+        elif msg_type == 'run':
+            self._exp_db.update({'exp_id': data['exp_id']}, {'$set': {'last_update_time': data['timestamp']}})
         self._db[DB_NAME]['experiment'][msg_type].insert(data)
