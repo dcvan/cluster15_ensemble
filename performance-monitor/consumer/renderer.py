@@ -26,6 +26,9 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         
         '''
         self._db = db
+        self._required_keys = set(['type', 'topology', 'deployment', 
+                                           'master_site', 'worker_sites', 'worker_size', 'storage_type',
+                                           'filesystem', 'workload', 'reservation', 'num_of_workers'])
     
     def get(self):
         '''
@@ -59,9 +62,7 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         if content_type == 'application/json':
             try:
                 data = json.loads(self.request.body)
-                if set(data.keys()) == set(['type', 'topology', 'deployment', 
-                                           'master_site', 'worker_sites', 'worker_size', 'storage_type',
-                                           'filesystem', 'workload', 'reservation', 'num_of_workers']):
+                if self._required_keys.issubset(set(data.keys)):
                     # TO-DO: data validation
                     data['exp_id'] = str(uuid.uuid4())
                     data['status'] = 'submitted'
