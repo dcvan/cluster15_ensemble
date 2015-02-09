@@ -63,11 +63,11 @@
 		{% end %}
 		{% if 'storage_site' in data %}
 			<dt>Storage Site</dt>
-			<dd>{{data['storage_site'] if data['storage_site'] else '-'}} GB</dd>
+			<dd>{{data['storage_site'].upper() if data['storage_site'] else '-'}}</dd>
 		{% end %}
 		{% if 'storage_bw' in data %}
 			<dt>Storage Link Bandwidth</dt>
-			<dd>{{data['storage_bw'] if data['storage_bw'] else '-'}} GB</dd>
+			<dd>{{data['storage_bw'] / 1000 / 1000 if data['storage_bw'] else '-'}} Mbps</dd>
 		{% end %}
 		{% if 'storage_size' in data %}
 			<dt>Storage Size</dt>
