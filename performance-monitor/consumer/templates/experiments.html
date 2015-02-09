@@ -32,7 +32,7 @@
 		<div class="form-inline">
 				{% for k in data %}
 				<div class="form-group">
-					{% if k != 'sites' %}
+					{% if k != 'sites'  and k != 'type' %}
 					<div id="{{k}}" class="dropdown">
 						<button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="true">{{' '.join(k.split('-')).capitalize()}}<span class="caret"></span></button>
 						  <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownDivider">
