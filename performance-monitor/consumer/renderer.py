@@ -14,7 +14,7 @@ import tornado.web
 
 from config import DB_NAME, check_content_type
 
-class WorkflowsRenderer(tornado.web.RedirectHandler):
+class WorkflowsRenderer(tornado.web.RequestHandler):
     '''
     Renders worklow listing
     

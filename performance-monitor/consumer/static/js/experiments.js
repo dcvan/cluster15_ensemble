@@ -163,41 +163,6 @@ function get_query(){
 	return data.join('&');
 }
 
-function get_walltime(exp, area){
-	if(!exp.length) return;
-	$.ajaxSetup({
-		url: window.location.pathname + '/analysis'
-	});
-	$.ajax({
-		type: 'POST',
-		data: JSON.stringify({
-			exp_ids: exp,
-			aspect: 'walltime',
-			use: 'chart'
-		}),
-		contentType: 'application/json',
-		success: function(data){
-			if(data == null || data.length == 0) return;
-			area.empty();
-			area.append('<canvas></canvas>'
-						+ '<div></div>'
-						+ '<div class="analysis">'
-						+ '<div>Max: <span class="max"></span></div>'
-						+ '<div>Min: <span class="min"></span></div>'
-						+ '<div>Avg: <span class="avg"></span></div>'
-						+ '<div>Standard Deviation: <span class="avg-std-dev"></span></div>'
-						+ '</div>');
-			area.find(' .analysis div .max').text(data.overall_max + 'mins');
-			area.find(' .analysis div .min').text(data.overall_min + 'mins');
-			area.find(' .analysis div .avg').text(data.overall_avg + 'mins');
-			area.find(' .analysis div .avg-std-dev').text(data.std_dev + 'mins');
-			plotLine(area, 
-					data.timestamp,
-					[{'label': 'Walltime', 'data': data.values, 'color': color1},]);
-		}
-	});
-}
-
 function get_sys_usage(aspect, area){
 	if($.inArray(aspect, ['walltime', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']) <= -1){
 		console.log('Unknown aspect: ' + aspect);
@@ -261,6 +226,7 @@ function get_sys_figure(data, area, unit){
 	if('avg_std_dev' in data)
 		analysis.append($('<div>Avg Standard Deviation: <span class="avg-std-dev">'+ data.avg_std_dev + unit +'</span></div>'));
 	area.append(analysis);
+	area.append('<div class="opers"></div>');
 	dataset = [];
 	if('values' in data)
 		dataset.push({

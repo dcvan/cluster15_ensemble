@@ -1,6 +1,7 @@
 @CHARSET "UTF-8";
 .legend {
     width: 10em;
+    height: 5.5em;
     border: 1px solid #aaaaaa; 
     padding: 5px;
     float: left;

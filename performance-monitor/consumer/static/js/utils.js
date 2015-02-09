@@ -14,7 +14,8 @@ function form_query(arg){
 function plotLine(container, labels, ds){
 	var canvas = container.find('canvas').get(0),
 		legend_area = container.find('div').get(0),
-		analysis = container.find('.analysis');
+		analysis = container.find('.analysis'),
+		opers = container.find('.opers');
 	resize(canvas);
 	
 	var lineData = {
@@ -24,7 +25,7 @@ function plotLine(container, labels, ds){
 	opts = {
 			bezierCurve: false,
 			onAnimationComplete: function(){
-				analysis.append($('<button class="btn btn-default download-image">Save Image</button>'));
+				opers.append($('<button class="btn btn-default download-image">Save Image</button>'));
 			}
 	};
 	
@@ -38,7 +39,6 @@ function plotLine(container, labels, ds){
 		           pointHighlightFill: '#fff',
 		           pointHighlightStroke: 'rgba(' + ds[i].color + ',1)',
 		           data: ds[i].data,
-		           metadata: 'hello'
 		});
 	}
 	var context = canvas.getContext('2d');
@@ -91,18 +91,18 @@ function render_image(container, height, width){
 		legend_area = container.find('div').get(0),
 		analysis = container.find('.analysis'),
 		paint = document.createElement('canvas');
-	paint.width = container.width();
-	paint.height = canvas.height;
+	paint.width = canvas.width + 5;
+	paint.height = canvas.height + 300;
 	var ctx = paint.getContext('2d');
 	ctx.drawImage(canvas, 5, 5);
 	html2canvas(legend_area, {
 		onrendered: function(l){
-			ctx.drawImage(l, canvas.width, 5);
+			ctx.drawImage(l, 5, canvas.height);
 			html2canvas(analysis, {
 				onrendered: function(a){
-					ctx.drawImage(a, canvas.width, l.height + 5);
-					var pdf = new jsPDF('l', 'mm', [345, 133]);
-					pdf.addImage(paint.toDataURL('image/png', 1.0), 'PNG', 0, 0);
+					ctx.drawImage(a, 10 + l.width, canvas.height);
+					var pdf = new jsPDF('l', 'mm', [280, 155]);
+					pdf.addImage(paint.toDataURL('image/png'), 'PNG', 0, 0);
 					pdf.save('download.pdf');
 				}
 			});
