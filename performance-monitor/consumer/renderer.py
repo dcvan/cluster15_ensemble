@@ -62,7 +62,7 @@ class WorkflowsRenderer(tornado.web.RedirectHandler):
         if content_type == 'application/json':
             try:
                 data = json.loads(self.request.body)
-                if self._required_keys.issubset(set(data.keys)):
+                if self._required_keys.issubset(set(data.keys())):
                     # TO-DO: data validation
                     data['exp_id'] = str(uuid.uuid4())
                     data['status'] = 'submitted'
