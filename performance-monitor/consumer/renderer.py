@@ -404,11 +404,15 @@ class WorkflowRenderer(tornado.web.RequestHandler):
         elif content_type == 'application/json':
             try:
                 query = {'$and': [{'type': workflow, 'status': self.get_argument('status')}]} 
-                args = [ 'deployment', 'topology', 'master_site', 'worker_site', 'num_of_workers', 'workload', 'bandwidth', 'start_time', 'end_time']
+                args = [ 'deployment', 'topology', 'master_site', 'worker_site', 'worker_size', 'num_of_workers', 'workload', 'bandwidth', 'start_time', 'end_time']
                 for i in args:
                     if self.get_arguments(i):
                         if i == 'worker_site':
-                            query['$and'].append({'worker_sites': {'$elemMatch': {'site': {'$in': self.get_arguments(i)}}}})
+                            sites = [s.lower() for s in self.get_arguments(i)]
+                            query['$and'].append({'worker_sites': {'$elemMatch': {'site': {'$in': sites}}}})
+                        elif i == 'worker_size':
+                            size = self._db[DB_NAME]['workflow']['vm_size'].find_one({'name': self.get_arguments(i)[0].lower()}, {'_id': 0})
+                            query['$and'].append({i: size['value'] if size else None})
                         elif i == 'bandwidth':
                             query['$and'].append({i: int(self.get_arguments(i)[0]) * 1000 * 1000})
                         elif i == 'start_time':
