@@ -83,8 +83,8 @@ $(document).ready(function(){
 		get_sys_usage(aspect, $('#sys-analysis #chart'));
 	});
 	
-	$('.del-experiment').click(function(){
-		var exp_id = $(this).closest('tr').children('td.exp-id').text();
+	$(document).on('click', '.del-experiment', function(){
+		var exp_id = $(this).closest('tr').children('td.last-update-time').data('id');
 		$.ajax({
 			url: window.location.pathname + '/experiments/' + exp_id,
 			type: 'DELETE',
