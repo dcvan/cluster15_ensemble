@@ -42,7 +42,8 @@ $(document).ready(function(){
 			};
 		
 		if($('#worker-sites').is(':visible')){
-			var worker_sites = [], num_of_workers = 0;
+			var num_of_workers = 0;
+			data['worker_sites'] = [];
 			$('.worker').each(function(){
 				data['worker_sites'].push({
 					'site': $(this).find('option:selected').val(),
