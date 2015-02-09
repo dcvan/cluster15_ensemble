@@ -39,10 +39,10 @@ $(document).ready(function(){
 				'filesystem': $('#filesystem option:selected').val(),
 				'workload': parseInt($('#workload input').val()),
 				'reservation': parseInt($('#reservation input').val()),
+				'num_of_workers': 0
 			};
 		
 		if($('#worker-sites').is(':visible')){
-			var num_of_workers = 0;
 			data['worker_sites'] = [];
 			$('.worker').each(function(){
 				data['worker_sites'].push({
@@ -57,9 +57,9 @@ $(document).ready(function(){
 		}
 		
 		if($('#storage-config').is(':visible')){
-			data['storage_site'] = $('#storage-config #detail .site select option:selected').val();
-			data['storage_bw'] = parseInt($('#storage_config #detail #storage-bw input').val()) * 1000 * 1000;
-			data['storage_size'] = parseInt($('#storage_config #detail #storage-size input').val()); 
+			data['storage_site'] = $('#storage-config #detail #storage-site select option:selected').val();
+			data['storage_bw'] = parseInt($('#storage-config #detail #storage-bw input').val()) * 1000 * 1000;
+			data['storage_size'] = parseInt($('#storage-config #detail #storage-size input').val()); 
 		}
 		console.log(JSON.stringify(data));
 		$.ajax({
