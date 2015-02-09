@@ -9,6 +9,7 @@ import uuid
 import jinja2
 import time
 import math
+import numpy
 import tornado.web
 
 from config import DB_NAME, check_content_type
@@ -596,9 +597,9 @@ class AnalysisRenderer(tornado.web.RequestHandler):
             res['overall_max'] = max(res['max'])
             res['overall_min'] = min(res['min'])
             res['overall_avg'] = sum(res['avg'])/len(res['avg']) if len(res['avg']) else 0
-            res['max_std_dev'] = self._calc_std_dev(res['max'])
-            res['min_std_dev'] = self._calc_std_dev(res['min'])
-            res['avg_std_dev'] = self._calc_std_dev(res['avg'])
+            res['max_std_dev'] = math.ceil(numpy.std((res['max']), ddof=1) * 100)/100
+            res['min_std_dev'] = math.ceil(numpy.std((res['min']), ddof=1) * 100)/100
+            res['avg_std_dev'] = math.ceil(numpy.std((res['avg']), ddof=1) * 100)/100
         elif aspect == 'walltime':
             for k in data:
                 exp_id = k['exp_id']
@@ -621,23 +622,5 @@ class AnalysisRenderer(tornado.web.RequestHandler):
             res['overall_max'] = max(res['values'])
             res['overall_min'] = min(res['values'])
             res['overall_avg'] = sum(res['values'])/len(res['values']) if len(res['values']) else 0
-            res['avg_std_dev'] = self._calc_std_dev(res['values'])
+            res['avg_std_dev'] = math.ceil(numpy.std((res['values']), ddof=1) * 100)/100
         return res
-    
-    def _calc_std_dev(self, data):
-        '''
-        Calculate standard deviation
-        
-        :param list data: a list of numbers
-        :rtype float
-        
-        '''
-        try:
-            if len(data) <= 1:
-                return 0.0
-            avg = sum(data)/len(data)
-            sqr_sum = sum([math.pow(int(e) - avg, 2) for e in data])
-            return float('%.3f'%math.sqrt(sqr_sum/len(data) - 1))
-        except ValueError:
-            return 0.0
-        
