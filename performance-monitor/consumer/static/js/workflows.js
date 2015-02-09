@@ -56,11 +56,17 @@ $(document).ready(function(){
 			data['num_of_workers'] = 1;
 		}
 		
+		if($('#bandwidth').is(':visible')){
+			data['bandwidth'] = parseInt($('#bandwidth input').val()) * 1000 * 1000;
+		}
+		
 		if($('#storage-config').is(':visible')){
 			data['storage_site'] = $('#storage-config #detail #storage-site select option:selected').val();
 			data['storage_bw'] = parseInt($('#storage-config #detail #storage-bw input').val()) * 1000 * 1000;
 			data['storage_size'] = parseInt($('#storage-config #detail #storage-size input').val()); 
 		}
+		
+		
 		console.log(JSON.stringify(data));
 		$.ajax({
 			url: window.location.pathname,
