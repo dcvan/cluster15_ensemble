@@ -96,8 +96,28 @@ $(document).ready(function(){
 		});
 	});
 	
-	$(document).on('click', '.download-image', function(){
+	$(document).on('click', '.chartjs', function(){
 		render_image($('#sys-analysis #chart'), 900, 300);
+	});
+	
+	$(document).on('click', '.matplotlib', function(){
+		console.log($('#aspect li').data('aspect'));
+		$.ajaxSetup({
+			url: window.location.pathname + '/analysis'
+		});
+		$.ajax({
+			type: 'POST',
+			data: JSON.stringify({
+				exp_ids: get_experiments(),
+				aspect: $('#aspect li').data('aspect'),
+				use: 'figure'
+			}),
+			contentType: 'application/json',
+			success: function(data){
+				console.log(data.url);
+				$(location).attr('href', 'http://' + data.url);
+			}
+		});
 	});
 	
 	$('.sort').click(function(){
@@ -163,33 +183,35 @@ function get_query(){
 	return data.join('&');
 }
 
+function get_experiments(){
+	var exp = [];
+	$('#experiments #table-content table tbody tr:visible').each(function(){
+		var last_update_time = $(this).find('td.last-update-time');
+		exp.push(last_update_time.data('id'));
+	});
+	return exp;
+}
 function get_sys_usage(aspect, area){
 	if($.inArray(aspect, ['walltime', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']) <= -1){
 		console.log('Unknown aspect: ' + aspect);
 		return;
 	}
-	
-	var exp = [], timestamps = [];
-	$('#experiments #table-content table tbody tr:visible').each(function(){
-		var last_update_time = $(this).find('td.last-update-time');
-		exp.push(last_update_time.data('id'));
-		timestamps.push(last_update_time.text());
-	});
-	if(exp.length == 0) return;
 	$.ajaxSetup({
 		url: window.location.pathname + '/analysis'
 	});
 	$.ajax({
 		type: 'POST',
 		data: JSON.stringify({
-			exp_ids: exp,
+			exp_ids: get_experiments(),
 			aspect: aspect,
 			use: 'chart'
 		}),
 		contentType: 'application/json',
 		success: function(data){
 				if(data == null || data.length == 0) return;
-				data.timestamp = timestamps;
+				for(var i in data.timestamp){
+					data.timestamp[i] = format_date(data.timestamp[i]);
+				}
 				if(aspect == 'walltime')
 					get_sys_figure(data, area, ' mins')
 				if(aspect == 'sys_cpu')

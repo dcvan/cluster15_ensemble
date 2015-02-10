@@ -10,7 +10,9 @@ import jinja2
 import time
 import math
 import numpy
+import tempfile
 import tornado.web
+import matplotlib.pyplot as plt
 
 from config import DB_NAME, check_content_type
 
@@ -500,7 +502,7 @@ class AnalysisRenderer(tornado.web.RequestHandler):
                 if query['aspect'] not in ['walltime', 'sys_cpu', 'sys_mem', 'sys_read', 'sys_write', 'sys_send', 'sys_recv']: 
                     self.set_status(400, 'Invalid aspect: %s' % query['aspect'])
                     return
-                query['use'] = 'regular' if 'use' not in query or query['use'] not in ['regular', 'chart'] else query['use']
+                query['use'] = 'regular' if 'use' not in query or query['use'] not in ['regular', 'chart', 'figure'] else query['use']
                 query['exp_ids'] = query['exp_ids'] if 'exp_ids' in query and query['exp_ids'] else [e['exp_id'] for e in 
                                             self._db[DB_NAME]['workflow']['experiment'].find({'type': workflow}, {'_id': 0, 'exp_id': 1}).sort('timestamp')]
                 data = self._get_data(query)
@@ -557,7 +559,55 @@ class AnalysisRenderer(tornado.web.RequestHandler):
             return {'result': raw}
         elif query['use'] == 'chart':
             return self._convert_to_chart_data(raw, query['aspect'], query['exp_ids'])
-
+        elif query['use'] == 'figure':
+            f = self._draw_figure(raw, query['aspect'], query['exp_ids'])
+            return {'url': '%s/pdf/%s'%(self.request.host, f.split('/')[-1])}
+            
+    def _draw_figure(self, raw, aspect, order):
+        '''
+        Draw figure with Matplotlib
+        
+        :param dict raw: raw data
+        :param str aspect: aspect of interest
+        :param list order: initial order of experiment IDs
+        :rtype str
+        
+        '''
+        data = self._convert_to_chart_data(raw, aspect, order)
+        legends = []
+        if 'values' in data and data['values']:
+            plt.plot(data['values'])
+        if 'avg' in data and data['avg']:
+            l, = plt.plot(data['avg'], label='Average')
+            legends.append(l)
+        if 'max' in data and data['max']:
+            l, = plt.plot(data['max'], label='Max')
+            legends.append(l)
+        if 'min' in data and data['min']:
+            l, = plt.plot(data['min'], label='Min')
+            legends.append(l)
+        plt.xlabel('Experiment Iterations')
+        if aspect == 'sys_cpu':
+            plt.ylabel('System CPU Usage')
+        elif aspect == 'sys_mem':
+            plt.ylabel('System Memory Usage')
+        elif aspect == 'sys_read':
+            plt.ylabel('System Read Rate')
+        elif aspect == 'sys_write':
+            plt.ylabel('System Write Rate')
+        elif aspect == 'sys_send':
+            plt.ylabel('System Send Rate')
+        elif aspect == 'sys_recv':
+            plt.ylabel('System Receive Rate')
+        elif aspect == 'walltime':
+            plt.ylabel('Walltime')
+        if legends:
+            plt.legend(handles=legends)
+        plt.title('Max: %.1f Min: %.1f Avg: %.1f'%(data['overall_max'], data['overall_min'], data['overall_avg']))
+        f = tempfile.mktemp(dir='/tmp')
+        plt.savefig(f, format='pdf')
+        return f
+        
     def _convert_to_chart_data(self, data, aspect, order):
         '''
         Convert raw data to usable data for Chart.js
@@ -624,3 +674,10 @@ class AnalysisRenderer(tornado.web.RequestHandler):
             res['overall_avg'] = sum(res['values'])/len(res['values']) if len(res['values']) else 0
             res['avg_std_dev'] = math.ceil(numpy.std((res['values']), ddof=1) * 100)/100
         return res
+    
+class PDFRenderer(tornado.web.RequestHandler):
+    
+    def get(self, name):
+        with open('/tmp/%s'%name, 'rb') as f:
+            self.set_header('Content-Type', 'application/pdf')
+            self.write(f.read())

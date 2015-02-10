@@ -9,7 +9,7 @@ import tornado.ioloop
 
 from message_consumer import ArchiveConsumer
 from connection import MessageConnection
-from renderer import WorkflowsRenderer, DeploymentRender, WorkflowRenderer, AnalysisRenderer, ExperimentRenderer, RunsRenderer, WorkerRenderer, ManifestRenderer
+from renderer import *
 from config import MESSAGE_BROKER_URI, ARCHIVE_HOST, ARCHIVE_PORT
 
 class Application(tornado.web.Application):
@@ -34,7 +34,9 @@ class Application(tornado.web.Application):
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/manifest', ManifestRenderer, dict(db=self._mongo_conn)),
                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/runs', RunsRenderer, dict(db=self._mongo_conn)),
 #                   (r'/workflows/([a-z-_]+)/experiments/([a-z0-9-]+)/workers/([a-z0-9-]+)', WorkerRenderer, dict(db=self._mongo_conn)),
-                  (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': 'static/'})
+                  (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': 'static/'}),
+                  (r'/tmp/(.*)', tornado.web.StaticFileHandler, {'path': '/tmp/'}),
+                  (r'/pdf/(.*)', PDFRenderer),
                 ]
         settings = {
                 'template_path': 'templates/',

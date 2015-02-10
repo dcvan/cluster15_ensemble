@@ -25,7 +25,8 @@ function plotLine(container, labels, ds){
 	opts = {
 			bezierCurve: false,
 			onAnimationComplete: function(){
-				opers.append($('<button class="btn btn-default download-image">Save Image</button>'));
+				opers.append($('<button class="btn btn-default chartjs">Chart.js</button>'));
+				opers.append($('<button class="btn btn-default matplotlib">Matplotlib</button>'))
 			}
 	};
 	
