@@ -30,17 +30,19 @@
     <rdf:type rdf:resource="http://www.w3.org/2006/time#DurationDescription"/>
   </rdf:Description>
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#">
-    <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0"/>
     <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#master"/>
-
     {% if param['storage_type'].lower() == 'iscsi' %}
        <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Link107"/>
     	<collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Storage0"/>
     {% endif %}
-     {% if param['deployment'] == 'multinode' and 'worker_sites' in param %}
+    
+     {%  if param['deployment'] == 'multinode' %} 
+     <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0"/>
+     {% if 'worker_sites' in param %}
     {% for w in param['worker_sites'] %}
     <collections:element rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#{{w['site']}}"/>
     {% endfor %}
+    {% endif %}
     {% endif %}
     <request-schema:hasTerm rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Term"/>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/request.owl#Reservation"/>
