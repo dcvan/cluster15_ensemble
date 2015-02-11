@@ -56,6 +56,7 @@
     <topology:hasGUID>{{param['image']['guid']}}</topology:hasGUID>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/compute.owl#DiskImage"/>
   </rdf:Description> 
+  {% if param['deployment'] == 'multinode' %}
   <!-- Broadcast Info -->
   <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0">
   <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master"/>
@@ -68,6 +69,7 @@
     <layer:bandwidth rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">{{param['bandwidth']}}</layer:bandwidth>
     <rdf:type rdf:resource="http://geni-orca.renci.org/owl/topology.owl#BroadcastConnection"/>
   </rdf:Description>
+  {% endif %}
   <!-- Node Group -->
   	<!-- Basic -->
   	{% if 'worker_sites' in param %}
