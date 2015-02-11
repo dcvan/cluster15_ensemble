@@ -108,7 +108,9 @@
   <!-- Master -->
 	<!-- Basic -->
    <rdf:Description rdf:about="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#master">
+   {% if param['deployment'] == 'multinode' %}
     <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#VLAN0-master"/>
+   {% endif %}
     {% if param['storage_type'].lower() == 'iscsi' %}
     <topology:hasInterface rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Link107-master"/>
     <request-schema:dependOn rdf:resource="http://geni-orca.renci.org/owl/0bb65c7c-bcaf-47ad-af51-e0b8c4adc527#Storage0"/>
