@@ -3,19 +3,10 @@ Created on Feb 10, 2015
 
 @author: dc
 '''
+import time
 import numpy
 import pymongo
 import matplotlib.pyplot as plt
-
-from matplotlib.patches import Polygon
-
-
-
-def plot_walltime(condition, name):
-    exps = db['experiment']['run'].find(condition, {'_id': 0})
-    plt.plot([e['walltime'] for e in exps])
-    plt.ylabel('Walltime(mins)')
-    plt.savefig(open('graphs/%s.pdf'%(name), 'wb'), format='pdf')
 
 db = pymongo.MongoClient()['cluster15']
 exp_handle = db['workflow']['experiment']
@@ -23,7 +14,9 @@ run_handle = db['experiment']['run']
 sys_handle = db['experiment']['system']
 job_handle = db['experiment']['job']
 
-class Analyzer:
+vm_sizes = ['Small', 'Medium', 'Large', 'Extra-large']
+
+class WalltimeAnalyzer:
     
     def get_experiments(self, cond, sortby='timestamp'):
         '''
@@ -31,6 +24,7 @@ class Analyzer:
         '''
         exps = [e for e in exp_handle.find(cond, {'_id': 0})]
         if sortby == 'worker_size':
+            sortby = 'size'
             for e in exps:
                 if e['worker_size'].lower() == 'xosmall':
                     e['size'] = 1
@@ -40,123 +34,67 @@ class Analyzer:
                     e['size'] = 3
                 elif e['worker_size'].lower() == 'xoxlarge':
                     e['size'] = 4
-            return [r for r in sorted(exps, key=lambda e: e['size'])]
-        else:
-            return [r for r in sorted(exps, key=lambda e: e[sortby])]
-        
-    def get_walltime_by_size(self, cond):
-        exps = self.get_experiments(cond, 'worker_size')
-        groups = {}
+        elif sortby == 'last_update_time':
+            for e in exps:
+                e['last_update_time'] = time.strftime('%m/%d %H:00', time.localtime(e['last_update_time']))
+        exps = [(r[sortby], r['exp_id']) for r in sorted(exps, key=lambda e: e[sortby])]
+        cat = {}
         for e in exps:
-            if e['worker_size'] in groups:
-                groups[e['worker_size']].append(e['exp_id'])
+            if e[0] in cat:
+                cat[e[0]].append(e[1])
             else:
-                groups[e['worker_size']] = [e['exp_id']]
+                cat[e[0]] = [e[1]]
+        return cat 
+    
+    def get_walltime(self, cond, sortby):
+        cat = self.get_experiments(cond, sortby)
         raw = {}
-        for g in groups:
-            for r in run_handle.find({'exp_id': {'$in': groups[g]}}):
-                if g in raw:
-                    raw[g].append(r['walltime'])
-                else:
-                    raw[g] = [r['walltime']]
-        tags = set([(e['worker_size'], e['size']) for e in exps])
-        sorted_tags = sorted(tags, key=lambda t: t[1])
-        tags = [t[0] for t in sorted_tags]
-        data = [numpy.average(raw[t]) for t in tags]
-        tags = ['%s(%d)'%(t, len(raw[t])) for t in tags]
-        x = [i for i in range(0, len(data))]
-        plt.xticks(x, tags)
-        l, = plt.plot(x, data, label='Average')
-        plt.legend(handles=[l])
-        plt.xlabel('Worker Size')
-        plt.ylabel('Walltime(mins)')
-        
-    def get_walltime_by_workload(self, cond):
-        exps = self.get_experiments(cond, 'workload')
-        groups = {}
-        for e in exps:
-            if e['workload'] in groups:
-                groups[e['workload']].append(e['exp_id'])
-            else:
-                groups[e['workload']] = [e['exp_id']]
-        raw = {}
-        for g in groups:
-            for r in run_handle.find({'exp_id': {'$in': groups[g]}}):
-                if g in raw:
-                    raw[g].append(r['walltime'])
-                else:
-                    raw[g] = [r['walltime']]
+        for g in cat:
+            raw[g] = [r['walltime'] for r in run_handle.find({'exp_id': {'$in': cat[g]}}, {'_id': 0})]
         tags = raw.keys()
         tags.sort()
-        data = [numpy.average(raw[t]) for t in tags]
-        tags = ['%d(%d)' % (t, len(raw[t])/t) for t in tags]
-        x = [i for i in range(0, len(data))]
-        plt.xticks(x, tags)
-        l, = plt.plot(x, data, label='Average')
-        plt.legend(handles=[l])
-        plt.xlabel('Number of Workloads')
-        plt.ylabel('Walltime(mins)')    
+        avg_wt = [numpy.average(raw[t]) for t in tags]
+        max_wt = [numpy.max(raw[t]) for t in tags]
+        min_wt = [numpy.min(raw[t]) for t in tags]
+        if sortby == 'worker_size':
+            tags = [vm_sizes[i - 1] for i in tags]
+        elif sortby == 'bandwidth':
+            tags = [i / (1000 * 1000) for i in tags]
+        elif sortby == 'master_site':
+            tags = [i.upper() for i in tags]
+        x = [i for i in range(0, len(tags))]
+        plt.xticks(x, tags, rotation=60if sortby in ['last_update_time'] else 'horizontal')
+        if sortby in ['last_update_time']:
+            plt.subplots_adjust(bottom=0.3)
+        l1, = plt.plot(x, avg_wt, label='Avg.')
+#         if sortby in ['master_site', 'last_update_time']:
+#             plt.legend(handles=[l1])
+#         else:
+        l2, =  plt.plot(x, max_wt, label='Max.')
+        l3, = plt.plot(x, min_wt, label='Min.')
+        plt.legend(handles=[l1, l2, l3])
+
+        plt.ylim(ymin=0)
+        if sortby in ['master_site', 'last_update_time', 'workload']:
+            plt.ylim(ymax=plt.ylim()[1] + 100)
         
-    def get_walltime_by_bandwidth(self, cond):
-        exps = self.get_experiments(cond, 'bandwidth')
-        groups = {}
-        for e in exps:
-            e['bandwidth'] /= (1000 * 1000)
-            if e['bandwidth'] in groups:
-                groups[e['bandwidth']].append(e['exp_id'])
-            else:
-                groups[e['bandwidth']] = [e['exp_id']]
-        raw = {}
-        for g in groups:
-            for r in run_handle.find({'exp_id': {'$in': groups[g]}}):
-                if g in raw:
-                    raw[g].append(r['walltime'])
-                else:
-                    raw[g] = [r['walltime']]
-        tags = raw.keys()
-        tags.sort()
-        data = [numpy.average(raw[t]) for t in tags]
-        tags = ['%d(%d)' % (t, len(raw[t])) for t in tags]
-        x = [i for i in range(0, len(data))]
-        plt.xticks(x, tags)
-        l, = plt.plot(x, data, label='Average')
-        plt.legend(handles=[l])
-        plt.xlabel('Bandwidth(Mbps)')
-        plt.ylabel('Walltime(mins)')  
-        
-    def get_walltime_by_worker_num(self, cond):
-        exps = self.get_experiments(cond, 'num_of_workers')
-        groups = {}
-        for e in exps:
-            if e['num_of_workers'] in groups:
-                groups[e['num_of_workers']].append(e['exp_id'])
-            else:
-                groups[e['num_of_workers']] = [e['exp_id']]
-        raw = {}
-        for g in groups:
-            for r in run_handle.find({'exp_id': {'$in': groups[g]}}):
-                if g in raw:
-                    raw[g].append(r['walltime'])
-                else:
-                    raw[g] = [r['walltime']]
-        tags = raw.keys()
-        tags.sort()
-        data = [numpy.average(raw[t]) for t in tags]
-        tags = ['%d(%d)' % (t, len(raw[t])) for t in tags]
-        x = [i for i in range(0, len(data))]
-        plt.xticks(x, tags)
-        l, = plt.plot(x, data, label='Average')
-        plt.legend(handles=[l])
-        plt.xlabel('Number of workers')
-        plt.ylabel('Walltime(mins)')  
+        if sortby == 'worker_size':
+            plt.xlabel('Worker size')
+        elif sortby == 'bandwidth':
+            plt.xlabel('Bandwidth(Mbps)')
+        elif sortby == 'num_of_workers':
+            plt.xlabel('Number of workers')
+        elif sortby == 'workload':
+            plt.xlabel('Number of workloads')
+        plt.ylabel('Walltime(mins)')        
     
     def save(self, fname):
-        plt.savefig(open('graphs/%s.pdf'%fname, 'wb'), format='pdf')
+        plt.savefig(open('graphs/wt-%s.pdf'%fname, 'wb'), format='pdf')
         plt.clf()
         
         
 if __name__ == '__main__':
-    m = Analyzer()
+    m = WalltimeAnalyzer()
     cond = {
             'type': 'montage',
             'status': 'finished',
@@ -165,8 +103,8 @@ if __name__ == '__main__':
             'workload': 1,
             'topology': 'intra-rack'
         }
-    m.get_walltime_by_size(cond)
-    m.save('wt-montage-size')
+    m.get_walltime(cond, 'worker_size')
+    m.save('montage-size')
     
     cond = {
             'type': 'genomic',
@@ -176,8 +114,8 @@ if __name__ == '__main__':
             'num_of_workers': 3,
             'topology': 'intra-rack'
         }
-    m.get_walltime_by_workload(cond)
-    m.save('wt-genomic-workload')
+    m.get_walltime(cond, 'workload')
+    m.save('genomic-workload')
     
     cond = {
             'type': 'montage',
@@ -187,8 +125,8 @@ if __name__ == '__main__':
             'workload': 1,
             'topology': 'intra-rack'
         }
-    m.get_walltime_by_bandwidth(cond)
-    m.save('wt-montage-bandwidth')
+    m.get_walltime(cond, 'bandwidth')
+    m.save('montage-bandwidth')
     
     cond = {
             'type': 'genomic',
@@ -198,8 +136,41 @@ if __name__ == '__main__':
             'topology': 'intra-rack',
             'master_site': 'sl',
         }
-    m.get_walltime_by_worker_num(cond)
-    m.save('wt-genomic-worker#')
+    m.get_walltime(cond, 'num_of_workers')
+    m.save('genomic-worker#')
+    
+    cond = {
+            'type': 'genomic',
+            'status': 'finished',
+            'workload': 1,
+            'worker_size': 'XOLarge',
+            'deployment': 'standalone'
+    }
+    m.get_walltime(cond, 'master_site')
+    m.save('genomic-master')
+
+    cond = {
+            'type': 'montage',
+            'status': 'finished',
+            'workload': 1,
+            'bandwidth': 100 * 1000 * 1000,
+            'num_of_workers': 5,
+            'worker_size': 'XOLarge',
+            'topology': 'intra-rack'
+    }
+    m.get_walltime(cond, 'master_site')
+    m.save('montage-master')
+        
+    cond = {
+            'type': 'genomic',
+            'status': 'finished',
+            'workload': 1,
+            'master_site': 'uh',
+            'worker_size': 'XOLarge',
+            'deployment': 'standalone'
+    }
+    m.get_walltime(cond, 'last_update_time')
+    m.save('genomic-timestamp')
     
 #     cond = {
 #             'type': 'genomic',
