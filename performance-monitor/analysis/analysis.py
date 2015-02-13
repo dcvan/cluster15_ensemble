@@ -40,7 +40,7 @@ def get_experiments(cond, sortby='timestamp'):
                 e['size'] = 4
     elif sortby == 'last_update_time':
         for e in exps:
-            e['last_update_time'] = time.strftime('%m/%d %H:00', time.localtime(e['last_update_time']))
+            e['last_update_time'] = time.strftime('%H:00', time.localtime(e['last_update_time']))
     elif sortby == 'worker_sites':
         sortby = 'overlap'
         for e in exps:
@@ -48,7 +48,7 @@ def get_experiments(cond, sortby='timestamp'):
         caliber = set(exps[0]['worker_sites'])
         print caliber
         for e in exps:
-            e['overlap'] = len(set(e['worker_sites'])&caliber)
+            e['overlap'] = len(caliber) - len(set(e['worker_sites'])&caliber)
 
     exps = [(r[sortby], r['exp_id']) for r in sorted(exps, key=lambda e: e[sortby])]
     cat = {}
@@ -77,11 +77,13 @@ class Analyzer:
         max_wt = [numpy.max(raw[t]) for t in tags]
         min_wt = [numpy.min(raw[t]) for t in tags]
         if sortby == 'worker_size':
-            tags = [vm_sizes[i - 1] for i in tags]
+            tags = ['%s(%d)'%(vm_sizes[i - 1], len(raw[i])) for i in tags]
         elif sortby == 'bandwidth':
-            tags = [i / (1000 * 1000) for i in tags]
+            tags = ['%d(%d)'%(i / (1000 * 1000), len(raw[i])) for i in tags]
         elif sortby == 'master_site':
-            tags = [i.upper() for i in tags]
+            tags = ['%s(%d)'%(i.upper(), len(raw[i])) for i in tags]
+        else:
+            tags = ['%s(%d)'%(str(i), len(raw[i])) for i in tags]
         x = [i for i in range(0, len(tags))]
         plt.xticks(x, tags, rotation=60 if sortby in ['last_update_time'] else 0, fontsize=8 if sortby in ['last_update_time'] else 10)
         if sortby in ['last_update_time']:
@@ -104,6 +106,11 @@ class Analyzer:
             plt.xlabel('Number of workers')
         elif sortby == 'workload':
             plt.xlabel('Number of workloads')
+        elif sortby == 'master_site':
+            plt.xlabel('Sites')
+        elif sortby == 'worker_sites':
+            plt.xlabel('Number of varied sites')
+        
             
         if aspect == 'walltime':
             plt.ylabel('Walltime(mins)')  
