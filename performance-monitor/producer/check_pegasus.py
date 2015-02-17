@@ -8,7 +8,7 @@ import re
 import shutil
 import argparse
 import logging
-from multiprocessing import Process, Manager, Lock, Queue
+from multiprocessing import Process, Manager, Queue
 
 from message_sender import MessageSender
 from config import MESSAGE_BROKER_URI, CONDOR_EXE_DIR
@@ -168,8 +168,7 @@ class SystemMonitor(Process):
         while True:
             while not os.listdir(CONDOR_EXE_DIR):
                 time.sleep(5)
-            cpu_pct = psutil.cpu_percent()
-            mem_pct = psutil.virtual_memory().percent
+            cpu_pct, mem_pct = psutil.cpu_percent(), psutil.virtual_memory().percent
             self._stat['sys_cpu_percent'] = self._stat['sys_cpu_percent'] + cpu_pct if 'sys_cpu_percent' in self._stat else cpu_pct
             self._stat['sys_max_cpu_percent'] = max(self._stat['sys_max_cpu_percent'], cpu_pct)
             self._stat['sys_min_cpu_percent'] = min(self._stat['sys_min_cpu_percent'], cpu_pct)
@@ -228,7 +227,7 @@ class WaitProcess(Process):
     
     '''
     
-    def __init__(self, proc, lock, data, msg_q):
+    def __init__(self, proc, data, msg_q):
         '''
         
         '''
@@ -237,7 +236,6 @@ class WaitProcess(Process):
         self.name = 'WaitProcess'
         self.daemon = True
         self._proc = proc
-        self._lock = lock
         self._stat = data
         self._msg_q = msg_q
         
@@ -261,25 +259,17 @@ class WaitProcess(Process):
         if proc.pid not in self._stat or not self._stat[proc.pid]:
             logging.warning('Job %d is not of interest. Quit' % proc.pid)
             return
-        if 'cmdline' not in self._stat[proc.pid] or not self._stat[proc.pid]['cmdline']: 
-            logging.warning('Cmdline not available for %d. Quit' % proc.pid)
-            return
-        
-        with self._lock: 
-            msg = dict(self._stat[proc.pid])
-            logging.debug('Copied job message: %s' % str(msg))
+        msg = dict(self._stat[proc.pid])
+        del self._stat[proc.pid]
+        logging.debug('Copied job message: %s' % str(msg))
         msg['timestamp'] = time.time()
         msg['runtime'] = msg['timestamp'] - proc.create_time() 
-        if msg['count'] > 1:
-            msg['avg_cpu_percent'] /= msg['count'] - 1 
-            msg['avg_mem_percent'] /= msg['count']
-        else:
-            msg['avg_cpu_percent'] = 0
-            msg['avg_mem_percent'] = 0
-        if msg['min_cpu_percent'] == 2000:
-            msg['min_cpu_percent'] = 0
-        if msg['min_mem_percent'] == 2000:
-            msg['min_mem_percent'] = 0
+        msg['avg_cpu_percent'] /= msg['count'] 
+        msg['avg_mem_percent'] /= msg['count']
+        msg['read_rate'] = msg['total_read_bytes'] / msg['runtime']
+        msg['write_rate'] = msg['total_write_bytes'] / msg['runtime']
+        msg['send_rate'] = msg['total_bytes_sent'] / msg['runtime']
+        msg['recv_rate'] = msg['total_bytes_recv'] / msg['runtime']
         self._msg_q.put(dict(msg))
         logging.info('Message sent to MessageSender')
         logging.debug('Runtime: %f\tCount: %d' % (msg['runtime'], msg['count']))
@@ -289,13 +279,12 @@ class JobMonitor(Process):
     A monitor to check a list of processes' system resource utilization
     
     '''
-    def __init__(self, exp_id, hostname, msg_q, execs, stat):
+    def __init__(self, exp_id, hostname, msg_q):
         '''
         Init
 
         :param str exp_id: experiment ID
         :param str hostname: hostname
-        :param set executables: executables to be monitored
         
         '''
         Process.__init__(self)
@@ -303,91 +292,53 @@ class JobMonitor(Process):
         self._exp_id = exp_id
         self._hostname = hostname
         self._msg_q = msg_q
-        self._cur = None
-        self._lock = Lock()
-        self._jobs = set(execs)
-        self._stat = stat
-        self._cur_stat = None
-        self._cur_job = 0
+        self._stat = Manager().dict()
         
     def _find_process(self):
         '''
         Find any running process of interest. Because only an interesting job will be running at 
         any point of time, it simply returns the first found process of interest
         
-        :rtype - psutil.Process
-        
         '''
         logging.info('Looking for condor_startd')
         pid = self._get_startd_pid()
-        if not pid: 
-            logging.info('No condor_startd found')
-            return None
+        while not pid: 
+            time.sleep(1)
+            pid = self._get_startd_pid()
+            
         logging.debug('PID: %d' % pid)
-        logging.debug('Waiting processes: %s' % str(self._stat.keys()))
         proc = psutil.Process(pid)
+
+        logging.info('Looking for job name')
+        job_name = self._get_job_name()
+        while not job_name:
+            time.sleep(1)
+            job_name = self._get_job_name()
+        
         if pid not in self._stat:
             logging.info('%d is not in the waiting list' % pid)
-            with self._lock:
-                self._stat[pid] = None
-                wp = WaitProcess(proc, self._lock, self._stat, self._msg_q)
-                wp.start()
-        try:
-            logging.info('Looking for interesting job')
-            children = proc.children(recursive=True)
-            logging.debug('Children: %s' % str(children))
-            for p in children:
-                try:
-                    executable = None                
-                    logging.debug('Command line of %d: %s' % (p.pid, ' '.join(p.cmdline())))
-                    if p.name() == 'python':
-                        executable = p.cmdline()[1].split('/')[-1] if len(p.cmdline()) > 1 else None
-                    elif p.name() == 'java':
-                        executable = p.parent().cmdline()[1].split('/')[-1] if len(p.parent().cmdline()) > 1 else None
-                    else:
-                        executable = p.name()
-                    logging.debug('Executable: %s' % executable)
-                    if executable and executable in self._jobs:
-                        logging.debug('Interesting job found: %s' % p.pid)
-                        if self._cur_job != proc.pid:
-                            logging.info('New job is found. Change job name')
-                            cmd = None
-                            parent_cmd = None
-                            try:
-                                cmd = list(p.cmdline())
-                                parent_cmd = list(p.parent().cmdline())
-                            except psutil.NoSuchProcess:
-                                logging.debug('Process %d is gone when just being found. Skip' % p.pid)
-                            else:
-                                self._cur_stat = {
-                                    'exp_id': self._exp_id,
-                                    'host': self._hostname,
-                                    'type': 'job',
-                                    'avg_cpu_percent': 0,
-                                    'avg_mem_percent': 0,
-                                    'max_cpu_percent': 0,
-                                    'min_cpu_percent': 2000,
-                                    'max_mem_percent': 0,
-                                    'min_mem_percent': 2000,
-                                    'count': 0
-                                }
-                                if p.name() == 'python':
-                                    self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[1:3]])
-                                elif p.name() == 'java':
-                                    self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in parent_cmd[1:3]])
-                                else:
-                                    self._cur_stat['cmdline'] = ' '.join([arg.split('/')[-1] for arg in cmd[:2]])
-                                logging.info('Message dict created')
-                                logging.debug('Cmdline: %s' % self._cur_stat['cmdline'])
-                                self._cur_job = proc.pid
-                        else:
-                            logging.info('Old job. Not change job name')
-                        return p
-                except psutil.NoSuchProcess:
-                    logging.debug('Process %d is gone when just being found. Skip' % p.pid)
-        except psutil.NoSuchProcess:
-            logging.info('Monitored job %d is gone in the middle' % proc.pid) 
-        return None
+            self._stat[pid] = None
+            wp = WaitProcess(proc, self._stat, self._msg_q)
+            wp.start()
+            cpu_pct, mem_pct = psutil.cpu_percent(), psutil.virtual_memory().percent
+            self._stat[pid] = {
+                    'exp_id': self._exp_id,
+                    'host': self._hostname,
+                    'name': job_name,
+                    'type': 'job',
+                    'avg_cpu_percent': cpu_pct,
+                    'avg_mem_percent': mem_pct,
+                    'max_cpu_percent': cpu_pct,
+                    'min_cpu_percent': cpu_pct,
+                    'max_mem_percent': mem_pct,
+                    'min_mem_percent': mem_pct,
+                    'init_read_bytes': psutil.disk_io_counters().read_bytes,
+                    'init_write_bytes': psutil.disk_io_counters().write_bytes,
+                    'init_bytes_sent': psutil.net_io_counters().bytes_sent,
+                    'init_bytes_recv': psutil.net_io_counters().bytes_recv,
+                    'count': 1
+            }
+            return proc
 
     def run(self):
         '''
@@ -395,35 +346,44 @@ class JobMonitor(Process):
          
         '''
         while True:
-            while not self._cur: 
-                self._cur = self._find_process()
+            cur = self._find_process()
+            logging.log('Start monitoring ...')
+            while cur.is_running():
+                pid = cur.pid
+                cpu_pct, mem_pct = psutil.cpu_percent(), psutil.virtual_memory().percent
+                self._stat[pid]['max_cpu_percent'] = max(self._stat[pid]['max_cpu_percent'], cpu_pct)
+                self._stat[pid]['min_cpu_percent'] = min(self._stat[pid]['min_cpu_percent'], cpu_pct)
+                self._stat[pid]['avg_cpu_percent'] += cpu_pct
+                self._stat[pid]['max_mem_percent'] = max(self._stat[pid]['max_mem_percent'], mem_pct)
+                self._stat[pid]['min_mem_percent'] = min(self._stat[pid]['min_mem_percent'], mem_pct)
+                self._stat[pid]['avg_mem_percent'] += mem_pct
+                self._stat[pid]['total_read_bytes'] = psutil.disk_io_counters().read_bytes - self._stat[pid]['init_read_bytes']
+                self._stat[pid]['total_write_bytes'] = psutil.disk_io_counters().write_bytes - self._stat[pid]['init_write_bytes']
+                self._stat[pid]['total_bytes_sent'] = psutil.net_io_counters().bytes_sent - self._stat[pid]['init_bytes_sent']
+                self._stat[pid]['total_bytes_recv'] = psutil.net_io_counters().bytes_recv - self._stat[pid]['init_bytes_recv']
+                self._stat[pid]['count'] += 1
                 time.sleep(1)
-            try:
-                cpu_pct = self._cur.cpu_percent()
-                mem_pct = self._cur.memory_percent()
-                self._cur_stat['max_cpu_percent'] = max(self._cur_stat['max_cpu_percent'], cpu_pct)
-                if cpu_pct:
-                    self._cur_stat['min_cpu_percent'] = min(self._cur_stat['min_cpu_percent'], cpu_pct)
-                self._cur_stat['avg_cpu_percent'] += cpu_pct
-                self._cur_stat['max_mem_percent'] = max(self._cur_stat['max_mem_percent'], mem_pct)
-                self._cur_stat['min_mem_percent'] = min(self._cur_stat['min_mem_percent'], mem_pct)
-                self._cur_stat['avg_mem_percent'] += mem_pct
-                self._cur_stat['total_read_bytes'] = self._cur.io_counters().read_bytes
-                self._cur_stat['total_write_bytes'] = self._cur.io_counters().write_bytes
-                self._cur_stat['count'] += 1
-            except psutil.NoSuchProcess:
-                logging.debug('Job %d is gone in the middle of examination' % self._cur.pid)
-                self._cur = None
-            else:
-                with self._lock:
-                    self._stat[self._cur_job] = dict(self._cur_stat)
-            time.sleep(1)
+            logging.log('%d is gone' % cur.pid)
             
     def _get_startd_pid(self):
         '''
         '''
         return int(os.listdir(CONDOR_EXE_DIR)[0][4:]) if os.listdir(CONDOR_EXE_DIR) else None
-
+    
+    def _get_job_name(self):
+        '''
+        
+        '''
+        job_ad_path = '%s/.job.ad' % os.listdir(CONDOR_EXE_DIR)[0]
+        if os.path.exists(job_ad_path): 
+            with open(job_ad_path, 'r') as job_ad:
+                for l in job_ad:
+                    if 'DAGNodeName' in l:
+                        return re.sub('[ "]', '', l.split('=')[1])
+        else:
+            return None
+        
+                    
     
 class MonitorManager(object):
     '''
@@ -431,7 +391,7 @@ class MonitorManager(object):
     
     '''
     
-    def __init__(self, exp_id, is_master, is_worker, site=None, work_dir=None, run=0, execs=None):
+    def __init__(self, exp_id, is_master, is_worker, site=None, work_dir=None, run=0):
         '''
         
         '''
@@ -447,7 +407,6 @@ class MonitorManager(object):
                 )
         self._is_master = is_master
         self._is_worker = is_worker
-        self._stat = Manager().dict()
         if self._is_master:
             if not work_dir:
                 logging.error('Workflow directory not provided')
@@ -457,11 +416,8 @@ class MonitorManager(object):
                 raise RuntimeError('Run number must not be zero for master nodes')
             self._workflow_monitor = WorkflowMonitor(self._exp_id, work_dir, run, self._msg_q)
         if self._is_worker:
-            if not execs:
-                logging.error('Executable list not provided')
-                raise RuntimeError('Executables to be tracked must be provided for worker nodes')
             self._sys_monitor = SystemMonitor(self._exp_id, self._hostname, self._msg_q)
-            self._job_monitor = JobMonitor(self._exp_id, self._hostname, self._msg_q, execs, self._stat)
+            self._job_monitor = JobMonitor(self._exp_id, self._hostname, self._msg_q)
     
     def run(self):
         '''
@@ -484,8 +440,7 @@ class MonitorManager(object):
             self._sys_monitor.start()
             logging.info('JobMonitor started')
             self._job_monitor.start()
-        while True: 
-            pass
+        while True:  pass
     
 if __name__ == '__main__':
     try:
@@ -496,7 +451,6 @@ if __name__ == '__main__':
         parser.add_argument('-d', '--dir', dest='workdir_base', type=str, help='Workflow working directory base')
         parser.add_argument('-r', '--run-num', dest='run_num', type=int, help='Number of planned runs')
         parser.add_argument('-s', '--site', type=str, dest='site', help='The site the node is running on')
-        parser.add_argument('-l', '--exec-list', nargs='+', type=str, dest='executables', help='Executables to be monitored')
         args = parser.parse_args()
         
         MonitorManager(
@@ -506,7 +460,6 @@ if __name__ == '__main__':
                 args.site,
                 args.workdir_base,
                 args.run_num,
-                args.executables,
             ).run()
     except KeyboardInterrupt:
         logging.warning('Ctrl-c found. Exit')

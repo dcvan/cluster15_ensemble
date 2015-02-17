@@ -16,11 +16,11 @@ sys_handle = db['experiment']['system']
 job_handle = db['experiment']['job']
 
 vm_sizes = ['Small', 'Medium', 'Large', 'Extra-large']
+weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 # matplotlib global settings
 matplotlib.rc('font', size=10)
 matplotlib.rc('legend', fontsize=10, frameon=False)
-
 
 def get_experiments(cond, sortby='timestamp'):
     '''
@@ -28,19 +28,18 @@ def get_experiments(cond, sortby='timestamp'):
     '''
     exps = [e for e in exp_handle.find(cond, {'_id': 0})]
     if sortby == 'worker_size':
-        sortby = 'size'
         for e in exps:
             if e['worker_size'].lower() == 'xosmall':
-                e['size'] = 1
+                e['worker_size'] = 'Small'
             elif e['worker_size'].lower() == 'xomedium':
-                e['size'] = 2
+                e['worker_size'] = 'Medium'
             elif e['worker_size'].lower() == 'xolarge':
-                e['size'] = 3
+                e['worker_size'] = 'Large'
             elif e['worker_size'].lower() == 'xoxlarge':
-                e['size'] = 4
-    elif sortby == 'last_update_time':
+                e['worker_size'] = 'Extra-large'
+    elif sortby == 'daytime' or sortby == 'weekday':
         for e in exps:
-            e['last_update_time'] = time.strftime('%H:00', time.localtime(e['last_update_time']))
+            e[sortby] = time.strftime('%H:00' if sortby == 'daytime' else '%A', time.localtime(e['last_update_time']))
     elif sortby == 'worker_sites':
         sortby = 'overlap'
         for e in exps:
@@ -71,22 +70,25 @@ class Analyzer:
                 raw[g] = [r['sys_cpu_percent'] for r in sys_handle.find({'exp_id': {'$in': cat[g]}}, {'_id': 0, 'sys_cpu_percent': 1})]
             elif aspect == 'sys_mem':
                 raw[g] = [r['sys_mem_percent'] for r in sys_handle.find({'exp_id': {'$in': cat[g]}}, {'_id': 0, 'sys_mem_percent': 1})]
-        tags = raw.keys()
-        tags.sort()
+        if sortby == 'weekday':
+            tags = sorted(raw.keys(), key=weekdays.index)
+        elif sortby == 'worker_size':
+            tags = sorted(raw.keys(), key=vm_sizes.index)
+        else:
+            tags = raw.keys()
+            tags.sort()
         avg_wt = [numpy.average(raw[t]) for t in tags]
         max_wt = [numpy.max(raw[t]) for t in tags]
         min_wt = [numpy.min(raw[t]) for t in tags]
-        if sortby == 'worker_size':
-            tags = ['%s(%d)'%(vm_sizes[i - 1], len(raw[i])) for i in tags]
-        elif sortby == 'bandwidth':
+        if sortby == 'bandwidth':
             tags = ['%d(%d)'%(i / (1000 * 1000), len(raw[i])) for i in tags]
         elif sortby == 'master_site':
             tags = ['%s(%d)'%(i.upper(), len(raw[i])) for i in tags]
         else:
             tags = ['%s(%d)'%(str(i), len(raw[i])) for i in tags]
         x = [i for i in range(0, len(tags))]
-        plt.xticks(x, tags, rotation=60 if sortby in ['last_update_time'] else 0, fontsize=8 if sortby in ['last_update_time'] else 10)
-        if sortby in ['last_update_time']:
+        plt.xticks(x, tags, rotation=60 if sortby in ['daytime'] else 0, fontsize=8 if sortby in ['daytime'] else 10)
+        if sortby in ['daytime']:
             plt.subplots_adjust(bottom=0.3)
         l1, = plt.plot(x, avg_wt, label='Avg.')
         l2, =  plt.plot(x, max_wt, label='Max.')
@@ -95,7 +97,7 @@ class Analyzer:
      
         plt.ylim(ymin=0, ymax=plt.ylim()[1] * 1.3)
         
-        if sortby in ['master_site', 'worker_sites', 'last_update_time']:
+        if sortby in ['master_site', 'worker_sites', 'weekday', 'daytime']:
             plt.text(plt.xlim()[1] * 0.02, plt.ylim()[1] * 0.95, 'std. deviation: %.2f' % numpy.std(avg_wt, ddof=1), fontsize=12)        
         
         if sortby == 'worker_size':
@@ -221,8 +223,11 @@ if __name__ == '__main__':
                 'worker_size': 'XOLarge',
                 'deployment': 'standalone'
         }
-        m.get_analysis(cond, 'last_update_time', asp)
-        m.save('%s-genomic-timestamp' % asp)
+        m.get_analysis(cond, 'daytime', asp)
+        m.save('%s-genomic-daytime' % asp)
+        
+        m.get_analysis(cond, 'weekday', asp)
+        m.save('%s-genomic-weekdays' % asp)
         
         cond = {
                 'type': 'montage',
@@ -233,6 +238,11 @@ if __name__ == '__main__':
         m.get_analysis(cond, 'worker_sites', asp)
         m.save('%s-montage-workers' % asp)
     
+#     cond = {
+#         'exp_id': '0355721a-6098-452b-ab66-ccde2ff2e749'
+#     }
+#     m.get_analysis(cond, 'cmdline', 'job_cpu')
+#     m.save('job_cpu-genomic-cmdline')
 
 #     cond = {
 #             'type': 'genomic',

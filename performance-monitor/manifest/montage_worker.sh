@@ -111,5 +111,5 @@ git clone https://github.com/dcvan/cluster15_ensemble.git ~/cluster
 rm -rf /home/pegasus-user/20131031/montage/input /home/pegasus-user/20131031/montage/workflow /home/pegasus-user/20131031/montage/workflow /home/pegasus-user/20131031/rosetta
 
 # start monitor
-python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w -s {{param['site']}} -l {{' '.join(param['executables'])}} &gt; log.txt 2&gt; err.txt
+python /root/cluster/performance-monitor/producer/check_pegasus.py -i {{param['exp_id']}} -w -s {{param['site']}} &amp;
 
