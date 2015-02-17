@@ -347,7 +347,7 @@ class JobMonitor(Process):
         '''
         while True:
             cur = self._find_process()
-            logging.log('Start monitoring ...')
+            logging.info('Start monitoring ...')
             while cur.is_running():
                 pid = cur.pid
                 cpu_pct, mem_pct = psutil.cpu_percent(), psutil.virtual_memory().percent
@@ -363,7 +363,7 @@ class JobMonitor(Process):
                 self._stat[pid]['total_bytes_recv'] = psutil.net_io_counters().bytes_recv - self._stat[pid]['init_bytes_recv']
                 self._stat[pid]['count'] += 1
                 time.sleep(1)
-            logging.log('%d is gone' % cur.pid)
+            logging.info('%d is gone' % cur.pid)
             
     def _get_startd_pid(self):
         '''
