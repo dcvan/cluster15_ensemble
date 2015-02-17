@@ -332,6 +332,10 @@ class JobMonitor(Process):
                     'min_cpu_percent': cpu_pct,
                     'max_mem_percent': mem_pct,
                     'min_mem_percent': mem_pct,
+                    'total_read_bytes': 0,
+                    'total_write_bytes': 0,
+                    'total_bytes_sent': 0,
+                    'total_bytes_recv': 0,
                     'init_read_bytes': psutil.disk_io_counters().read_bytes,
                     'init_write_bytes': psutil.disk_io_counters().write_bytes,
                     'init_bytes_sent': psutil.net_io_counters().bytes_sent,
@@ -348,20 +352,22 @@ class JobMonitor(Process):
         while True:
             cur = self._find_process()
             logging.info('Start monitoring ...')
+            pid = cur.pid
+            tmp_stat = dict(self._stat[pid])
             while cur.is_running():
-                pid = cur.pid
                 cpu_pct, mem_pct = psutil.cpu_percent(), psutil.virtual_memory().percent
-                self._stat[pid]['max_cpu_percent'] = max(self._stat[pid]['max_cpu_percent'], cpu_pct)
-                self._stat[pid]['min_cpu_percent'] = min(self._stat[pid]['min_cpu_percent'], cpu_pct)
-                self._stat[pid]['avg_cpu_percent'] += cpu_pct
-                self._stat[pid]['max_mem_percent'] = max(self._stat[pid]['max_mem_percent'], mem_pct)
-                self._stat[pid]['min_mem_percent'] = min(self._stat[pid]['min_mem_percent'], mem_pct)
-                self._stat[pid]['avg_mem_percent'] += mem_pct
-                self._stat[pid]['total_read_bytes'] = psutil.disk_io_counters().read_bytes - self._stat[pid]['init_read_bytes']
-                self._stat[pid]['total_write_bytes'] = psutil.disk_io_counters().write_bytes - self._stat[pid]['init_write_bytes']
-                self._stat[pid]['total_bytes_sent'] = psutil.net_io_counters().bytes_sent - self._stat[pid]['init_bytes_sent']
-                self._stat[pid]['total_bytes_recv'] = psutil.net_io_counters().bytes_recv - self._stat[pid]['init_bytes_recv']
-                self._stat[pid]['count'] += 1
+                tmp_stat['max_cpu_percent'] = max(tmp_stat['max_cpu_percent'], cpu_pct)
+                tmp_stat['min_cpu_percent'] = min(tmp_stat['min_cpu_percent'], cpu_pct)
+                tmp_stat['avg_cpu_percent'] += cpu_pct
+                tmp_stat['max_mem_percent'] = max(tmp_stat['max_mem_percent'], mem_pct)
+                tmp_stat['min_mem_percent'] = min(tmp_stat['min_mem_percent'], mem_pct)
+                tmp_stat['avg_mem_percent'] += mem_pct
+                tmp_stat['total_read_bytes'] = psutil.disk_io_counters().read_bytes - tmp_stat['init_read_bytes']
+                tmp_stat['total_write_bytes'] = psutil.disk_io_counters().write_bytes - tmp_stat['init_write_bytes']
+                tmp_stat['total_bytes_sent'] = psutil.net_io_counters().bytes_sent - tmp_stat['init_bytes_sent']
+                tmp_stat['total_bytes_recv'] = psutil.net_io_counters().bytes_recv - tmp_stat['init_bytes_recv']
+                tmp_stat['count'] += 1
+                self._stat[pid] = dict(tmp_stat)
                 time.sleep(1)
             logging.info('%d is gone' % cur.pid)
             
@@ -379,7 +385,7 @@ class JobMonitor(Process):
             with open(job_ad_path, 'r') as job_ad:
                 for l in job_ad:
                     if 'DAGNodeName' in l:
-                        return re.sub('[ "]', '', l.split('=')[1])
+                        return re.sub('[ "\n]', '', l.split('=')[1])
         else:
             return None
         
