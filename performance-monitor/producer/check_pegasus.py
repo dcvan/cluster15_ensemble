@@ -374,7 +374,7 @@ class JobMonitor(Process):
         '''
         
         '''
-        job_ad_path = '%s/.job.ad' % os.listdir(CONDOR_EXE_DIR)[0]
+        job_ad_path = '%s/%s/.job.ad' % (CONDOR_EXE_DIR, os.listdir(CONDOR_EXE_DIR)[0])
         if os.path.exists(job_ad_path): 
             with open(job_ad_path, 'r') as job_ad:
                 for l in job_ad:
