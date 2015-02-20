@@ -74,7 +74,7 @@ if __name__ == '__main__':
     ax2 = ax.twinx()
     l3, = ax2.plot(x, [geno_rrate[k] / (1024 * 1024) for k in geno_rrate], 'gD--' , markersize=5, label='Read rate')
     l4, = ax2.plot(x, [geno_wrate[k] / (1024 * 1024) for k in geno_wrate], 'ms--' , markersize=5, label='Write rate')
-    ax2.set_ylabel('Rate(MB/s)')
+    ax2.set_ylabel('I/O Rate(MB/s)')
 
     ax.set_ylim(0, ax.get_ylim()[1]  * 1.1)
     ax.set_ylabel('Utilization(%)')    
@@ -93,7 +93,7 @@ if __name__ == '__main__':
     ax4 = ax3.twinx()
     l3, = ax4.plot(x, [mon_rrate[k] / (1024 * 1024) for k in mon_rrate], 'gD--' , markersize=5, label='Read rate')
     l4, = ax4.plot(x, [mon_wrate[k] / (1024 * 1024) for k in mon_wrate], 'ms--' , markersize=5, label='Write rate')
-    ax4.set_ylabel('Rate(MB/s)')
+    ax4.set_ylabel('I/O Rate(MB/s)')
 
     ax3.set_ylim(0, ax3.get_ylim()[1]  * 1.1)
     ax3.set_ylabel('Utilization(%)')
