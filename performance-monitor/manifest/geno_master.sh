@@ -67,8 +67,6 @@ chown condor:condor /var/log/condor
 service condor restart
 
 mkdir -p /mnt/scratch
-chown -R pegasus-user:pegasus-user /mnt/scratch
-
 {% if param['filesystem'] == 'nfs' %}
 # NFS server setup
 yum -y install nfs-utils nfs-utils-lib
@@ -79,7 +77,7 @@ exportfs -a
 /etc/init.d/rpcbind start
 /etc/init.d/nfs start
 {% endif %}
-
+chown -R pegasus-user:pegasus-user /mnt/scratch
 # workflow setup 
 tar zxf /home/pegasus-user/genomics/references.tgz -C /home/pegasus-user/genomics
 chown -R pegasus-user:pegasus-user /home/pegasus-user/genomics

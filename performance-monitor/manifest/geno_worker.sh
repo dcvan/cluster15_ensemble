@@ -69,7 +69,6 @@ while [ ! "$(condor_status | grep $MY_HOSTNAME)" ];do
 done
 
 mkdir -p /mnt/scratch
-chown -R pegasus-user:pegasus-user /mnt/scratch
 
 {% if param['filesystem'] == 'nfs' %}
 # NFS setup
@@ -84,6 +83,7 @@ while [ "$?" -gt 0 ];do
     mount -a -t nfs
 done
 {% endif %}
+chown -R pegasus-user:pegasus-user /mnt/scratch
 
 # workflow setup
 tar zxf /home/pegasus-user/genomics/references.tgz -C /home/pegasus-user/genomics
