@@ -9,18 +9,21 @@ import pymongo
 import matplotlib
 import matplotlib.pyplot as plt
 
+from matplotlib.pyplot import legend
+
 db = pymongo.MongoClient()['cluster15']
 exp_handle = db['workflow']['experiment']
 run_handle = db['experiment']['run']
 sys_handle = db['experiment']['system']
 job_handle = db['experiment']['job']
 
-vm_sizes = ['Small', 'Medium', 'Large', 'Extra-large']
+vm_sizes = ['Small', 'Medium', 'Large', 'XLarge']
 weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
+styles = ['rD-', 'bH:', 'g.-.']
+labels = ['Exomic', 'Montage']
 # matplotlib global settings
-matplotlib.rc('font', size=10)
-matplotlib.rc('legend', fontsize=10, frameon=False)
+matplotlib.rc('font', size=8)
+matplotlib.rc('legend', fontsize=12)
 
 def get_experiments(cond, sortby='timestamp'):
     '''
@@ -36,7 +39,7 @@ def get_experiments(cond, sortby='timestamp'):
             elif e['worker_size'].lower() == 'xolarge':
                 e['worker_size'] = 'Large'
             elif e['worker_size'].lower() == 'xoxlarge':
-                e['worker_size'] = 'Extra-large'
+                e['worker_size'] = 'XLarge'
     elif sortby == 'daytime' or sortby == 'weekday':
         for e in exps:
             e[sortby] = time.strftime('%H:00' if sortby == 'daytime' else '%A', time.localtime(e['last_update_time']))
@@ -45,205 +48,256 @@ def get_experiments(cond, sortby='timestamp'):
         for e in exps:
             e['worker_sites'] = [s['site'] for s in e['worker_sites']]
         caliber = set(exps[0]['worker_sites'])
-        print caliber
         for e in exps:
             e['overlap'] = len(caliber) - len(set(e['worker_sites'])&caliber)
-
+    sites = {}
+    for e in exps:
+        if e['master_site'] in sites:
+            sites[e['master_site']] += 1
+        else:
+            sites[e['master_site']] = 1
+    print sites
     exps = [(r[sortby], r['exp_id']) for r in sorted(exps, key=lambda e: e[sortby])]
     cat = {}
+    if sortby == 'worker_size':
+        for s in vm_sizes:
+            cat[s] = []
+    elif sortby == 'workload':
+        for w in range(1, 9):
+            cat[w] = []
+    elif sortby == 'bandwidth':
+        for w in range(100, 600, 100):
+            cat[w] = []
+    elif sortby == 'num_of_workers':
+        for w in range(1, 6):
+            cat[w] = []
     for e in exps:
-        if e[0] in cat:
-            cat[e[0]].append(e[1])
+        if sortby == 'bandwidth':
+            cat[e[0] / (1000 * 1000)].append(e[1])
         else:
-            cat[e[0]] = [e[1]]
+            cat[e[0]].append(e[1])
     return cat 
     
 class Analyzer:
-    
-    def get_analysis(self, cond, sortby, aspect):
-        cat = get_experiments(cond, sortby)
-        raw = {}
-        for g in cat:
-            if aspect == 'walltime':
-                raw[g] = [r['walltime'] for r in run_handle.find({'exp_id': {'$in': cat[g]}}, {'_id': 0, 'walltime': 1})]
-            elif aspect == 'sys_cpu':
-                raw[g] = [r['sys_cpu_percent'] for r in sys_handle.find({'exp_id': {'$in': cat[g]}}, {'_id': 0, 'sys_cpu_percent': 1})]
-            elif aspect == 'sys_mem':
-                raw[g] = [r['sys_mem_percent'] for r in sys_handle.find({'exp_id': {'$in': cat[g]}}, {'_id': 0, 'sys_mem_percent': 1})]
-        if sortby == 'weekday':
-            tags = sorted(raw.keys(), key=weekdays.index)
-        elif sortby == 'worker_size':
-            tags = sorted(raw.keys(), key=vm_sizes.index)
+
+    def analyze(self, conds, sortby):
+        cat = [get_experiments(c, sortby) for c in conds]
+        if sortby in ['worker_size']:
+            tags = sorted(cat[0].keys(), key=vm_sizes.index)
         else:
-            tags = raw.keys()
+            tags = cat[0].keys()
             tags.sort()
-        avg_wt = [numpy.average(raw[t]) for t in tags]
-        max_wt = [numpy.max(raw[t]) for t in tags]
-        min_wt = [numpy.min(raw[t]) for t in tags]
-        if sortby == 'bandwidth':
-            tags = ['%d(%d)'%(i / (1000 * 1000), len(raw[i])) for i in tags]
-        elif sortby == 'master_site':
-            tags = ['%s(%d)'%(i.upper(), len(raw[i])) for i in tags]
-        else:
-            tags = ['%s(%d)'%(str(i), len(raw[i])) for i in tags]
-        x = [i for i in range(0, len(tags))]
-        plt.xticks(x, tags, rotation=60 if sortby in ['daytime'] else 0, fontsize=8 if sortby in ['daytime'] else 10)
-        if sortby in ['daytime']:
-            plt.subplots_adjust(bottom=0.3)
-        l1, = plt.plot(x, avg_wt, label='Avg.')
-        l2, =  plt.plot(x, max_wt, label='Max.')
-        l3, = plt.plot(x, min_wt, label='Min.')
-        plt.legend(handles=[l1, l2, l3])
-     
-        plt.ylim(ymin=0, ymax=plt.ylim()[1] * 1.3)
+        g_wt_raw, g_sys_raw, m_wt_raw, m_sys_raw = {}, {}, {}, {}
+        for group in tags:
+                g_wt_raw[group] = [d['walltime'] for d in run_handle.find({'exp_id': {'$in': cat[0][group]}}, {'_id': 0, 'walltime': 1})]
+                g_sys_raw[group] = [d for d in sys_handle.find({'exp_id': {'$in': cat[0][group]}}, {'_id': 0})]
+                m_wt_raw[group] = [d['walltime'] for d in run_handle.find({'exp_id': {'$in': cat[1][group]}}, {'_id': 0, 'walltime': 1})]
+                m_sys_raw[group] = [d  for d in sys_handle.find({'exp_id': {'$in': cat[1][group]}}, {'_id': 0})]
+        x = range(0, len(tags))
+        #walltime
+        plt.figure(1)
+        ax0 = plt.subplot(321)
+        ax0.plot(x, [numpy.average(g_wt_raw[k]) if g_wt_raw[k] else None for k in tags], styles[0], markersize=5, label=labels[0])
+        ax0.plot(x, [numpy.average(m_wt_raw[k]) if m_wt_raw[k] else None for k in tags], styles[1], markersize=5, label=labels[1])
+        ax0.set_xticks(x)
+        ax0.set_xticklabels(tags)
+        ax0.set_ylabel('Walltime(mins)')
         
-        if sortby in ['master_site', 'worker_sites', 'weekday', 'daytime']:
-            plt.text(plt.xlim()[1] * 0.02, plt.ylim()[1] * 0.95, 'std. deviation: %.2f' % numpy.std(avg_wt, ddof=1), fontsize=12)        
-        
+        #cpu 
+        ax1 = plt.subplot(322)
+        ax1.plot(x, [numpy.average([d['sys_cpu_percent'] for d in g_sys_raw[k]]) if g_sys_raw[k] else None for k in tags], styles[0], markersize=5, label=labels[0])
+        ax1.plot(x, [numpy.average([d['sys_cpu_percent'] for d in m_sys_raw[k]]) if m_sys_raw[k] else None for k in tags], styles[1], markersize=5, label=labels[1])
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(tags)
         if sortby == 'worker_size':
-            plt.xlabel('Worker size')
-        elif sortby == 'bandwidth':
-            plt.xlabel('Bandwidth(Mbps)')
-        elif sortby == 'num_of_workers':
-            plt.xlabel('Number of workers')
+            ax1.set_ylim(ymax=105)
         elif sortby == 'workload':
-            plt.xlabel('Number of workloads')
-        elif sortby == 'master_site':
-            plt.xlabel('Sites')
-        elif sortby == 'worker_sites':
-            plt.xlabel('Number of varied sites')
+            ax1.set_ylim(94, 100)
+        ax1.set_ylabel('CPU util.(%)')
+
+        #mem
+        ax2 = plt.subplot(323)
+        ax2.plot(x, [numpy.average([d['sys_mem_percent'] for d in g_sys_raw[k]]) if g_sys_raw[k] else None for k in tags], styles[0], markersize=5, label=labels[0])
+        ax2.plot(x, [numpy.average([d['sys_mem_percent'] for d in m_sys_raw[k]]) if m_sys_raw[k] else None for k in tags], styles[1], markersize=5, label=labels[1])
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(tags)
+        ax2.set_ylabel('Memory util.(%)')
         
-            
-        if aspect == 'walltime':
-            plt.ylabel('Walltime(mins)')  
-        elif aspect == 'sys_cpu':
-            plt.ylabel('CPU Usage(%)')
-        elif aspect == 'sys_mem':
-            plt.ylabel('Memory Usage(%)')
-            
+        #read rate
+        ax3 = plt.subplot(324)
+        ax3.plot(x, [numpy.average([d['sys_read_rate'] / (1024 * 1024) for d in g_sys_raw[k]]) if g_sys_raw[k] else None for k in tags], styles[0], markersize=5, label=labels[0])
+        ax3.plot(x, [numpy.average([d['sys_read_rate'] / (1024 * 1024) for d in m_sys_raw[k]]) if m_sys_raw[k] else None for k in tags], styles[1], markersize=5, label=labels[1])
+        ax3.set_xticks(x)
+        ax3.set_xticklabels(tags)
+        ax3.set_ylabel('Read rate(MB/s)')
+        
+        #write rate
+        ax4 = plt.subplot(325)
+        l1, = ax4.plot(x, [numpy.average([d['sys_write_rate'] / (1024 * 1024) for d in g_sys_raw[k]]) if g_sys_raw[k] else None for k in tags], styles[0], markersize=5, label=labels[0])
+        l2, = ax4.plot(x, [numpy.average([d['sys_write_rate'] / (1024 * 1024) for d in m_sys_raw[k]]) if m_sys_raw[k] else None for k in tags], styles[1], markersize=5, label=labels[1])
+        ax4.set_xticks(x)
+        ax4.set_xticklabels(tags)
+        ax4.set_ylabel('Write rate(MB/s)')
+
+        legend(bbox_to_anchor=(1.45, 0.4), loc=2, ncol=1, borderaxespad=0, borderpad=0.7, labelspacing=1, handlelength=3, handles=[l1, l2])
+        plt.tight_layout()
+         
     def save(self, fname):
         plt.savefig(open('graphs/%s.pdf'%fname, 'wb'), format='pdf')
         plt.clf()
+        
+        
 
         
 if __name__ == '__main__':
     m = Analyzer()
-    for asp in ['walltime', 'sys_cpu', 'sys_mem']:
-        cond = {
-                'type': 'genomic',
-                'status': 'finished',
-                'workload': 1,
-                'deployment': 'standalone'
-            }
-        m.get_analysis(cond, 'worker_size', asp)
-        m.save('%s-genomic-size' % asp)
+    conds = [
+                    {
+                        'type': 'genomic',
+                        'status': 'finished',
+                        'workload': 1,
+                        'deployment': 'standalone'
+                    },
+                    {
+                        'type': 'montage',
+                        'status': 'finished',
+                        'bandwidth': 100 * 1000 * 1000,
+                        'num_of_workers': 5,
+                        'workload': 1,
+                        'topology': 'intra-rack'
+                    }
+            ]
+    m.analyze(conds, 'worker_size')
+    m.save('vm_size')
         
-        cond = {
-                'type': 'montage',
-                'status': 'finished',
-                'bandwidth': 100 * 1000 * 1000,
-                'num_of_workers': 5,
-                'workload': 1,
-                'topology': 'intra-rack'
-            }
-        m.get_analysis(cond, 'worker_size', asp)
-        m.save('%s-montage-size' % asp)
-        
-        cond = {
+    conds = [{
+            'type': 'genomic',
+            'status': 'finished',
+            'worker_size': 'XOLarge',
+            'bandwidth': 100 * 1000 * 1000,
+            'num_of_workers': 3,
+            'topology': 'intra-rack'
+        },
+        {
+            'type': 'montage',
+            'status': 'finished',
+            'worker_size': 'XOLarge',
+            'bandwidth': 100 * 1000 * 1000,
+            'num_of_workers': 5,
+            'topology': 'intra-rack'
+        }
+    ]
+    m.analyze(conds, 'workload')
+    m.save('workload') 
+
+    conds =[
+            {
                 'type': 'genomic',
                 'status': 'finished',
                 'worker_size': 'XOLarge',
-                'bandwidth': 100 * 1000 * 1000,
                 'num_of_workers': 3,
-                'topology': 'intra-rack'
-            }
-        m.get_analysis(cond, 'workload', asp)
-        m.save('%s-genomic-workload' % asp)
-        
-        cond = {
+                'workload': 3,
+                'topology': 'intra-rack',
+            },
+            {
                 'type': 'montage',
                 'status': 'finished',
                 'worker_size': 'XOLarge',
-                'bandwidth': 100 * 1000 * 1000,
-                'num_of_workers': 5,
-                'topology': 'intra-rack'
-            }
-        m.get_analysis(cond, 'workload', asp)
-        m.save('%s-montage-workload' % asp) 
-        
-        cond = {
-                'type': 'montage',
-                'status': 'finished',
-                'worker_size': 'XOLarge',
-                'num_of_workers': 5,
                 'workload': 1,
+                'master_site': 'osf',
+                'num_of_workers': 5,
                 'topology': 'intra-rack',
             }
-        m.get_analysis(cond, 'bandwidth', asp)
-        m.save('%s-montage-bandwidth' % asp)
-        
-        cond = {
+        ]
+    m.analyze(conds, 'bandwidth')
+    m.save('bandwidth')
+    
+    conds = [
+             {
                 'type': 'genomic',
                 'status': 'finished',
                 'worker_size': 'XOLarge',
                 'workload': 5,
-                'topology': 'intra-rack',
-                'master_site': 'sl',
-            }
-        m.get_analysis(cond, 'num_of_workers', asp)
-        m.save('%s-genomic-worker#' % asp)
-        
-        cond = {
-                'type': 'genomic',
-                'status': 'finished',
-                'workload': 1,
-                'worker_size': 'XOLarge',
-                'deployment': 'standalone'
-        }
-        m.get_analysis(cond, 'master_site', asp)
-        m.save('%s-genomic-master' % asp)
-    
-        cond = {
+                'bandwidth': 100 * 1000 * 1000,
+                'topology': 'intra-rack'
+              },
+             {
                 'type': 'montage',
                 'status': 'finished',
+                'worker_size': 'XOLarge',
                 'workload': 1,
                 'bandwidth': 100 * 1000 * 1000,
-                'num_of_workers': 5,
-                'worker_size': 'XOLarge',
-                'topology': 'intra-rack'
-        }
-        m.get_analysis(cond, 'master_site', asp)
-        m.save('%s-montage-master' % asp)
-            
-        cond = {
-                'type': 'genomic',
-                'status': 'finished',
-                'workload': 1,
-                'master_site': 'uh',
-                'worker_size': 'XOLarge',
-                'deployment': 'standalone'
-        }
-        m.get_analysis(cond, 'daytime', asp)
-        m.save('%s-genomic-daytime' % asp)
-        
-        m.get_analysis(cond, 'weekday', asp)
-        m.save('%s-genomic-weekdays' % asp)
-        
-        cond = {
-                'type': 'montage',
-                'status': 'finished',
-                'topology': 'inter-rack',
-                'num_of_workers': 4
-                }
-        m.get_analysis(cond, 'worker_sites', asp)
-        m.save('%s-montage-workers' % asp)
-    
+                'topology': 'intra-rack',
+              }
+    ]
+    m.analyze(conds, 'num_of_workers')
+    m.save('num_of_workers')
+#         cond = {
+#                 'type': 'genomic',
+#                 'status': 'finished',
+#                 'workload': 1,
+#                 'worker_size': 'XOLarge',
+#                 'deployment': 'standalone'
+#         }
+#         m.get_analysis(cond, 'master_site', asp)
+#         m.save('%s-genomic-master' % asp)
+#     
+#         cond = {
+#                 'type': 'montage',
+#                 'status': 'finished',
+#                 'workload': 1,
+#                 'bandwidth': 100 * 1000 * 1000,
+#                 'num_of_workers': 5,
+#                 'worker_size': 'XOLarge',
+#                 'topology': 'intra-rack'
+#         }
+#         m.get_analysis(cond, 'master_site', asp)
+#         m.save('%s-montage-master' % asp)
+#             
+#         cond = {
+#                 'type': 'genomic',
+#                 'status': 'finished',
+#                 'workload': 1,
+#                 'master_site': 'uh',
+#                 'worker_size': 'XOLarge',
+#                 'deployment': 'standalone'
+#         }
+#         m.get_analysis(cond, 'daytime', asp)
+#         m.save('%s-genomic-daytime' % asp)
+#         
+#         m.get_analysis(cond, 'weekday', asp)
+#         m.save('%s-genomic-weekdays' % asp)
+#         
+#         cond = {
+#                 'type': 'montage',
+#                 'status': 'finished',
+#                 'topology': 'inter-rack',
+#                 'num_of_workers': 4
+#                 }
+#         m.get_analysis(cond, 'worker_sites', asp)
+#         m.save('%s-montage-workers' % asp)
+#     
+#         cond = {
+#                 'type': 'montage',
+#                 'status': 'finished',
+#                 'bandwidth': 100 * 1000 * 1000,
+#                 'topology': 'intra-rack',
+#                 'worker_size': 'XOLarge',
+#                 'num_of_workers': 5,
+#                 'workload': 1,
+#                 'master_site': 'wsu',
+#         }
+#         m.get_analysis(cond, 'daytime', asp)
+#         m.save('%s-montage-daytime' % asp)
+#         
+#         m.get_analysis(cond, 'weekday', asp)
+#         m.save('%s-montage-weekdays' % asp)
 #     cond = {
 #         'exp_id': '0355721a-6098-452b-ab66-ccde2ff2e749'
 #     }
 #     m.get_analysis(cond, 'cmdline', 'job_cpu')
 #     m.save('job_cpu-genomic-cmdline')
-
+ 
 #     cond = {
 #             'type': 'genomic',
 #             'status': 'finished',
