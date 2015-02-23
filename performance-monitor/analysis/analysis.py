@@ -50,15 +50,7 @@ def get_experiments(cond, sortby='timestamp'):
             e['worker_sites'] = [s['site'] for s in e['worker_sites']]
         caliber = set([u'ufl', u'fiu', u'wvn', u'osf'])
         for e in exps:
-            print set(e['worker_sites'])
             e['overlap'] = len(caliber) - len(set(e['worker_sites'])&caliber)
-    sites = {}
-    for e in exps:
-        if e['master_site'] in sites:
-            sites[e['master_site']] += 1
-        else:
-            sites[e['master_site']] = 1
-    print sites
     exps = [(r[sortby], r['exp_id']) for r in sorted(exps, key=lambda e: e[sortby])]
     cat = {}
     if sortby == 'worker_size':
@@ -96,6 +88,11 @@ def get_experiments(cond, sortby='timestamp'):
                 cat[e[0]].append(e[1])
         else:
             cat[e[0]].append(e[1])
+    info = dict(cat)
+    for d in info:
+        info[d] = len(info[d])
+    print 'Condition: ', cond
+    print 'Result: ', info
     return cat 
     
 class Analyzer:
@@ -169,7 +166,7 @@ class Analyzer:
         plt.tight_layout()
         
     def analyze_vary_time(self, conds):
-        styles = ['rD-', 'c<--', 'bH-', 'y>--']
+        styles = ['rD-', 'g<--', 'bH-', 'c>--']
         labels = ['Exomic - time', 'Exomic - day', 'Montage - time', 'Montage - day']
         cat = (
                [get_experiments(cond[0], 'daytime'), get_experiments(cond[0], 'weekday')],
@@ -281,7 +278,6 @@ class Analyzer:
         '''
         styles = ['rD-', 'b^--']
         cat = get_experiments(cond, 'worker_sites')
-        print [len(cat[d]) for d in cat]
         tags = cat.keys()
         tags.sort()
         wt_raw, sys_raw = {}, {}
@@ -337,7 +333,8 @@ if __name__ == '__main__':
                 'type': 'genomic',
                 'status': 'finished',
                 'workload': 1,
-                'deployment': 'standalone'
+                'deployment': 'standalone',
+                'master_site': 'fiu'
             },
             {
                 'type': 'montage',
@@ -345,7 +342,8 @@ if __name__ == '__main__':
                 'bandwidth': 100 * 1000 * 1000,
                 'num_of_workers': 5,
                 'workload': 1,
-                'topology': 'intra-rack'
+                'topology': 'intra-rack',
+                'master_site': 'wsu'
             }
     ]
     m.analyze(conds, 'worker_size')
@@ -357,6 +355,8 @@ if __name__ == '__main__':
             'worker_size': 'XOLarge',
             'bandwidth': 100 * 1000 * 1000,
             'num_of_workers': 3,
+            'master_site': 'osf',
+            'storage_type': 'ISCSI',
             'topology': 'intra-rack'
         },
         {
@@ -365,6 +365,8 @@ if __name__ == '__main__':
             'worker_size': 'XOLarge',
             'bandwidth': 100 * 1000 * 1000,
             'num_of_workers': 5,
+            'master_site': 'fiu',
+            'storage_type': 'ISCSI',
             'topology': 'intra-rack'
         }
     ]
@@ -378,6 +380,7 @@ if __name__ == '__main__':
                 'worker_size': 'XOLarge',
                 'num_of_workers': 3,
                 'workload': 3,
+                'master_site': 'osf',
                 'topology': 'intra-rack',
             },
             {
@@ -400,6 +403,7 @@ if __name__ == '__main__':
                 'worker_size': 'XOLarge',
                 'workload': 5,
                 'bandwidth': 100 * 1000 * 1000,
+                'master_site': 'sl',
                 'topology': 'intra-rack'
               },
              {
@@ -408,6 +412,7 @@ if __name__ == '__main__':
                 'worker_size': 'XOLarge',
                 'workload': 1,
                 'bandwidth': 100 * 1000 * 1000,
+                'master_site': 'ucd',
                 'topology': 'intra-rack',
               }
     ]
@@ -440,7 +445,7 @@ if __name__ == '__main__':
             'num_of_workers': 4
             }
     m.analyze_varying_intersite(cond)
-    m.save('interrack')
+    m.save('intersite')
      
     cond = [{
             'type': 'genomic',
@@ -459,6 +464,7 @@ if __name__ == '__main__':
             'num_of_workers': 5,
             'workload': 1,
             'master_site': 'wsu',
+            'storage_type': 'native'
     }
     ]
     m.analyze_vary_time(cond)

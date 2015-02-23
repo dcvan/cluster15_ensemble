@@ -4,7 +4,7 @@ Created on Jan 13, 2015
 @author: dc
 '''
 
-MESSAGE_BROKER_URI = 'amqp://dc:cluster15@152.54.14.32:5672/%2F'
+MESSAGE_BROKER_URI = 'amqp://dc:cluster15@152.54.9.88:5672/%2F'
 
 EXCHANGE_NAME = 'cluster15_stat'
 
